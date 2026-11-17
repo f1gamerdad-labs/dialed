@@ -196,7 +196,7 @@
           <p><b>Private.</b> Everything runs on your PC. Nothing is uploaded.</p>
           <p><b>Small steps.</b> Apply a few changes, capture again, and the tool tells you what each round did and what to put back.</p>
           <p>Frame capture uses Intel PresentMon, released under the MIT licence. Made by F1GamerDad.</p>
-          <p style="margin-top:14px"><button class="ghost" data-intro hidden>Watch the welcome video</button> <button class="ghost" data-suggest hidden>Send an idea or suggestion</button> <button class="ghost" data-report hidden>Report a problem</button> <button class="ghost" data-news hidden>Get update emails</button> <button class="ghost" data-tip hidden>Support Dialed</button></p>
+          <p style="margin-top:14px"><button class="ghost" data-tour hidden>Watch the quick tour</button> <button class="ghost" data-intro hidden>Watch the welcome video</button> <button class="ghost" data-suggest hidden>Send an idea or suggestion</button> <button class="ghost" data-report hidden>Report a problem</button> <button class="ghost" data-news hidden>Get update emails</button> <button class="ghost" data-tip hidden>Support Dialed</button></p>
         </div>
       </section>
     </div>
@@ -218,6 +218,17 @@
   <p class="newsnote-title" id="newsNoteTitle">Want to hear when ACC support and big updates land?</p>
   <p class="hint" style="margin:0 0 10px">One occasional email. You never need it to use Dialed, and you will not be asked again.</p>
   <button id="newsYes">Open the sign-up</button> <button class="ghost" id="newsNo">No thanks</button>
+</div>
+<!-- first-run tour -->
+<div class="overlay tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+  <div class="tourbox">
+    <div class="tourhead"><span id="tourStep"></span><button class="ghost" id="tourSkip">Skip tour</button></div>
+    <div class="tourscene" id="tourScene" aria-hidden="true"></div>
+    <h2 id="tourTitle"></h2>
+    <p id="tourText"></p>
+    <p class="tourtip" id="tourTip"></p>
+    <div class="tourfoot"><div class="tourdots" id="tourDots" aria-hidden="true"></div><span><button class="ghost" id="tourBack">Back</button> <button id="tourNext">Next</button></span></div>
+  </div>
 </div>
 <!-- Report a problem -->
 <div class="overlay" id="report" hidden role="dialog" aria-modal="true" aria-labelledby="reportTitle">
@@ -288,6 +299,7 @@
 <script src="ui.js"></script>
 <script src="intro.js"></script>
 <script src="warn.js"></script>
+<script src="tour.js"></script>
 <script src="news.js"></script>
 </body>
 </html>
