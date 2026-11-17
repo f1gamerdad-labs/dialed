@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dialed by F1GamerDad</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- icon rail -->
+  <nav class="rail" aria-label="Sections">
+    <img class="logo" src="assets/f1gd-logo.png" alt="F1GamerDad">
+    <button data-view="setup" class="on"><svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2.3"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2.3"/></svg>Setup</button>
+    <button data-view="results"><svg viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="18" y1="20" x2="18" y2="9"/></svg>Results</button>
+    <button data-view="history"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</button>
+    <button data-view="about"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="8" r=".6"/></svg>About</button>
+    <div class="spacer"></div>
+    <button data-suggest hidden title="Send an idea or suggestion"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>Ideas</button>
+    <div class="ver">v0.1.0</div>
+  </nav>
+
+  <!-- sidebar -->
+  <aside class="side">
+    <div class="simpicker" id="simPicker" role="group" aria-label="Choose your sim"></div>
+    <div class="brand"><h1><span class="gt">Dialed</span></h1><span class="pill">BETA</span></div>
+    <p class="tagline">Sim Graphics Optimiser</p>
+    <p class="by">by F1GamerDad</p>
+    <div class="state"><span class="dot" id="sideDot"></span><div><b id="sideState">Ready</b><span id="sideSub">Add captures to begin</span></div></div>
+
+    <div data-for="setup">
+      <div class="sidehead">Setup</div>
+      <a data-go="appPanel" id="stepCapture"><i></i><div><b>Capture</b><small id="sCap">Hotkey Ctrl+Shift+F11</small></div></a>
+      <a data-go="capCard" id="stepCaptures"><i></i><div><b>Captures</b><small id="sCaps">None yet</small></div></a>
+      <a data-go="iniPanel" id="stepIni"><i></i><div><b id="sIniTitle">Game file</b><small id="sIni">Not loaded</small></div></a>
+      <a data-go="goalCard" id="stepGoal"><i></i><div><b>What you want</b><small id="sGoal">Balanced, driving</small></div></a>
+    </div>
+    <div data-for="results" hidden>
+      <div class="sidehead">Results</div>
+      <a data-go="sumCard"><i></i><div><b>Summary</b></div></a>
+      <a data-go="tableCard"><i></i><div><b>Your captures</b></div></a>
+      <a data-go="lastRound" id="stepLast"><i></i><div><b>Last round</b></div></a>
+      <a data-go="changesCard"><i></i><div><b>Recommended changes</b></div></a>
+      <a data-go="notesPanel" id="stepNotes"><i></i><div><b>Also worth knowing</b></div></a>
+    </div>
+    <div data-for="history" hidden>
+      <div class="sidehead">History</div>
+      <p class="note">Every round you apply is remembered here, so the next capture can say what each change did and what to put back.</p>
+    </div>
+    <div data-for="about" hidden>
+      <div class="sidehead">About</div>
+      <p class="note">Made by F1GamerDad. Everything runs on your PC.</p>
+    </div>
+  </aside>
+
+  <!-- main -->
+  <main class="main" id="main">
+    <div class="wrap">
+      <div class="update" id="updateBar" hidden role="status">
+        <div class="updatetext"><b id="updateTitle"></b> <span id="updateSub"></span><ul id="updateNotes"></ul></div>
+        <div class="updatebtns"><button id="updateNow">Update now</button><button class="ghost" id="updateLater">Later</button></div>
+      </div>
+      <div class="banner"><b>Not for VR.</b> Dialed is built for monitors, single screen and triples. For VR, use NextLevelXR, which is made for it.</div>
+
+      <!-- SETUP -->
+      <section id="view-setup">
+        <div class="title"><h2>Setup</h2></div>
+        <p class="lead">Capture your frame rate, say what you want most, and get graphics settings built from your own PC. <span id="version"></span></p>
+
+        <div class="info" id="simNote" hidden></div>
+
+        <div class="card" id="appPanel" hidden>
+          <p class="eyebrow">Capture</p>
+          <div class="reminder"><b>Before you capture, close as many other programs as you can.</b> That means OBS, Chrome and other browsers, Discord, overlays, and anything running in the system tray (check the arrow by the clock). Background programs are the most common cause of stutter and they skew your results. <span id="busyNow"></span></div>
+          <div class="row">
+            <div class="field" id="iniSelectField"><label for="iniSelect">iRacing graphics file</label><select id="iniSelect"></select></div>
+            <div class="field"><label for="hotkeyBox">Capture hotkey</label><input id="hotkeyBox" readonly placeholder="Click, then press keys"></div>
+            <div class="field"><button id="capBtn">Start capture</button></div>
+          </div>
+          <p class="status" id="capStatus"></p>
+          <div class="reminder"><b>Open this app before you start the sim.</b> Windows asks for permission when the app opens, and that prompt can freeze a full-screen game. Once the app is open, you never see it again, and the hotkey works from inside the game.</div>
+    <p class="hint">Click Start capture, or press the hotkey while you are in <span id="capSimName">the sim</span>. You get a 10 second countdown with beeps, then 60 seconds are recorded, then two beeps. Drive (or watch a replay) with the same track, car and field each time.</p>
+          <p style="margin:12px 0 0"><button class="ghost" id="openCaps">Open captures folder</button> <button class="ghost" id="openBackups">Open backups folder</button></p>
+        </div>
+
+        <div class="grid2">
+          <div class="card" id="capCard">
+            <p class="eyebrow">Your captures</p>
+            <label class="drop" id="capDrop"><input type="file" id="capInput" accept=".csv" multiple>Drop PresentMon <b>.csv</b> captures here, or click to choose</label>
+            <ul class="files" id="capFiles"></ul>
+            <p class="hint">60 seconds on track with a full field, same track and car each time. Two or three captures give firmer advice than one.</p>
+          </div>
+          <div class="card" id="iniPanel">
+            <p class="eyebrow" id="iniEyebrow">Your game file</p>
+            <label class="drop" id="iniDrop"><input type="file" id="iniInput" accept=".ini,.json"><span id="iniDropText">Drop your settings file here, or click to choose</span></label>
+            <ul class="files" id="iniFiles"></ul>
+            <p class="hint" id="iniHint"></p>
+          </div>
+        </div>
+
+        <div class="card" id="goalCard">
+          <p class="eyebrow">What are you tuning, and what do you want most?</p>
+          <div class="row">
+            <div class="field" id="modeField"><label>Tuning</label>
+              <div class="seg" id="modeSeg"></div></div>
+            <div class="field"><label>Priority</label>
+              <div class="seg"><label><input type="radio" name="goal" value="smooth">Smoothness</label><label><input type="radio" name="goal" value="balanced" checked>Balanced</label><label><input type="radio" name="goal" value="eyecandy">Eye candy</label></div></div>
+            <div class="field"><label for="target">Target FPS (blank = your frame cap)</label><input type="number" id="target" min="30" max="500" placeholder="auto"></div>
+          </div>
+          <p class="opt-note" id="modeHint">Capture while driving on track. Changes go to your normal driving settings.</p>
+          <p class="opt-note" id="goalHint">Balanced: a steady frame rate, keeping what looks good.</p>
+          <p style="margin:16px 0 0"><button id="run" disabled>Analyse my settings</button></p>
+          <div class="error" id="error" hidden></div>
+          <p class="hint">Everything runs on your PC. Your files never leave it.</p>
+        </div>
+      </section>
+
+      <!-- RESULTS -->
+      <section id="view-results" hidden>
+        <div class="title"><h2>Results</h2></div>
+        <div class="card empty" id="resultsEmpty"><img src="assets/f1gd-logo.png" alt=""><p style="margin:0" id="resultsEmptyText">Nothing to show yet. Add a capture and your settings file in Setup, then press Analyse.</p></div>
+
+        <div id="results" hidden>
+          <div class="card" id="sumCard"><p class="eyebrow" id="resultsTitle">What your PC is doing</p><div class="tiles" id="tiles"></div></div>
+          <div class="card" id="tableCard"><p class="eyebrow">Your captures</p><div class="scroll"><table id="capTable"></table></div></div>
+          <section class="card" id="lastRound" hidden></section>
+          <div class="card" id="changesCard">
+            <p class="eyebrow">Recommended changes</p>
+            <p class="hint" style="margin:0 0 10px">Listed best first. The top 3 are ticked, because a small round lets the next report show what each change did on your PC. <b>Gain</b> is how much load it takes off what is limiting you, <b>Look</b> is how much you will notice it.</p>
+            <p class="scopeline" id="scopeLine"></p>
+            <div class="scroll"><table id="changes"></table></div>
+            <p style="margin:12px 0 0"><button class="ghost" id="moreBtn" hidden></button></p>
+            <p id="noChanges" hidden>No setting changes recommended for this goal.</p>
+            <p style="margin:16px 0 0"><button id="apply">Apply selected changes</button> <span id="applyMsg" class="hint"></span></p>
+            <p class="hint" id="applyHint"></p>
+          </div>
+          <div class="card" id="notesPanel"><p class="eyebrow">Also worth knowing</p><ul class="notes" id="notes"></ul></div>
+          <div class="card"><p class="eyebrow">What next</p><p style="margin:0">Apply the changes, capture again on the same track with the same field, and add the new captures here. Repeat until the result says you are where you want to be.</p></div>
+        </div>
+      </section>
+
+      <!-- HISTORY -->
+      <section id="view-history" hidden>
+        <div class="title"><h2>History</h2></div>
+        <p class="lead">Every round you applied, what changed, and how it turned out.</p>
+        <div class="card empty" id="historyEmpty"><img src="assets/f1gd-logo.png" alt=""><p style="margin:0">No rounds yet. Apply your first changes and they will show up here.</p></div>
+        <div class="card" id="historyPanel" hidden>
+          <div class="scroll"><table id="history"></table></div>
+          <p style="margin:14px 0 0"><button class="ghost" id="clearHistory">Clear history</button></p>
+        </div>
+
+        <!-- Windows app only -->
+        <div class="card" id="backupsCard" hidden>
+          <p class="eyebrow">Backups and restore</p>
+          <p class="hint" style="margin:0 0 10px">Before every change, the app saves your old file into a folder called <code>Dialed Backups</code> next to the sim's own settings, for every sim. Restore any of them here. Your current file is backed up first, so a restore can be undone too.</p>
+          <div class="scroll"><table id="backups"></table></div>
+          <p class="hint" id="backupsEmpty">No backups yet. One is made each time you apply changes.</p>
+          <p class="status" id="backupMsg"></p>
+        </div>
+        <div class="card" id="tidyCard" hidden>
+          <p class="eyebrow">Tidy up your iRacing folder</p>
+          <p class="hint" style="margin:0 0 10px">Looks for loose backup files such as <code>rendererDX11Monitor.ini.bak-2026-10-15</code> in your iRacing folder and moves them into the backups folder. Nothing is deleted or renamed, and VR backups are left where they are.</p>
+          <p style="margin:0"><button class="ghost" id="tidyScan">Look for loose backup files</button></p>
+          <div id="tidyResult" hidden>
+            <div class="scroll" style="margin-top:12px"><table id="tidyList"></table></div>
+            <p style="margin:12px 0 0"><button class="ghost" id="tidyMove">Move selected files</button></p>
+          </div>
+          <p class="status" id="tidyMsg"></p>
+        </div>
+      </section>
+
+      <!-- ABOUT -->
+      <section id="view-about" hidden>
+        <div class="title"><h2>About</h2></div>
+        <div class="card" id="updatesCard" hidden>
+          <p class="eyebrow">Version and updates</p>
+          <p id="versionLine" style="margin:0 0 10px"></p>
+          <label class="checkrow"><input type="checkbox" id="autoUpdate"> Check for updates when the app opens</label>
+          <p class="hint">Updates come from this project's GitHub releases only. Checking sends nothing about you or your PC, and an update is never installed without you pressing Update now.</p>
+          <p style="margin:12px 0 0"><button class="ghost" id="checkUpdate">Check for updates</button> <button class="ghost" id="revertUpdate" hidden>Go back to the previous version</button> <span class="status" id="updateStatus"></span></p>
+        </div>
+        <div class="card about">
+          <p class="eyebrow">Dialed by F1GamerDad</p>
+          <p style="font-family:'Russo One'; font-size:22px; color:var(--text); margin:0 0 10px">Sim graphics, dialed.</p>
+          <p><b>Settings built from your own PC, not copied from someone else's.</b> It records your frame data with PresentMon and reads your sim's graphics settings, works out whether your processor, graphics card or graphics memory is holding you back, and suggests the changes that help most for the least visual cost.</p>
+          <p><b>Not for VR.</b> This tool is for monitors, single screen and triples. For VR, use NextLevelXR, which is built for it.</p>
+          <p><b>Private.</b> Everything runs on your PC. Nothing is uploaded.</p>
+          <p><b>Small steps.</b> Apply a few changes, capture again, and the tool tells you what each round did and what to put back.</p>
+          <p>Frame capture uses Intel PresentMon, released under the MIT licence. Made by F1GamerDad.</p>
+          <p style="margin-top:14px"><button class="ghost" data-intro hidden>Watch the welcome video</button> <button class="ghost" data-suggest hidden>Send an idea or suggestion</button></p>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<!-- welcome video, plays once on first open -->
+<div class="overlay" id="intro" hidden role="dialog" aria-modal="true" aria-labelledby="introTitle">
+  <div class="modal">
+    <div class="modal-head"><h2 id="introTitle">Welcome</h2><button class="ghost" id="introClose">Skip</button></div>
+    <div class="player" id="introBody"></div>
+    <div class="modal-foot">
+      <p class="hint" style="margin:0"><span id="introIdeas" hidden>Got an idea or something you would like added? Use the <b>Ideas</b> button on the left at any time. </span>You can watch this again from About.</p>
+      <button id="introStart">Get started</button>
+    </div>
+  </div>
+</div>
+<!-- shown after a round is saved -->
+<div class="overlay done" id="done" hidden role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+  <div class="donebox">
+    <svg class="tick" viewBox="0 0 120 120" aria-hidden="true"><circle class="ring" cx="60" cy="60" r="52"/><path class="check" d="M34 62 L53 80 L88 42"/></svg>
+    <p class="donesub" id="doneSub"></p>
+    <h2 id="doneTitle">Round saved</h2>
+    <p class="donelead" id="doneLead"></p>
+    <ul class="donelist" id="doneList"></ul>
+    <p class="donehead">Next</p>
+    <ol class="donesteps" id="doneNext"></ol>
+    <button id="doneGo">Go to capture</button>
+  </div>
+</div>
+<!-- big warning shown before anything closes iRacing -->
+<div class="overlay warn" id="warn" hidden role="alertdialog" aria-modal="true" aria-labelledby="warnTitle" aria-describedby="warnLead">
+  <div class="warnbox">
+    <div class="hazard" aria-hidden="true"></div>
+    <div class="warnhead">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"/><line x1="12" y1="10" x2="12" y2="15"/><circle cx="12" cy="18" r=".7"/></svg>
+      <span>Warning</span>
+    </div>
+    <h2 id="warnTitle">iRacing will close</h2>
+    <p class="warnlead" id="warnLead"></p>
+    <ol class="warnsteps" id="warnSteps"></ol>
+    <div class="warnbtns">
+      <button id="warnCancel">No, keep iRacing open</button>
+      <button id="warnOk">Close iRacing and apply</button>
+    </div>
+  </div>
+</div>
+<script src="config.js"></script>
+<script src="settings-table.js"></script>
+<script src="core.js"></script>
+<script src="settings-table-lmu.js"></script>
+<script src="sims.js"></script>
+<script src="app.js"></script>
+<script src="bridge.js"></script>
+<script src="ui.js"></script>
+<script src="intro.js"></script>
+<script src="warn.js"></script>
+</body>
+</html>

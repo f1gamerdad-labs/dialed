@@ -1,0 +1,19 @@
+# build output
+app/bin/
+app/obj/
+release/
+
+# personal captures, settings copies and test fixtures (never publish)
+test/
+*.csv
+*.ini
+*.JSON
+captures/
+
+# large media supplied separately
+assets/intro.mp4
+*.mp4
+
+# editor / OS
+.vs/
+Thumbs.db

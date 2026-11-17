@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>Dialed</AssemblyName>
+    <RootNamespace>TunerApp</RootNamespace>
+    <Version>0.1.0</Version>
+    <Product>Dialed</Product>
+    <Company>F1GamerDad</Company>
+    <AssemblyTitle>Dialed: Sim Graphics Optimiser</AssemblyTitle>
+    <ApplicationIcon>..\assets\app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2792.45" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
+  </ItemGroup>
+
+  <!-- The web page the app shows. These are the same files the browser version uses. -->
+  <ItemGroup>
+    <Content Include="..\index.html" Link="web\index.html" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\app.js" Link="web\app.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\bridge.js" Link="web\bridge.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\ui.js" Link="web\ui.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\intro.js" Link="web\intro.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\warn.js" Link="web\warn.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\sims.js" Link="web\sims.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\settings-table-lmu.js" Link="web\settings-table-lmu.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\config.js" Link="web\config.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\version.json" Link="web\version.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\styles.css" Link="web\styles.css" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\assets\**\*" Exclude="..\assets\app.ico" Link="web\assets\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\core.js" Link="web\core.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\settings-table.js" Link="web\settings-table.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="tools\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
+
+
