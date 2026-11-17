@@ -338,7 +338,7 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 .celeact { display:flex; flex-direction:column; gap:8px; align-items:center; }
 #celeOk { all:unset; box-sizing:border-box; cursor:pointer; font-weight:900; font-size:16px; color:#fff; padding:12px 34px; border-radius:12px; background:var(--grad); box-shadow:0 6px 22px rgba(255,46,147,.4); }
 #celeOk:focus-visible { outline:3px solid #fff; outline-offset:2px; }
-#celeOff { font-size:13px; padding:6px 12px; opacity:.85; }
+#celeOff { all:unset; cursor:pointer; margin-top:6px; font-size:11px; color:var(--muted); opacity:.6; text-decoration:underline; text-underline-offset:2px; } #celeOff:hover, #celeOff:focus-visible { opacity:1; }
 @keyframes cFade { from{opacity:0} to{opacity:1} }
 @keyframes cPop { 0%{transform:scale(.6) translateY(30px);opacity:0} 100%{transform:none;opacity:1} }
 @keyframes cPump { 0%,100%{transform:translateY(0) rotate(0)} 25%{transform:translateY(-14px) rotate(-3deg) scale(1.04)} 50%{transform:translateY(0) rotate(0)} 75%{transform:translateY(-10px) rotate(3deg) scale(1.03)} }
