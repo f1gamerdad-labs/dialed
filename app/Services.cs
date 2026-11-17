@@ -639,8 +639,16 @@ static class Vram
     /// <summary>Samples dedicated video memory used by one process, via Windows performance counters.</summary>
     public sealed class Sampler : IDisposable
     {
-        readonly List<PerformanceCounter> counters = new();
+        // One probe per graphics adapter the process touches: its "dedicated" figure, its "local" (resident) figure, and what the whole adapter is really using.
+        sealed record Probe(PerformanceCounter Dedicated, PerformanceCounter? Local, PerformanceCounter? Adapter);
+        readonly List<Probe> probes = new();
+        bool warned;
         public double MaxBytes { get; private set; }
+
+        static PerformanceCounter? Make(string category, string counter, string instance)
+        {
+            try { return new PerformanceCounter(category, counter, instance, true); } catch { return null; }
+        }
 
         public Sampler(int pid)
         {
@@ -648,23 +656,46 @@ static class Vram
             {
                 var cat = new PerformanceCounterCategory("GPU Process Memory");
                 foreach (var inst in cat.GetInstanceNames().Where(n => n.StartsWith($"pid_{pid}_", StringComparison.Ordinal)))
-                    counters.Add(new PerformanceCounter("GPU Process Memory", "Dedicated Usage", inst, true));
+                {
+                    var ded = Make("GPU Process Memory", "Dedicated Usage", inst);
+                    if (ded == null) continue;
+                    var luid = inst.Substring(inst.IndexOf("_luid_", StringComparison.Ordinal) + 1); // "luid_0x..._phys_0", the same name the adapter counters use
+                    probes.Add(new Probe(ded, Make("GPU Process Memory", "Local Usage", inst), Make("GPU Adapter Memory", "Dedicated Usage", luid)));
+                }
             }
             catch (Exception ex) { Paths.Log_("vram sampler failed: " + ex.Message); }
+        }
+
+        /// <summary>
+        /// The per-process "dedicated" figure is normally right, but some games (RaceRoom, for one) make Windows report what they have
+        /// RESERVED, which can be several times the whole card (43 GB on an 8 GB card). A process cannot really use more dedicated memory
+        /// than the adapter is in total using, so when it claims to, the resident "local" figure is used instead.
+        /// </summary>
+        public static double Plausible(double dedicated, double? local, double? adapter, long totalVram)
+        {
+            bool impossible = adapter.HasValue ? dedicated > adapter.Value * 1.1 + 256 * 1048576.0
+                                               : totalVram > 0 && dedicated > totalVram * 1.25;
+            return impossible && local.HasValue ? local.Value : dedicated;
         }
 
         public void Sample()
         {
             try
             {
-                double sum = 0;
-                foreach (var c in counters) sum += c.NextValue();
+                double sum = 0; long total = TotalBytes();
+                foreach (var p in probes)
+                {
+                    double ded = p.Dedicated.NextValue(); double? loc = p.Local?.NextValue(), ad = p.Adapter?.NextValue();
+                    var v = Plausible(ded, loc, ad, total);
+                    if (v != ded && !warned) { warned = true; Paths.Log_($"vram: process reported {ded / 1048576:N0} MB dedicated (adapter in use {(ad ?? 0) / 1048576:N0} MB); using the resident figure {v / 1048576:N0} MB"); }
+                    sum += v;
+                }
                 if (sum > MaxBytes) MaxBytes = sum;
             }
             catch (Exception ex) { Paths.Log_("vram sample failed: " + ex.Message); }
         }
 
-        public void Dispose() { foreach (var c in counters) c.Dispose(); }
+        public void Dispose() { foreach (var p in probes) { p.Dedicated.Dispose(); p.Local?.Dispose(); p.Adapter?.Dispose(); } }
     }
 }
 

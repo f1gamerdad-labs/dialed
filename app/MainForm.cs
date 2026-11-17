@@ -39,6 +39,17 @@ public sealed class MainForm : Form
             Load += async (_, _) => { await RunUpdateSelfTestAsync(testUrl); Close(); };
             return;
         }
+        if (Arg("--selftest-vram") is { } vramPid && int.TryParse(vramPid, out var vpid) && Paths.DataOverride != null) // samples a running process's graphics memory three times and reports it
+        {
+            Load += async (_, _) =>
+            {
+                using var s = new Vram.Sampler(vpid);
+                for (int i = 0; i < 3; i++) { s.Sample(); await Task.Delay(500); }
+                File.WriteAllText(Path.Combine(Paths.Data, "selftest-vram.json"), JsonSerializer.Serialize(new { usedMB = Math.Round(s.MaxBytes / 1048576), totalMB = Math.Round(Vram.TotalBytes() / 1048576.0) }));
+                Close();
+            };
+            return;
+        }
         if (args.Contains("--selftest-report") && Paths.DataOverride != null) // builds a report zip from throwaway data and lists what is in it (nothing is posted)
         {
             Load += (_, _) =>
@@ -459,6 +470,14 @@ public sealed class MainForm : Form
         void Check(string name, bool pass, string detail = "") => checks.Add(new { name, pass, detail });
         try
         {
+            // ----- graphics memory sanity rule (RaceRoom reported 43,683 MB "dedicated" on an 8 GB card) -----
+            const double MB = 1048576.0;
+            Check("VRAM: a normal game keeps its dedicated figure (7265 MB of 7800 in use on the card)", Vram.Sampler.Plausible(7265 * MB, 6900 * MB, 7800 * MB, 8192L * 1048576) == 7265 * MB);
+            Check("VRAM: an impossible figure (43,683 MB when the card uses 4,817) falls back to the resident figure", Vram.Sampler.Plausible(43683 * MB, 2696 * MB, 4817 * MB, 8192L * 1048576) == 2696 * MB);
+            Check("VRAM: with no adapter figure, more than 125% of the card is rejected", Vram.Sampler.Plausible(43683 * MB, 2696 * MB, null, 8192L * 1048576) == 2696 * MB);
+            Check("VRAM: with no adapter figure, a plausible value is kept", Vram.Sampler.Plausible(7000 * MB, 6000 * MB, null, 8192L * 1048576) == 7000 * MB);
+            Check("VRAM: with nothing else to go on the original figure is kept", Vram.Sampler.Plausible(43683 * MB, null, 4817 * MB, 8192L * 1048576) == 43683 * MB);
+
             var docs = Paths.IRacingDocs; var live = Path.Combine(docs, "rendererDX11Monitor.ini");
             if (IniService.IRacingRunning()) { Check("iRacing must be closed for this test", false); throw new InvalidOperationException("sim running"); }
 
