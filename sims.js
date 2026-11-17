@@ -11,6 +11,7 @@
   var tBEAMNG = isNode ? require('./settings-table-beamng.js') : root.SETTINGS_TABLE_BEAMNG;
   var tPMR = isNode ? require('./settings-table-pmr.js') : root.SETTINGS_TABLE_PMR;
   var tRR = isNode ? require('./settings-table-raceroom.js') : root.SETTINGS_TABLE_RACEROOM;
+  var tEVO = isNode ? require('./settings-table-evo.js') : root.SETTINGS_TABLE_EVO;
 
   // ---------- iRacing ----------
   var iracing = {
@@ -169,7 +170,36 @@
     captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
     requiredFiles: ['main']
   };
-  var acevo = soon('acevo', 'Assetto Corsa EVO', 'EVO', 'AC EVO saves its video settings in a binary file (Saved Games\\ACE\\video.videosettings) that cannot be edited safely yet.');
+  // ---------- Assetto Corsa EVO ----------
+  var acevo = {
+    id: 'acevo', name: 'Assetto Corsa EVO', short: 'EVO',
+    process: 'AssettoCorsaEVO.exe',
+    steamAppId: '3058630',
+    table: tEVO,
+    files: [{
+      id: 'main', name: 'video.videosettings', label: 'AC EVO video settings', rel: 'video.videosettings',
+      hint: 'In Saved Games\\ACE. A binary file: Dialed only changes the few settings it has checked.',
+      sections: ['EVO'],
+      match: function (n) { return /^video\.videosettings$/i.test(n); },
+      parse: function (t) { return core.parseEvoProto(t); },
+      patch: function (t, changes) { return core.patchEvoProto(t, changes); }
+    }],
+    modes: [{ id: 'driving', label: 'Driving', section: 'EVO', hint: 'Capture while driving on track. AC EVO uses the same graphics settings for replays.' }],
+    isVrFile: function () { return false; },
+    note: '<b>AC EVO support is early and small.</b> AC EVO is still early access, and it keeps its video settings in a binary file. ' +
+      'Dialed has checked four settings so far: Shadows, Ambient occlusion, Max cars ahead and Max cars behind. Other settings are not changed. ' +
+      'Every suggestion is low confidence, and Dialed only ever lowers a setting. After applying, open Settings, then Video, then Graphics in AC EVO and check the change. ' +
+      'If AC EVO updates and its file changes, Dialed finds nothing it recognises and offers no changes.',
+    scopeLine: function () { return 'AC EVO has one set of graphics settings, so every change below applies to both driving and replays.'; },
+    scopeOf: function () { return 'Changes driving and replays'; },
+    capInfo: function () { return { cap: NaN, refresh: NaN }; }, // the frame-rate limit is not read from this file, so the target is the user's own
+    scenarios: [
+      '<b>A race start with a full grid</b> on the busiest track you have, in <b>rain or at dusk</b> if you can.',
+      'Capture the <b>first lap</b> each time, from the same grid slot.'
+    ],
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    requiredFiles: ['main']
+  };
   // ---------- RaceRoom Racing Experience ----------
   var raceroom = {
     id: 'raceroom', name: 'RaceRoom', short: 'RaceRoom',

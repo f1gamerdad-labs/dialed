@@ -607,8 +607,25 @@ public sealed class MainForm : Form
                     var rrr = BackupService.Restore("raceroom", Path.GetFileName(rw.backup!));
                     Check("RaceRoom: restore puts the original bytes back", rrr.ok && File.ReadAllBytes(rx).SequenceEqual(rorig), rrr.message);
                 }
-                foreach (var soon in new[] { SimService.AcEvo })
-                    Check($"{soon.Name}: coming soon, never read or written", soon.ComingSoon && SimService.Root(soon) == null && SimService.ReadAll(soon).Length == 0);
+                if (Paths.SimOverrides.TryGetValue("acevo", out var eroot)) // --sim-acevo=<throwaway folder holding video.videosettings>
+                {
+                    var ev = SimService.AcEvo; var ef = Path.Combine(eroot, "video.videosettings");
+                    var ed = SimService.Describe().First(x => (string)x.GetType().GetProperty("id")!.GetValue(x)! == "acevo");
+                    Check("AC EVO: found and switched on", (bool)ed.GetType().GetProperty("found")!.GetValue(ed)! && !(bool)ed.GetType().GetProperty("comingSoon")!.GetValue(ed)!);
+                    var eorig = File.ReadAllBytes(ef);
+                    Check("AC EVO: binary file reads without changing a byte", SimService.ReadAll(ev).Length == 1 && File.ReadAllBytes(ef).SequenceEqual(eorig));
+                    // write bytes that include 0x00 and 0xFF to prove the binary file survives the text round trip exactly
+                    var back = (string)SimService.ReadAll(ev)[0].GetType().GetProperty("text")!.GetValue(SimService.ReadAll(ev)[0])!;
+                    var ew = SimService.Write(ev, ev.Files[0], back);
+                    Check("AC EVO: writing back the same content leaves the binary file byte-identical", ew.ok && File.ReadAllBytes(ef).SequenceEqual(eorig), ew.message);
+                    Check("AC EVO: backup is byte-exact and sits beside the video file", ew.backup != null && File.ReadAllBytes(ew.backup).SequenceEqual(eorig) && Path.GetDirectoryName(ew.backup) == Path.Combine(eroot, Paths.BackupsFolderName));
+                    var elist = BackupService.List().Where(i => (string)i.GetType().GetProperty("sim")!.GetValue(i)! == "acevo").ToArray();
+                    Check("AC EVO: lists its backup (.videosettings extension)", elist.Length == 1, $"found {elist.Length}");
+                    File.WriteAllBytes(ef, new byte[] { 1, 2, 3 });
+                    var err = BackupService.Restore("acevo", Path.GetFileName(ew.backup!));
+                    Check("AC EVO: restore puts the original bytes back", err.ok && File.ReadAllBytes(ef).SequenceEqual(eorig), err.message);
+                    Check("AC EVO: restore refuses a path trick", !BackupService.Restore("acevo", @"..\video.videosettings").ok);
+                }
             }
         }
         catch (Exception ex) { Check("test ran to the end", false, ex.Message); }

@@ -525,6 +525,81 @@
     }).join('');
   }
 
+  // ---------- Assetto Corsa EVO: Saved Games\ACE\video.videosettings ----------
+  // A protobuf file, read here as Latin-1 text (one character per byte). Field paths: 'f26' = top-level field 26 of the video message,
+  // 'f19.1' = field 1 inside field 19. A value of 0 is not stored by the format at all, so an absent field reads as 0 and writing 0 removes it.
+  // Only the fields listed in settings-table-evo.js are ever touched; every other byte is copied through unchanged.
+  function evoBytes(t) { var a = new Array(t.length); for (var i = 0; i < t.length; i++) a[i] = t.charCodeAt(i) & 255; return a; }
+  function evoText(a) { var s = ''; for (var i = 0; i < a.length; i += 8192) s += String.fromCharCode.apply(null, a.slice(i, i + 8192)); return s; }
+  function evoRv(b, p) { var v = 0, m = 1, x; do { if (p.i >= b.length) throw new Error('truncated'); x = b[p.i++]; v += (x & 127) * m; m *= 128; } while (x & 128); return v; }
+  function evoWv(v) { var o = []; while (v >= 128) { o.push((v % 128) | 128); v = Math.floor(v / 128); } o.push(v); return o; }
+  function evoFields(b, from, to) {
+    var p = { i: from }, out = [];
+    while (p.i < to) {
+      var s = p.i, tag = evoRv(b, p), f = { num: Math.floor(tag / 8), wire: tag % 8, start: s };
+      if (f.wire === 0) f.value = evoRv(b, p);
+      else if (f.wire === 2) { var len = evoRv(b, p); f.pstart = p.i; f.pend = p.i + len; p.i += len; }
+      else if (f.wire === 5) p.i += 4;
+      else if (f.wire === 1) p.i += 8;
+      else throw new Error('unsupported field type');
+      if (p.i > to) throw new Error('bad length');
+      f.end = p.i; out.push(f);
+    }
+    return out;
+  }
+  function evoRoot(b) { var root = evoFields(b, 0, b.length), f2 = null; root.forEach(function (f) { if (f.num === 2 && f.wire === 2) f2 = f; }); return { root: root, f2: f2 }; }
+  var EVO_PATHS = ['f19.1', 'f26', 'f47.1', 'f47.2'];
+  function parseEvoProto(text) {
+    var out = { EVO: {} }, b = evoBytes(text), r;
+    try { r = evoRoot(b); } catch (e) { return out; }
+    if (!r.f2) return out;
+    var inner = evoFields(b, r.f2.pstart, r.f2.pend);
+    EVO_PATHS.forEach(function (path) {
+      var parts = path.slice(1).split('.'), top = null;
+      inner.forEach(function (f) { if (f.num === Number(parts[0])) top = f; });
+      if (parts.length === 1) { out.EVO[path] = top && top.wire === 0 ? String(top.value) : (top ? undefined : '0'); if (out.EVO[path] === undefined) delete out.EVO[path]; return; }
+      if (!top || top.wire !== 2) return;
+      evoFields(b, top.pstart, top.pend).forEach(function (f) { if (f.num === Number(parts[1]) && f.wire === 0) out.EVO[path] = String(f.value); });
+    });
+    return out;
+  }
+  // edits: { fieldNumber: { set: n } | { sub: { fieldNumber: n } } }. Fields set to 0 are removed; fields that are absent and set above 0 are inserted in order.
+  function evoRebuild(b, from, to, edits) {
+    var fields = evoFields(b, from, to), out = [], pending = Object.keys(edits).map(Number).filter(function (n) { return edits[n].set !== undefined; }).sort(function (a, c) { return a - c; });
+    var seen = {};
+    fields.forEach(function (f) { seen[f.num] = true; });
+    pending = pending.filter(function (n) { return !seen[n]; });
+    fields.forEach(function (f) {
+      while (pending.length && pending[0] < f.num) { var n = pending.shift(); if (edits[n].set > 0) out.push.apply(out, evoWv(n * 8).concat(evoWv(edits[n].set))); }
+      var e = edits[f.num];
+      if (e && f.wire === 0 && e.set !== undefined) { if (e.set > 0) out.push.apply(out, evoWv(f.num * 8).concat(evoWv(e.set))); return; }
+      if (e && f.wire === 2 && e.sub) {
+        var subEdits = {}; Object.keys(e.sub).forEach(function (k) { subEdits[k] = { set: e.sub[k] }; });
+        var payload = evoRebuild(b, f.pstart, f.pend, subEdits);
+        out.push.apply(out, evoWv(f.num * 8 + 2).concat(evoWv(payload.length), payload)); return;
+      }
+      for (var i = f.start; i < f.end; i++) out.push(b[i]);
+    });
+    pending.forEach(function (n) { if (edits[n].set > 0) out.push.apply(out, evoWv(n * 8).concat(evoWv(edits[n].set))); });
+    return out;
+  }
+  function patchEvoProto(text, changes) {
+    var b = evoBytes(text), r = evoRoot(b);
+    if (!r.f2) return text;
+    var edits = {};
+    changes.forEach(function (c) {
+      var parts = c.key.slice(1).split('.'), n = Number(parts[0]);
+      if (parts.length === 1) edits[n] = { set: Number(c.to) };
+      else { edits[n] = edits[n] || { sub: {} }; edits[n].sub = edits[n].sub || {}; edits[n].sub[parts[1]] = Number(c.to); }
+    });
+    var inner = evoRebuild(b, r.f2.pstart, r.f2.pend, edits), out = [];
+    r.root.forEach(function (f) {
+      if (f === r.f2) out.push.apply(out, evoWv(f.num * 8 + 2).concat(evoWv(inner.length), inner));
+      else for (var i = f.start; i < f.end; i++) out.push(b[i]);
+    });
+    return evoText(out);
+  }
+
   // ---------- RaceRoom: UserData\graphics_options.xml ----------
   // One <name type="bool|int32|uint32|float32|...">value</name> per line. Section is always 'RaceRoom'. Booleans read as 1/0.
   function parseRaceRoomXml(text) {
@@ -626,7 +701,7 @@
     return head + body;
   }
 
-  return { parseRaceRoomXml: parseRaceRoomXml, patchRaceRoomXml: patchRaceRoomXml, parsePmrXml: parsePmrXml, patchPmrXml: patchPmrXml, parseBeamngJson: parseBeamngJson, patchBeamngJson: patchBeamngJson, parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, parseIni: parseIni, diagnose: diagnose,
+  return { parseEvoProto: parseEvoProto, patchEvoProto: patchEvoProto, parseRaceRoomXml: parseRaceRoomXml, patchRaceRoomXml: patchRaceRoomXml, parsePmrXml: parsePmrXml, patchPmrXml: patchPmrXml, parseBeamngJson: parseBeamngJson, patchBeamngJson: patchBeamngJson, parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, parseIni: parseIni, diagnose: diagnose,
     recommend: recommend, patchIni: patchIni, snapshot: snapshot, assessRound: assessRound, GOALS: GOALS,
     parseLmuIni: parseLmuIni, patchLmuIni: patchLmuIni, parseLmuJson: parseLmuJson, patchLmuJson: patchLmuJson };
 });

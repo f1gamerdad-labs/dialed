@@ -214,7 +214,7 @@ sealed record SimFile(string Id, string Name, string Rel);
 /// <summary>Process may list several names separated by "|". DocsRel: the sim keeps its settings under Documents\DocsRel instead of its Steam folder.
 /// Reason: when set, the sim is a "Coming soon" tile (listed, but never read or written).</summary>
 sealed record SimDef(string Id, string Name, string Process, string? SteamAppId, string? SteamFolder, string? BackupsRel, SimFile[] Files,
-    string? DocsRel = null, string? Reason = null, string? LocalRel = null) // LocalRel: settings live under %LOCALAPPDATA%\LocalRel
+    string? DocsRel = null, string? Reason = null, string? LocalRel = null, string? SavedRel = null) // LocalRel: settings live under %LOCALAPPDATA%\LocalRel; SavedRel: under the user's Saved Games\SavedRel
 {
     public bool ComingSoon => Reason != null;
     public string[] ProcessNames => Process.Split('|', StringSplitOptions.RemoveEmptyEntries);
@@ -239,8 +239,9 @@ static class SimService
     // Assetto Corsa Competizione: Documents\Assetto Corsa Competizione\Config\menuSettings.json (the Custom graphics sliders live in its customGraphicOptions block).
     public static readonly SimDef Acc = new("acc", "Assetto Corsa Competizione", "AC2-Win64-Shipping", "805550", "Assetto Corsa Competizione",
         Paths.BackupsFolderName, new[] { new SimFile("main", "menuSettings.json", @"Config\menuSettings.json") }, DocsRel: "Assetto Corsa Competizione");
-    public static readonly SimDef AcEvo = Soon("acevo", "Assetto Corsa EVO", "AssettoCorsaEVO", "3058630", "Assetto Corsa EVO",
-        "AC EVO saves its video settings in a binary file (Saved Games\\ACE\\video.videosettings) that cannot be edited safely yet.");
+    // Assetto Corsa EVO: Saved Games\ACE\video.videosettings (binary; the page only touches the few fields it has checked). Backups sit in Saved Games\ACE\Dialed Backups.
+    public static readonly SimDef AcEvo = new("acevo", "Assetto Corsa EVO", "AssettoCorsaEVO", "3058630", "Assetto Corsa EVO",
+        Paths.BackupsFolderName, new[] { new SimFile("main", "video.videosettings", "video.videosettings") }, SavedRel: "ACE");
     // RaceRoom: Documents\My Games\SimBin\RaceRoom Racing Experience\UserData\graphics_options.xml. Backups sit beside UserData, not inside it.
     public static readonly SimDef RaceRoom = new("raceroom", "RaceRoom", "RRRE64|RRRE", "211500", "raceroom racing experience",
         Paths.BackupsFolderName, new[] { new SimFile("main", "graphics_options.xml", @"UserData\graphics_options.xml") }, DocsRel: @"My Games\SimBin\RaceRoom Racing Experience");
@@ -290,6 +291,11 @@ static class SimService
         if (sim.ComingSoon) return null;
         if (sim.Id == "lmu" && Paths.LmuOverride != null) return Directory.Exists(Paths.LmuOverride) ? Paths.LmuOverride : null;
         if (Paths.SimOverrides.TryGetValue(sim.Id, out var ov)) return Directory.Exists(ov) ? ov : null;
+        if (sim.SavedRel != null)
+        {
+            var sg = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Saved Games", sim.SavedRel);
+            return Directory.Exists(sg) ? sg : null;
+        }
         if (sim.LocalRel != null)
         {
             var l = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), sim.LocalRel);
@@ -513,7 +519,7 @@ static class BackupService
 {
     // "rendererDX11Monitor 2026-11-17 17-28-48.ini", "Settings 2026-11-17 17-28-48.JSON" (optionally "... before restore"),
     // or the older iRacing-only "rendererDX11Monitor.20261117-172848.ini"
-    static readonly Regex Current = new(@"^(?<base>.+?) (?<ts>\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2})(?<tag> before restore)?(?<ext>\.ini|\.json|\.xml)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    static readonly Regex Current = new(@"^(?<base>.+?) (?<ts>\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2})(?<tag> before restore)?(?<ext>\.ini|\.json|\.xml|\.videosettings)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     static readonly Regex Legacy = new(@"^(?<base>.+)\.(?<ts>\d{8}-\d{6})\.ini$", RegexOptions.Compiled);
     // Loose manual backups such as "rendererDX11Monitor.ini.bak-2026-10-15" or "rendererDX11Monitor.ini.backup-2026..."
     static readonly Regex Loose = new(@"^renderer[^\\/]*\.ini\.(bak|backup)([-_.][^\\/]*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -541,7 +547,7 @@ static class BackupService
         {
             var dir = SimService.BackupsDir(sim);
             if (dir == null || !Directory.Exists(dir)) continue;
-            foreach (var f in new DirectoryInfo(dir).GetFiles().Where(x => x.Extension.Equals(".ini", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".json", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".xml", StringComparison.OrdinalIgnoreCase)))
+            foreach (var f in new DirectoryInfo(dir).GetFiles().Where(x => x.Extension.Equals(".ini", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".json", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".xml", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".videosettings", StringComparison.OrdinalIgnoreCase)))
                 if (TryParse(sim, f.Name, out var target, out var at))
                     items.Add((at, new { sim = sim.Id, file = f.Name, target, at = at.ToString("s"), kb = (int)Math.Ceiling(f.Length / 1024.0) }));
         }
