@@ -39,6 +39,22 @@ public sealed class MainForm : Form
             Load += async (_, _) => { await RunUpdateSelfTestAsync(testUrl); Close(); };
             return;
         }
+        if (Arg("--selftest-sounds") is { } soundDir && Paths.DataOverride != null) // reports which spoken cues in a folder are found and are playable WAV files
+        {
+            Load += (_, _) =>
+            {
+                SoundPack.FolderOverride = soundDir; SoundPack.ForgetAll();
+                var found = SoundPack.Names.Select(n =>
+                {
+                    var p = SoundPack.Find(n); bool playable = false;
+                    if (p != null) { try { using var sp = new System.Media.SoundPlayer(p); sp.Load(); playable = true; } catch { } }
+                    return new { name = n, exists = p != null, playable, bytes = p != null ? new FileInfo(p).Length : 0L, played = SoundPack.Play(n) };
+                }).ToArray();
+                File.WriteAllText(Path.Combine(Paths.Data, "selftest-sounds.json"), JsonSerializer.Serialize(found));
+                Close();
+            };
+            return;
+        }
         if (args.Contains("--selftest-hang")) // a window whose thread never reads messages, to stand in for a frozen game
         {
             Text = "frozen test window"; ClientSize = new Size(300, 120);
@@ -189,7 +205,7 @@ public sealed class MainForm : Form
 
     async Task ToggleCaptureAsync()
     {
-        if (capture != null) { Paths.Log_("capture: cancelled by hotkey or button"); capture.Cancel(); CaptureService.BeepSeq((520, 220)); return; }
+        if (capture != null) { Paths.Log_("capture: cancelled by hotkey or button"); capture.Cancel(); if (!SoundPack.Play("cancel")) CaptureService.BeepSeq((520, 220)); return; }
         capture = new CancellationTokenSource();
         var sim = ChooseCaptureSim();
         if (sim != currentSim)
@@ -199,7 +215,7 @@ public sealed class MainForm : Form
             Post(new { type = "capture", phase = "sim", sim = sim.Id }); // the page switches its picker to match
         }
         Paths.Log_($"capture start: {sim.Name}, {settings.CaptureSeconds}s");
-        CaptureService.BeepSeq((784, 110), (1047, 150)); // "got it", so the press is audible even when the app is hidden behind a full-screen game
+        if (!SoundPack.Has("announce")) CaptureService.BeepSeq((784, 110), (1047, 150)); // "got it", so the press is audible even when the app is hidden behind a full-screen game (the spoken "Capture about to start" does this job when it exists)
         try
         {
             var r = await CaptureService.RunAsync(sim, settings.CaptureSeconds, settings.Countdown, Post, capture.Token);
@@ -209,7 +225,7 @@ public sealed class MainForm : Form
         catch (Exception ex)
         {
             Paths.Log_("capture error: " + ex.Message);
-            CaptureService.BeepSeq((300, 200), (300, 200)); // two low beeps: it did not start
+            if (!SoundPack.Play("error")) CaptureService.BeepSeq((300, 200), (300, 200)); // two low beeps: it did not start
             Post(new { type = "capture", phase = "error", message = ex.Message });
         }
         finally { capture.Dispose(); capture = null; }

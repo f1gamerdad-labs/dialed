@@ -743,6 +743,46 @@ static class Busy
 
 sealed record CaptureResult(string Name, string Path, string Text, double VramUsedBytes, long VramTotalBytes, string[] Busy);
 
+/// <summary>
+/// Spoken cues for a capture, from short WAV files in assets\sounds (announce, 3, 2, 1, start, done, cancel, error). Any clip that is missing
+/// or is not a playable WAV falls back to the plain beep, so the app always makes a sound. The folder comes from the active page, so a
+/// page update can ship new recordings without a new program.
+/// </summary>
+static class SoundPack
+{
+    public static readonly string[] Names = { "announce", "3", "2", "1", "start", "done", "cancel", "error" };
+    static readonly Dictionary<string, System.Media.SoundPlayer?> cache = new();
+    public static string? FolderOverride { get; set; }
+    public static string Folder => FolderOverride ?? Path.Combine(UpdateService.ActiveWeb(), "assets", "sounds");
+
+    public static string? Find(string name) { var p = Path.Combine(Folder, name + ".wav"); return File.Exists(p) ? p : null; }
+    public static bool Has(string name) => Find(name) != null;
+
+    /// <summary>Plays the clip and returns true, or returns false (and the caller beeps) when there is no usable clip.</summary>
+    public static bool Play(string name)
+    {
+        lock (cache)
+        {
+            if (!cache.TryGetValue(name, out var sp))
+            {
+                sp = null;
+                var path = Find(name);
+                if (path != null)
+                {
+                    try { var s = new System.Media.SoundPlayer(path); s.Load(); sp = s; }
+                    catch (Exception ex) { Paths.Log_($"sound '{name}': not a playable WAV ({ex.Message})"); }
+                }
+                cache[name] = sp;
+            }
+            if (sp == null) return false;
+            try { sp.Play(); return true; }
+            catch (Exception ex) { Paths.Log_($"sound '{name}' could not play: {ex.Message}"); return false; }
+        }
+    }
+
+    public static void ForgetAll() { lock (cache) cache.Clear(); }
+}
+
 static class CaptureService
 {
     static void Beep(int freq, int ms) => Task.Run(() => { try { Console.Beep(freq, ms); } catch { /* no sound device */ } });
@@ -759,7 +799,8 @@ static class CaptureService
         for (int i = countdown; i > 0; i--)
         {
             report(new { type = "capture", phase = "countdown", secondsLeft = i, busy });
-            if (i <= 3) Beep(660, 120);
+            if (i == countdown && countdown >= 6) SoundPack.Play("announce"); // "Capture about to start" (only when there is time to say it before "3")
+            if (i <= 3 && !SoundPack.Play(i.ToString())) Beep(660, 120);
             await Task.Delay(1000, ct);
         }
         if (simProc.HasExited) throw new InvalidOperationException($"{sim.Name} closed before the capture started.");
@@ -782,7 +823,7 @@ static class CaptureService
         proc.ErrorDataReceived += (_, e) => { if (e.Data != null) err.AppendLine(e.Data); };
         proc.OutputDataReceived += (_, e) => { if (e.Data != null) err.AppendLine(e.Data); };
         proc.BeginErrorReadLine(); proc.BeginOutputReadLine();
-        Beep(988, 400);
+        if (!SoundPack.Play("start")) Beep(988, 400);
 
         using var vram = new Vram.Sampler(simProc.Id);
         var sw = Stopwatch.StartNew();
@@ -803,7 +844,7 @@ static class CaptureService
             try { File.Delete(path); } catch { }
             throw;
         }
-        Beep(988, 150); await Task.Delay(250, CancellationToken.None); Beep(988, 150);
+        if (!SoundPack.Play("done")) { Beep(988, 150); await Task.Delay(250, CancellationToken.None); Beep(988, 150); }
 
         if (proc.ExitCode != 0 || !File.Exists(path) || new FileInfo(path).Length < 200)
         {
