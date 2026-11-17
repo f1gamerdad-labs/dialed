@@ -1,4 +1,4 @@
-﻿# Dialed by F1GamerDad â€” Sim Graphics Optimiser
+# Dialed by F1GamerDad — Sim Graphics Optimiser
 
 Capture a few laps with PresentMon, and Dialed reads your simulator's graphics settings and tells you which ones to
 change first for a smoother frame rate. It is rules-based (no AI at run time), remembers what you changed each round,

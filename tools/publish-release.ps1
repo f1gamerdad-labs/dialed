@@ -40,7 +40,8 @@ Remove-Item (Join-Path $stage 'assets\app.ico') -ErrorAction SilentlyContinue   
 Get-ChildItem $stage -Recurse -Include *.mp4,*.exe,*.dll | Remove-Item -Force      # page updates never carry big media or program files
 
 # 2. stamp the version
-(@{ version = $Version; minHost = $MinHost } | ConvertTo-Json) | Set-Content (Join-Path $stage 'version.json') -Encoding UTF8
+$utf8 = New-Object System.Text.UTF8Encoding($false)   # UTF-8 WITHOUT a byte-order mark: Windows PowerShell's -Encoding UTF8 adds one, and it can upset JSON readers
+[IO.File]::WriteAllText((Join-Path $stage 'version.json'), ((@{ version = $Version; minHost = $MinHost } | ConvertTo-Json) + "`n"), $utf8)
 Copy-Item (Join-Path $stage 'version.json') (Join-Path $root 'version.json') -Force
 
 # 3. zip and fingerprint
@@ -59,7 +60,7 @@ $manifest = [ordered]@{
   contentUrl = "https://github.com/$repoName/releases/download/v$Version/Dialed-content-$Version.zip"
 }
 $manifestPath = Join-Path $out 'latest.json'
-($manifest | ConvertTo-Json) | Set-Content $manifestPath -Encoding UTF8
+[IO.File]::WriteAllText($manifestPath, (($manifest | ConvertTo-Json) + "`n"), $utf8)
 
 "Built $zip  ($([math]::Round($size/1KB)) KB)"
 "SHA-256  $sha"
@@ -69,7 +70,7 @@ Get-Content $manifestPath
 if ($DryRun) { "`nDry run: nothing was published."; return }
 if (-not $Repo) { throw "Pass -Repo owner/repo to publish." }
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { throw "The GitHub CLI (gh) is not installed or not on PATH." }
-$notesFile = Join-Path $out 'notes.md'; ("## Dialed $Version`n`n" + (($Notes | ForEach-Object { "- $_" }) -join "`n")) | Set-Content $notesFile -Encoding UTF8
+$notesFile = Join-Path $out 'notes.md'; [IO.File]::WriteAllText($notesFile, ("## Dialed $Version`n`n" + (($Notes | ForEach-Object { "- $_" }) -join "`n") + "`n"), $utf8)
 if (-not $Package) { throw "Pass -Package <path to Dialed-win-x64.zip>. Without it the website's Download link breaks, because 'latest' would have no package." }
 if ((Split-Path $Package -Leaf) -ne 'Dialed-win-x64.zip') { throw "The package must be named Dialed-win-x64.zip (the website links to that exact name)." }
 gh release create "v$Version" $zip $manifestPath $Package --repo $Repo --title "Dialed $Version" --notes-file $notesFile
