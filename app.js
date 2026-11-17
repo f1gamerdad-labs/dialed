@@ -120,10 +120,13 @@
 
   function renderPicker() {
     $('simPicker').innerHTML = sims.ORDER.map(function (id) {
-      var s = sims.SIMS[id], on = s === state.sim, missing = STATUS[id] && STATUS[id].found === false;
-      return '<button class="simbtn' + (on ? ' on' : '') + (missing ? ' missing' : '') + '" data-sim="' + id + '" aria-pressed="' + on + '" title="' +
-        esc(s.name + (missing ? ' (not found on this PC)' : '')) + '">' +
-        (LOGOS[id] ? '<img src="' + esc(LOGOS[id]) + '" alt="' + esc(s.name) + '">' : '<span>' + esc(s.short) + '</span>') + '</button>';
+      var s = sims.SIMS[id], on = s === state.sim, st = STATUS[id] || {};
+      var soon = !!s.comingSoon, notInstalled = !soon && st.installed === false, missing = !soon && !notInstalled && st.found === false;
+      var tip = s.name + (soon ? ' - coming soon. ' + s.reason : notInstalled ? ' (not installed on this PC)' : missing ? ' (settings file not found on this PC)' : '');
+      var logo = LOGOS[id] ? '<img src="' + esc(LOGOS[id]) + '" alt="">' : '';
+      return '<button class="simbtn' + (on ? ' on' : '') + (missing || notInstalled ? ' missing' : '') + (soon ? ' soon' : '') + '" data-sim="' + id +
+        '" aria-pressed="' + on + '"' + (soon ? ' disabled aria-disabled="true"' : '') + ' title="' + esc(tip) + '">' + logo +
+        '<span class="nm">' + esc(s.short) + '</span>' + (soon ? '<span class="tagsoon">Coming soon</span>' : notInstalled ? '<span class="tagsoon">Not installed</span>' : '') + '</button>';
     }).join('');
   }
   $('simPicker').addEventListener('click', function (e) {
@@ -163,7 +166,7 @@
   var simListeners = [];
   function setSim(id) {
     var next = sims.SIMS[id];
-    if (!next) return;
+    if (!next || next.comingSoon) return;
     if (next !== state.sim) {
       state.sim = next; state.files = {}; state.caps = []; state.result = null; state.assess = null; state.rows = [];
       state.ini = null; state.iniName = null; state.iniText = null;

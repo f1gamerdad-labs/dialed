@@ -28,6 +28,7 @@ public sealed class MainForm : Form
         string? Arg(string name) => args.FirstOrDefault(a => a.StartsWith(name + "=", StringComparison.Ordinal))?.Substring(name.Length + 1).Trim('"');
         Paths.DocsOverride = Arg("--docs");
         Paths.LmuOverride = Arg("--lmu");
+        foreach (var s in SimService.All) if (Arg("--sim-" + s.Id) is { } so) Paths.SimOverrides[s.Id] = so;
         Paths.DataOverride = Arg("--data");
         Paths.Ensure();
         settings = Settings.Load();

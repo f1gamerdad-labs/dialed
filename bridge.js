@@ -204,7 +204,7 @@
         if (m.hotkeyError) status(m.hotkeyError, 'bad');
         // which sims are installed, their logos, and which are open
         var logos = {}, found = {};
-        m.sims.forEach(function (s) { simInfo[s.id] = s; if (s.logo) logos[s.id] = s.logo; found[s.id] = { found: s.found }; });
+        m.sims.forEach(function (s) { simInfo[s.id] = s; if (s.logo) logos[s.id] = s.logo; found[s.id] = { found: s.found, installed: s.installed }; });
         app.setLogos(logos); app.setSimStatus(found);
         setRunning(m.running);
         send({ type: 'setSim', sim: sim().id }); // the page's saved choice wins; the hotkey then captures that sim

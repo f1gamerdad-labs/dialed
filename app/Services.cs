@@ -49,6 +49,8 @@ static class Paths
     public static string? DocsOverride { get; set; }
     /// <summary>Set only by the self-test (--lmu=PATH) so tests never touch a real Le Mans Ultimate folder.</summary>
     public static string? LmuOverride { get; set; }
+    /// <summary>Self-test overrides for the other sims (--sim-ams2=PATH etc.): a throwaway folder standing in for the sim's data folder.</summary>
+    public static Dictionary<string, string> SimOverrides { get; } = new();
     public static string IRacingDocs => DocsOverride ?? Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "iRacing");
     public static string PresentMon => Path.Combine(AppContext.BaseDirectory, "tools", "PresentMon.exe");
@@ -209,7 +211,14 @@ static class Backup
 // The sims this app knows. To add one: add a SimDef here and a profile in the page (sims.js).
 // ---------------------------------------------------------------------------------------------------------------------
 sealed record SimFile(string Id, string Name, string Rel);
-sealed record SimDef(string Id, string Name, string Process, string? SteamAppId, string? SteamFolder, string? BackupsRel, SimFile[] Files);
+/// <summary>Process may list several names separated by "|". DocsRel: the sim keeps its settings under Documents\DocsRel instead of its Steam folder.
+/// Reason: when set, the sim is a "Coming soon" tile (listed, but never read or written).</summary>
+sealed record SimDef(string Id, string Name, string Process, string? SteamAppId, string? SteamFolder, string? BackupsRel, SimFile[] Files,
+    string? DocsRel = null, string? Reason = null)
+{
+    public bool ComingSoon => Reason != null;
+    public string[] ProcessNames => Process.Split('|', StringSplitOptions.RemoveEmptyEntries);
+}
 
 static class SimService
 {
@@ -221,7 +230,23 @@ static class SimService
             new SimFile("video", "Config_DX11.ini", @"UserData\Config_DX11.ini"),
             new SimFile("graphics", "Settings.JSON", @"UserData\player\Settings.JSON"),
         });
-    public static readonly SimDef[] All = { IRacing, Lmu };
+    // Automobilista 2: one XML file in Documents. AMS2.exe is the normal build, AMS2AVX.exe the older-CPU build.
+    public static readonly SimDef Ams2 = new("ams2", "Automobilista 2", "AMS2|AMS2AVX", "1066890", "Automobilista 2",
+        Paths.BackupsFolderName, new[] { new SimFile("main", "graphicsconfigdx11.xml", "graphicsconfigdx11.xml") }, DocsRel: "Automobilista 2");
+    // Sims that are listed but not switched on yet. The reason is shown on the tile.
+    static SimDef Soon(string id, string name, string process, string appId, string folder, string reason) =>
+        new(id, name, process, appId, folder, null, Array.Empty<SimFile>(), null, reason);
+    public static readonly SimDef Acc = Soon("acc", "Assetto Corsa Competizione", "AC2-Win64-Shipping", "805550", "Assetto Corsa Competizione",
+        "ACC keeps its graphics in menuSettings.json, but which block the game reads cannot be confirmed without testing it in the game.");
+    public static readonly SimDef AcEvo = Soon("acevo", "Assetto Corsa EVO", "AssettoCorsaEVO", "3058630", "Assetto Corsa EVO",
+        "No graphics settings file could be found for this early-access game.");
+    public static readonly SimDef RaceRoom = Soon("raceroom", "RaceRoom", "RRRE64", "211500", "raceroom racing experience",
+        "RaceRoom's settings file could not be found or tested.");
+    public static readonly SimDef Pmr = Soon("pmr", "Project Motor Racing", "ProjectMotorRacing-Win64-Shipping", "299970", "Project Motor Racing",
+        "Its graphics settings use numbered levels with no published meaning, so they cannot be checked yet.");
+    public static readonly SimDef BeamNg = Soon("beamng", "BeamNG.drive", "BeamNG.drive.x64", "284160", "BeamNG.drive",
+        "BeamNG stores its main quality levels as words in a versioned folder; support is not built yet.");
+    public static readonly SimDef[] All = { IRacing, Lmu, Ams2, Acc, AcEvo, RaceRoom, Pmr, BeamNg };
     public static SimDef? ById(string? id) => All.FirstOrDefault(s => s.Id == id);
 
     // Game files are not guaranteed UTF-8; Latin-1 round-trips every byte unchanged.
@@ -257,7 +282,14 @@ static class SimService
     public static string? Root(SimDef sim)
     {
         if (sim.Id == "iracing") return Directory.Exists(Paths.IRacingDocs) ? Paths.IRacingDocs : null;
+        if (sim.ComingSoon) return null;
         if (sim.Id == "lmu" && Paths.LmuOverride != null) return Directory.Exists(Paths.LmuOverride) ? Paths.LmuOverride : null;
+        if (Paths.SimOverrides.TryGetValue(sim.Id, out var ov)) return Directory.Exists(ov) ? ov : null;
+        if (sim.DocsRel != null)
+        {
+            var d = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), sim.DocsRel);
+            return Directory.Exists(d) ? d : null;
+        }
         if (sim.SteamFolder == null) return null;
         foreach (var lib in SteamLibraries())
         {
@@ -276,7 +308,7 @@ static class SimService
             {
                 var root = Root(sim);
                 if (root == null) continue;
-                var parent = sim.Id == "iracing" ? root : Path.Combine(root, "UserData");
+                var parent = sim.Id == "iracing" ? root : Path.GetDirectoryName(Path.Combine(root, sim.BackupsRel ?? "x"))!;
                 var next = Path.Combine(parent, Paths.BackupsFolderName);
                 foreach (var oldName in Paths.OldBackupsFolderNames)
                 {
@@ -311,13 +343,13 @@ static class SimService
     // ---------- running state ----------
     /// <summary>Set only by the self-test, which works on throwaway folders and so does not care whether the real sim is open.</summary>
     public static bool IgnoreRunning { get; set; }
-    public static bool IsRunning(SimDef sim) => !IgnoreRunning && Process.GetProcessesByName(sim.Process).Length > 0;
+    public static bool IsRunning(SimDef sim) => !IgnoreRunning && sim.ProcessNames.Any(n => Process.GetProcessesByName(n).Length > 0);
     public static Dictionary<string, bool> RunningMap() => All.ToDictionary(s => s.Id, IsRunning);
 
     /// <summary>Asks the sim to close like a normal exit and waits for it. It never force-kills the sim.</summary>
     public static async Task<(bool ok, string message)> CloseAsync(SimDef sim, int timeoutMs = 30000)
     {
-        var procs = Process.GetProcessesByName(sim.Process);
+        var procs = sim.ProcessNames.SelectMany(n => Process.GetProcessesByName(n)).ToArray();
         if (procs.Length == 0) return (true, "");
         foreach (var p in procs) { try { p.CloseMainWindow(); } catch { /* already closing */ } }
         var sw = Stopwatch.StartNew();
@@ -360,9 +392,18 @@ static class SimService
         return (object)new
         {
             id = s.Id, name = s.Name, running = IsRunning(s), logo = Logo(s), files,
-            found = s.Id == "iracing" ? root != null : root != null && files.All(x => x.exists),
+            comingSoon = s.ComingSoon, reason = s.Reason, installed = s.Id == "iracing" ? root != null : SteamInstalled(s),
+            found = !s.ComingSoon && (s.Id == "iracing" ? root != null : root != null && files.All(x => x.exists)),
         };
     }).ToArray();
+
+    /// <summary>Is the game installed (its Steam folder exists)? Test overrides count as installed.</summary>
+    public static bool SteamInstalled(SimDef s)
+    {
+        if (Paths.SimOverrides.ContainsKey(s.Id) || (s.Id == "lmu" && Paths.LmuOverride != null)) return true;
+        if (s.SteamFolder == null) return false;
+        return SteamLibraries().Any(lib => Directory.Exists(Path.Combine(lib, "steamapps", "common", s.SteamFolder)));
+    }
 
     // ---------- reading and writing the sim's own files ----------
     public static object[] ReadAll(SimDef sim) => sim.Files.Select(f =>
@@ -462,7 +503,7 @@ static class BackupService
 {
     // "rendererDX11Monitor 2026-11-17 17-28-48.ini", "Settings 2026-11-17 17-28-48.JSON" (optionally "... before restore"),
     // or the older iRacing-only "rendererDX11Monitor.20261117-172848.ini"
-    static readonly Regex Current = new(@"^(?<base>.+?) (?<ts>\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2})(?<tag> before restore)?(?<ext>\.ini|\.json)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    static readonly Regex Current = new(@"^(?<base>.+?) (?<ts>\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2})(?<tag> before restore)?(?<ext>\.ini|\.json|\.xml)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     static readonly Regex Legacy = new(@"^(?<base>.+)\.(?<ts>\d{8}-\d{6})\.ini$", RegexOptions.Compiled);
     // Loose manual backups such as "rendererDX11Monitor.ini.bak-2026-10-15" or "rendererDX11Monitor.ini.backup-2026..."
     static readonly Regex Loose = new(@"^renderer[^\\/]*\.ini\.(bak|backup)([-_.][^\\/]*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -490,7 +531,7 @@ static class BackupService
         {
             var dir = SimService.BackupsDir(sim);
             if (dir == null || !Directory.Exists(dir)) continue;
-            foreach (var f in new DirectoryInfo(dir).GetFiles().Where(x => x.Extension.Equals(".ini", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".json", StringComparison.OrdinalIgnoreCase)))
+            foreach (var f in new DirectoryInfo(dir).GetFiles().Where(x => x.Extension.Equals(".ini", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".json", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".xml", StringComparison.OrdinalIgnoreCase)))
                 if (TryParse(sim, f.Name, out var target, out var at))
                     items.Add((at, new { sim = sim.Id, file = f.Name, target, at = at.ToString("s"), kb = (int)Math.Ceiling(f.Length / 1024.0) }));
         }
@@ -642,7 +683,7 @@ static class CaptureService
     public static async Task<CaptureResult> RunAsync(SimDef sim, int seconds, int countdown, Action<object> report, CancellationToken ct)
     {
         if (!File.Exists(Paths.PresentMon)) throw new FileNotFoundException("The capture engine is missing from the app folder (tools\\PresentMon.exe). Reinstall the app.");
-        var simProc = Process.GetProcessesByName(sim.Process).FirstOrDefault()
+        var simProc = sim.ProcessNames.SelectMany(n => Process.GetProcessesByName(n)).FirstOrDefault()
             ?? throw new InvalidOperationException($"{sim.Name} is not running. Start the sim and get on track first.");
 
         var busy = Busy.Running();
@@ -662,7 +703,7 @@ static class CaptureService
             UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardOutput = true,
         };
         // ArgumentList quotes each value, so process names with spaces ("Le Mans Ultimate.exe") are passed whole.
-        foreach (var a in new[] { "--process_name", sim.Process + ".exe", "--timed", seconds.ToString(), "--terminate_after_timed",
+        foreach (var a in new[] { "--process_name", simProc.ProcessName + ".exe", "--timed", seconds.ToString(), "--terminate_after_timed",
                                   "--no_console_stats", "--v2_metrics", "--session_name", "iRacingTuner", "--stop_existing_session",
                                   "--output_file", path })
             psi.ArgumentList.Add(a);
