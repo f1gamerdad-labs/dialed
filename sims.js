@@ -7,6 +7,7 @@
   var tIR = isNode ? require('./settings-table.js') : root.SETTINGS_TABLE;
   var tLMU = isNode ? require('./settings-table-lmu.js') : root.SETTINGS_TABLE_LMU;
   var tAMS2 = isNode ? require('./settings-table-ams2.js') : root.SETTINGS_TABLE_AMS2;
+  var tACC = isNode ? require('./settings-table-acc.js') : root.SETTINGS_TABLE_ACC;
 
   // ---------- iRacing ----------
   var iracing = {
@@ -110,7 +111,36 @@
 
   // ---------- sims that are listed but not switched on yet ----------
   function soon(id, name, short, reason) { return { id: id, name: name, short: short, comingSoon: true, reason: reason }; }
-  var acc = soon('acc', 'Assetto Corsa Competizione', 'ACC', 'ACC keeps its graphics in menuSettings.json, but which block the game reads cannot be confirmed without testing it in the game.');
+  // ---------- Assetto Corsa Competizione ----------
+  function accCapInfo(ini) {
+    var g = ini['customGraphicOptions'] || {};
+    var cap = parseFloat(g.frameLimit);
+    return { cap: cap > 0 ? cap : NaN, refresh: NaN }; // the refresh rate and V-sync are not in this file
+  }
+  var acc = {
+    id: 'acc', name: 'Assetto Corsa Competizione', short: 'ACC',
+    process: 'AC2-Win64-Shipping.exe',
+    steamAppId: '805550',
+    table: tACC,
+    files: [{
+      id: 'main', name: 'menuSettings.json', label: 'ACC settings file', rel: 'Config\\menuSettings.json',
+      hint: 'In Documents\\Assetto Corsa Competizione\\Config.',
+      sections: ['customGraphicOptions'],
+      match: function (n) { return /^menuSettings\.json$/i.test(n); },
+      parse: function (t) { return core.parseAccJson(t); },
+      patch: function (t, changes, section) { return core.patchAccJson(t, changes, section); }
+    }],
+    modes: [{ id: 'driving', label: 'Driving', section: 'customGraphicOptions', hint: 'Capture while driving on track. ACC uses the same graphics settings for replays.' }],
+    isVrFile: function () { return false; },
+    note: '<b>Set ACC\'s graphics preset to Custom.</b> Dialed changes the sliders on ACC\'s Custom graphics page (Video, then Graphics). ' +
+      'If a preset such as High or Epic is selected, the game ignores them. Kunos does not publish what each number means, so every suggestion is shown as low confidence: ' +
+      'after applying, open the Graphics page in ACC and check the sliders moved.',
+    scopeLine: function () { return 'ACC has one set of graphics settings, so every change below applies to both driving and replays.'; },
+    scopeOf: function () { return 'Changes driving and replays'; },
+    capInfo: accCapInfo,
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    requiredFiles: ['main']
+  };
   var acevo = soon('acevo', 'Assetto Corsa EVO', 'EVO', 'No graphics settings file could be found for this early-access game.');
   var raceroom = soon('raceroom', 'RaceRoom', 'RaceRoom', 'RaceRoom\'s settings file could not be found or tested.');
   var pmr = soon('pmr', 'Project Motor Racing', 'PMR', 'Its graphics settings use numbered levels with no published meaning, so they cannot be checked yet.');

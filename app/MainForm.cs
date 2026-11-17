@@ -546,7 +546,23 @@ public sealed class MainForm : Form
                 Check("AMS2: restore puts the original bytes back", rr.ok && File.ReadAllBytes(xml).SequenceEqual(original), rr.message);
                 Check("AMS2: restore refuses a path trick", !BackupService.Restore("ams2", @"..\graphicsconfigdx11.xml").ok);
                 Check("AMS2: the app never touches a VR file", !SimService.TargetValid(ams2, "graphicsconfigopenvrdx11.xml") && !SimService.TargetValid(ams2, "oculussettings.xml"));
-                foreach (var soon in new[] { SimService.Acc, SimService.AcEvo, SimService.RaceRoom, SimService.Pmr, SimService.BeamNg })
+                if (Paths.SimOverrides.TryGetValue("acc", out var croot)) // --sim-acc=<throwaway folder holding Config\menuSettings.json>
+                {
+                    var acc = SimService.Acc; var json = Path.Combine(croot, @"Config\menuSettings.json");
+                    var cd = SimService.Describe().First(x => (string)x.GetType().GetProperty("id")!.GetValue(x)! == "acc");
+                    Check("ACC: found and switched on", (bool)cd.GetType().GetProperty("found")!.GetValue(cd)! && !(bool)cd.GetType().GetProperty("comingSoon")!.GetValue(cd)!);
+                    var cb = SimService.BackupsDir(acc)!;
+                    Check("ACC: backups folder sits in the ACC documents folder, not in Config", cb == Path.Combine(croot, Paths.BackupsFolderName), cb);
+                    var corig = File.ReadAllBytes(json);
+                    Check("ACC: reads the file unchanged", SimService.ReadAll(acc).Length == 1 && File.ReadAllBytes(json).SequenceEqual(corig));
+                    var cw = SimService.Write(acc, acc.Files[0], "{}");
+                    Check("ACC: write succeeds with a byte-exact backup", cw.ok && File.ReadAllText(json) == "{}" && cw.backup != null && File.ReadAllBytes(cw.backup).SequenceEqual(corig), cw.message);
+                    Check("ACC: lists its backup (.json)", BackupService.List().Count(i => (string)i.GetType().GetProperty("sim")!.GetValue(i)! == "acc") == 1);
+                    var crr = BackupService.Restore("acc", Path.GetFileName(cw.backup!));
+                    Check("ACC: restore puts the original bytes back", crr.ok && File.ReadAllBytes(json).SequenceEqual(corig), crr.message);
+                    Check("ACC: restore refuses a path trick", !BackupService.Restore("acc", @"..\Config\menuSettings.json").ok);
+                }
+                foreach (var soon in new[] { SimService.AcEvo, SimService.RaceRoom, SimService.Pmr, SimService.BeamNg })
                     Check($"{soon.Name}: coming soon, never read or written", soon.ComingSoon && SimService.Root(soon) == null && SimService.ReadAll(soon).Length == 0);
             }
         }

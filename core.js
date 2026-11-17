@@ -501,6 +501,30 @@
     }).join('');
   }
 
+  // ---------- Assetto Corsa Competizione: Config\menuSettings.json ----------
+  // Strict JSON, tab-indented, with the opening brace of every block on its own line. Reading is the same as LMU's Settings.JSON.
+  // Writing edits only the matching "Key": value lines inside the named block (customGraphicOptions); every other byte stays as the game wrote it.
+  function patchAccJson(text, changes, section) {
+    var want = {};
+    changes.forEach(function (c) { want[c.key] = c; });
+    var parts = text.split(/(\r?\n)/), state = 0, indent = '';
+    var head = new RegExp('^(\\s*)"' + escRe(section) + '"\\s*:\\s*(\\{)?\\s*$');
+    return parts.map(function (line) {
+      var m;
+      if (state === 3) return line;
+      if (state === 0) { if ((m = line.match(head))) { indent = m[1]; state = m[2] ? 2 : 1; } return line; }
+      if (state === 1) { if (/^\s*\{\s*$/.test(line)) state = 2; return line; }
+      if (line.match(new RegExp('^' + indent + '\\},?\\s*$'))) { state = 3; return line; }
+      m = line.match(/^(\s*)"((?:[^"\\]|\\.)*)"(\s*:\s*)(.*?)(,?)\s*$/);
+      if (!m || !want[m[2]]) return line;
+      var old = m[4], to = want[m[2]].to, val;
+      if (old === 'true' || old === 'false') val = to ? 'true' : 'false';
+      else if (/^-?\d+\.\d+$/.test(old)) val = Number.isInteger(to) ? to.toFixed(1) : String(to);
+      else val = String(to);
+      return m[1] + '"' + m[2] + '"' + m[3] + val + m[5];
+    }).join('');
+  }
+
   // ---------- Automobilista 2: graphicsconfigdx11.xml ----------
   // One <prop name="Key" key="value" /> line per setting inside the <data> element (the <class> list above it only declares types).
   // Section is always 'GraphicConfigData'. The Mode line is split into Width, Height and RefreshRate (Hz).
@@ -536,7 +560,7 @@
     return head + body;
   }
 
-  return { parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, parseIni: parseIni, diagnose: diagnose,
+  return { parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, parseIni: parseIni, diagnose: diagnose,
     recommend: recommend, patchIni: patchIni, snapshot: snapshot, assessRound: assessRound, GOALS: GOALS,
     parseLmuIni: parseLmuIni, patchLmuIni: patchLmuIni, parseLmuJson: parseLmuJson, patchLmuJson: patchLmuJson };
 });

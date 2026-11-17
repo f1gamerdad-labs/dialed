@@ -236,8 +236,9 @@ static class SimService
     // Sims that are listed but not switched on yet. The reason is shown on the tile.
     static SimDef Soon(string id, string name, string process, string appId, string folder, string reason) =>
         new(id, name, process, appId, folder, null, Array.Empty<SimFile>(), null, reason);
-    public static readonly SimDef Acc = Soon("acc", "Assetto Corsa Competizione", "AC2-Win64-Shipping", "805550", "Assetto Corsa Competizione",
-        "ACC keeps its graphics in menuSettings.json, but which block the game reads cannot be confirmed without testing it in the game.");
+    // Assetto Corsa Competizione: Documents\Assetto Corsa Competizione\Config\menuSettings.json (the Custom graphics sliders live in its customGraphicOptions block).
+    public static readonly SimDef Acc = new("acc", "Assetto Corsa Competizione", "AC2-Win64-Shipping", "805550", "Assetto Corsa Competizione",
+        Paths.BackupsFolderName, new[] { new SimFile("main", "menuSettings.json", @"Config\menuSettings.json") }, DocsRel: "Assetto Corsa Competizione");
     public static readonly SimDef AcEvo = Soon("acevo", "Assetto Corsa EVO", "AssettoCorsaEVO", "3058630", "Assetto Corsa EVO",
         "No graphics settings file could be found for this early-access game.");
     public static readonly SimDef RaceRoom = Soon("raceroom", "RaceRoom", "RRRE64", "211500", "raceroom racing experience",
