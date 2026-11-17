@@ -330,7 +330,7 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 .celepic { height:220px; margin:-6px 0 6px; display:grid; place-items:end center; overflow:hidden; }
 .celepic img { max-height:230px; max-width:100%; object-fit:contain; filter:drop-shadow(0 10px 24px rgba(0,0,0,.5)); transform-origin:50% 100%; animation:cPump 1.1s ease-in-out .4s 3; }
 .celepic img.logo { max-height:120px; margin-bottom:34px; animation:none; }
-.cele.loss .celepic { height:150px; } .cele.loss .celepic img { animation:none; max-height:150px; }
+.cele.loss .celepic { height:190px; } .cele.loss .celepic img { animation:none; max-height:196px; }
 .celebox h2 { font-family:"Russo One"; font-size:26px; line-height:1.15; margin:6px 0 8px; background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
 .cele.loss .celebox h2 { background:none; color:#fff; -webkit-text-fill-color:#fff; }
 .celestat { margin:0 0 6px; font-weight:900; color:var(--yellow); font-size:16px; }
