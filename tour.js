@@ -17,11 +17,11 @@
           '</div>';
       } },
     { id: 'pick', title: 'Pick your sim',
-      text: 'Dialed works with iRacing, Le Mans Ultimate, ACC, AMS2, AC EVO, RaceRoom, Project Motor Racing and BeamNG, and finds your games through Steam. Each sim keeps its own settings table and its own history.',
+      text: 'Dialed works with iRacing and Le Mans Ultimate today, and finds your games for you. ACC, AMS2, AC EVO, RaceRoom, Project Motor Racing and BeamNG are coming soon. Each sim keeps its own settings table and its own history.',
       tip: 'Not for VR. For VR, NextLevelXR is the right tool.',
       scene: function () {
         var names = ['iRacing', 'LMU', 'AMS2', 'ACC', 'EVO', 'RaceRoom', 'PMR', 'BeamNG'];
-        return '<div class="sc sc-pick"><div class="grid8">' + names.map(function (n, i) { return '<span style="--i:' + i + '"' + (i === 0 ? ' class="pick"' : '') + '>' + n + '</span>'; }).join('') + '</div></div>';
+        return '<div class="sc sc-pick"><div class="grid8">' + names.map(function (n, i) { return '<span style="--i:' + i + '"' + (i === 0 ? ' class="pick"' : i > 1 ? ' class="soon"' : '') + '>' + n + '</span>'; }).join('') + '</div></div>';
       } },
     { id: 'capture', title: 'Capture three runs',
       text: 'Start your game and press {hotkey} while you drive. You get a spoken or beeped countdown, then Dialed records 60 seconds. Do it three times in the same session, with a full grid on your heaviest track if you can.',

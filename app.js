@@ -254,6 +254,10 @@
     if (a.reverts.length) h += '<p style="margin:12px 0 0"><b>' + a.reverts.length + ' revert suggestion' + (a.reverts.length > 1 ? 's are' : ' is') + ' in the list below.</b></p>';
     if (a.notes.length) h += '<ul class="notes" style="margin-top:12px">' + a.notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>';
     p.innerHTML = h; p.hidden = false;
+    if (a.delta && window.TunerCelebrate) {
+      var gain = Math.round(m.low1) - Math.round(b.low1);
+      window.TunerCelebrate.round(prev.at, a.verdict, { line: '1% low FPS: ' + Math.round(b.low1) + ' &rarr; ' + Math.round(m.low1) + ' (' + (gain > 0 ? '+' : '') + gain + ')' });
+    }
   }
 
   // ---------- main analysis ----------
@@ -516,7 +520,7 @@
   $('run').addEventListener('click', run);
 
   // start on the sim the user used last
-  try { var saved = localStorage.getItem(SIMKEY); if (saved && sims.SIMS[saved]) state.sim = sims.SIMS[saved]; } catch (e) { /* default */ }
+  try { var saved = localStorage.getItem(SIMKEY); if (saved && sims.SIMS[saved] && !sims.SIMS[saved].comingSoon) state.sim = sims.SIMS[saved]; } catch (e) { /* default */ }
   renderSimUI();
   refresh();
   renderHistory();

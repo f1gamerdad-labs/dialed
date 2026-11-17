@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dialed: sim graphics settings built from your own PC</title>
-<meta name="description" content="Dialed reads your frame data and your sim's graphics settings, then tells you which settings to change first for a smoother frame rate. Free beta for iRacing, Le Mans Ultimate, ACC, AMS2, AC EVO, RaceRoom, Project Motor Racing and BeamNG. Not for VR.">
+<meta name="description" content="Dialed reads your frame data and your sim's graphics settings, then tells you which settings to change first for a smoother frame rate. Free beta for iRacing and Le Mans Ultimate, with ACC, AMS2, AC EVO, RaceRoom, Project Motor Racing and BeamNG coming soon. Not for VR.">
 <meta property="og:title" content="Dialed by F1GamerDad: Sim Graphics Optimiser">
 <meta property="og:description" content="Capture a few laps. Dialed tells you what to change first. Rules-based, private, with backups and undo.">
 <meta property="og:image" content="img/app-results.png">
@@ -75,7 +75,7 @@ section h2 { font-size:clamp(30px,5vw,44px); margin-bottom:14px; }
 .sim img { height:52px; width:auto; max-width:100%; object-fit:contain; display:block; margin:0 auto 6px; } .sim .nm { font-family:"Russo One"; font-size:22px; } .sim p { margin:8px 0 0; color:var(--muted); font-size:15px; }
 .sim.soon { opacity:.7; border-style:dashed; }
 .sim .nm { line-height:1.2; margin-bottom:2px; } .sims .sim { flex:1 1 240px; }
-.status.new { background:rgba(155,77,255,.18); color:#c9a6ff; }
+.status.new { background:rgba(155,77,255,.18); color:#c9a6ff; } .status.soon { background:rgba(255,210,63,.14); color:#ffd23f; }
 .status { display:inline-block; font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; padding:3px 10px; border-radius:999px; background:rgba(52,210,123,.15); color:var(--good); margin-top:8px; } .soon .status { background:rgba(255,212,0,.14); color:var(--yellow); }
 details { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 20px; margin:0 0 12px; }
 summary { cursor:pointer; font-weight:900; } details p { color:var(--muted); margin:10px 0 0; }
@@ -103,7 +103,7 @@ code { background:#0e0720; border:1px solid var(--line); border-radius:6px; padd
     <a class="btn ghost" href="#help">How to install</a>
   </div>
   <p class="meta">Free beta · Windows 10 and 11 · 63 MB · no account</p>
-  <div class="pills"><span class="pill"><b>8 sims</b> from iRacing to BeamNG</span><span class="pill">Backups and <b>undo</b></span><span class="pill"><b>Free</b> during the beta</span><span class="pill">Nothing <b>uploaded</b></span></div>
+  <div class="pills"><span class="pill"><b>iRacing</b> and <b>Le Mans Ultimate</b>, more sims coming</span><span class="pill">Backups and <b>undo</b></span><span class="pill"><b>Free</b> during the beta</span><span class="pill">Nothing <b>uploaded</b></span></div>
   <p class="novr"><b>Not for VR.</b> Dialed is for monitors, single screen and triples. For VR, use NextLevelXR, which is built for it.</p>
   <div class="shot"><div class="frame"><img src="img/app-results.png" alt="Dialed's results screen: average FPS, 1% lows, what is limiting you and graphics memory use" width="1280" height="800"></div>
   <p class="cap">Real screen, real captures. Here the graphics card is flat out and graphics memory is nearly full, so Dialed looks for savings there first.</p></div>
@@ -138,13 +138,13 @@ code { background:#0e0720; border:1px solid var(--line); border-radius:6px; padd
   <p class="sub">Pick your sim at the top of the left pane. Each sim has its own settings table, its own history and a suggested heavy test session. Dialed finds your games through Steam.</p>
   <div class="sims">
     <div class="sim"><img src="assets/sims/iracing.png" alt="iRacing"><p>Driving and replay settings, kept separate.</p><span class="status">Supported</span></div>
-    <div class="sim"><img src="assets/sims/lmu.png" alt="Le Mans Ultimate" loading="lazy"><p>Reads both of its settings files and changes them together, or not at all.</p><span class="status">Supported, beta</span></div>
-    <div class="sim"><img src="assets/sims/acc.png" alt="Assetto Corsa Competizione" loading="lazy"><p>Changes the sliders on its Custom graphics page. Set the preset to Custom first.</p><span class="status new">New</span></div>
-    <div class="sim"><img src="assets/sims/ams2.png" alt="Automobilista 2" loading="lazy"><p>Lowers settings one careful step at a time.</p><span class="status new">New</span></div>
-    <div class="sim"><img src="assets/sims/raceroom.png" alt="RaceRoom" loading="lazy"><p>Textures, mirrors, particles, visible cars and more.</p><span class="status new">New</span></div>
-    <div class="sim"><img src="assets/sims/pmr.png" alt="Project Motor Racing" loading="lazy"><p>Shadows, fog, grass, textures and effects, one step at a time.</p><span class="status new">New</span></div>
-    <div class="sim"><img src="assets/sims/beamng.png" alt="BeamNG.drive" loading="lazy"><p>Uses BeamNG's own quality levels and its own cost ratings.</p><span class="status new">New</span></div>
-    <div class="sim"><img src="assets/sims/acevo.png" alt="Assetto Corsa EVO" loading="lazy"><p>Shadows, ambient occlusion and visible cars so far. More to come.</p><span class="status new">New, early</span></div>
+    <div class="sim"><img src="assets/sims/lmu.png" alt="Le Mans Ultimate" loading="lazy"><p>Reads both of its settings files and changes them together, or not at all.</p><span class="status">Supported</span></div>
+    <div class="sim"><img src="assets/sims/acc.png" alt="Assetto Corsa Competizione" loading="lazy"><p>Changes the sliders on its Custom graphics page. Set the preset to Custom first.</p><span class="status soon">Coming soon</span></div>
+    <div class="sim"><img src="assets/sims/ams2.png" alt="Automobilista 2" loading="lazy"><p>Lowers settings one careful step at a time.</p><span class="status soon">Coming soon</span></div>
+    <div class="sim"><img src="assets/sims/raceroom.png" alt="RaceRoom" loading="lazy"><p>Textures, mirrors, particles, visible cars and more.</p><span class="status soon">Coming soon</span></div>
+    <div class="sim"><img src="assets/sims/pmr.png" alt="Project Motor Racing" loading="lazy"><p>Shadows, fog, grass, textures and effects, one step at a time.</p><span class="status soon">Coming soon</span></div>
+    <div class="sim"><img src="assets/sims/beamng.png" alt="BeamNG.drive" loading="lazy"><p>Uses BeamNG's own quality levels and its own cost ratings.</p><span class="status soon">Coming soon</span></div>
+    <div class="sim"><img src="assets/sims/acevo.png" alt="Assetto Corsa EVO" loading="lazy"><p>Shadows, ambient occlusion and visible cars so far. More to come.</p><span class="status soon">Coming soon</span></div>
   </div>
   <p class="meta" style="margin-top:14px">The six newest sims are brand new and have not been through long testing on track. Their suggestions are shown as low confidence and only ever lower a setting. Treat them as a good starting point and tell me what you find with the Report button.</p>
 </div></section>

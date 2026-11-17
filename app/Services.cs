@@ -216,7 +216,8 @@ sealed record SimFile(string Id, string Name, string Rel);
 sealed record SimDef(string Id, string Name, string Process, string? SteamAppId, string? SteamFolder, string? BackupsRel, SimFile[] Files,
     string? DocsRel = null, string? Reason = null, string? LocalRel = null, string? SavedRel = null) // LocalRel: settings live under %LOCALAPPDATA%\LocalRel; SavedRel: under the user's Saved Games\SavedRel
 {
-    public bool ComingSoon => Reason != null;
+    // First release ships iRacing and Le Mans Ultimate; the rest wait as "Coming soon" (the self-tests point sims at fixture folders, so they stay switched on there).
+    public bool ComingSoon => Reason != null || (Id != "iracing" && Id != "lmu" && Paths.SimOverrides.Count == 0);
     public string[] ProcessNames => Process.Split('|', StringSplitOptions.RemoveEmptyEntries);
 }
 

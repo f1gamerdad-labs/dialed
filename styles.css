@@ -322,3 +322,25 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 #tourNext:focus-visible, #reportSend:focus-visible, #newsYes:focus-visible { outline:2px solid #fff; outline-offset:3px; }
 #reportSend:disabled { opacity:.55; cursor:default; filter:none; }
 #tourBack { margin-right:6px; }
+/* ---- result pop-ups (celebrate.js) ---- */
+.overlay.cele { z-index:96; display:grid; place-items:center; padding:16px; background:rgba(8,3,20,.78); animation:cFade .25s ease-out both; }
+.celecv { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+.celebox { position:relative; z-index:2; width:min(460px,100%); text-align:center; background:linear-gradient(180deg,#241346,#170b30); border:1px solid var(--line); border-radius:22px; padding:0 26px 22px; box-shadow:0 24px 70px rgba(0,0,0,.6); animation:cPop .55s cubic-bezier(.2,1.5,.4,1) both; }
+.cele.win .celebox { box-shadow:0 0 0 2px rgba(255,138,42,.5), 0 0 60px rgba(255,46,147,.35), 0 24px 70px rgba(0,0,0,.6); }
+.celepic { height:220px; margin:-6px 0 6px; display:grid; place-items:end center; overflow:hidden; }
+.celepic img { max-height:230px; max-width:100%; object-fit:contain; filter:drop-shadow(0 10px 24px rgba(0,0,0,.5)); transform-origin:50% 100%; animation:cPump 1.1s ease-in-out .4s 3; }
+.celepic img.logo { max-height:120px; margin-bottom:34px; animation:none; }
+.cele.loss .celepic { height:150px; } .cele.loss .celepic img { animation:none; max-height:150px; }
+.celebox h2 { font-family:"Russo One"; font-size:26px; line-height:1.15; margin:6px 0 8px; background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.cele.loss .celebox h2 { background:none; color:#fff; -webkit-text-fill-color:#fff; }
+.celestat { margin:0 0 6px; font-weight:900; color:var(--yellow); font-size:16px; }
+.celebox p { margin:0 0 14px; color:#e2d6ff; line-height:1.5; }
+.celeact { display:flex; flex-direction:column; gap:8px; align-items:center; }
+#celeOk { all:unset; box-sizing:border-box; cursor:pointer; font-weight:900; font-size:16px; color:#fff; padding:12px 34px; border-radius:12px; background:var(--grad); box-shadow:0 6px 22px rgba(255,46,147,.4); }
+#celeOk:focus-visible { outline:3px solid #fff; outline-offset:2px; }
+#celeOff { font-size:13px; padding:6px 12px; opacity:.85; }
+@keyframes cFade { from{opacity:0} to{opacity:1} }
+@keyframes cPop { 0%{transform:scale(.6) translateY(30px);opacity:0} 100%{transform:none;opacity:1} }
+@keyframes cPump { 0%,100%{transform:translateY(0) rotate(0)} 25%{transform:translateY(-14px) rotate(-3deg) scale(1.04)} 50%{transform:translateY(0) rotate(0)} 75%{transform:translateY(-10px) rotate(3deg) scale(1.03)} }
+@media (prefers-reduced-motion: reduce) { .overlay.cele, .celebox, .celepic img { animation:none !important; } }
+.sc-pick .grid8 span.soon { opacity:.4; }

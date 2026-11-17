@@ -314,6 +314,13 @@
   var SIMS = { iracing: iracing, lmu: lmu, ams2: ams2, acc: acc, acevo: acevo, raceroom: raceroom, pmr: pmr, beamng: beamng };
   var ORDER = ['iracing', 'lmu', 'ams2', 'acc', 'acevo', 'raceroom', 'pmr', 'beamng'];
 
+  // First release: only these sims are switched on. The others are built and tested but shown as "Coming soon" until they ship as fast follows.
+  // To release one, add its id here (the picker, capture following and the website all read comingSoon).
+  var LIVE = ['iracing', 'lmu'];
+  ORDER.forEach(function (id) {
+    if (LIVE.indexOf(id) < 0) { SIMS[id].comingSoon = true; SIMS[id].reason = 'It is built and being tested, and arrives in a fast follow update.'; }
+  });
+
   // ---------- helpers shared by the page and the tests ----------
   // texts: { fileId: text }  ->  one settings object with every file's sections merged.
   function parseAll(sim, texts) {
