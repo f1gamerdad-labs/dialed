@@ -39,6 +39,23 @@ public sealed class MainForm : Form
             Load += async (_, _) => { await RunUpdateSelfTestAsync(testUrl); Close(); };
             return;
         }
+        if (args.Contains("--selftest-hang")) // a window whose thread never reads messages, to stand in for a frozen game
+        {
+            Text = "frozen test window"; ClientSize = new Size(300, 120);
+            Shown += (_, _) => System.Threading.Thread.Sleep(180000); // the window is on screen, then its thread stops reading messages
+            return;
+        }
+        if (Arg("--selftest-close") is { } closeName && Paths.DataOverride != null) // closes a throwaway process by name (hung or healthy) and reports how it went
+        {
+            Load += async (_, _) =>
+            {
+                var sw = Stopwatch.StartNew();
+                var r = await SimService.CloseProcessesAsync(new[] { closeName }, "Test game", () => System.Diagnostics.Process.GetProcessesByName(closeName).Length > 0, 25000, 6000);
+                File.WriteAllText(Path.Combine(Paths.Data, "selftest-close.json"), JsonSerializer.Serialize(new { r.ok, r.message, seconds = Math.Round(sw.Elapsed.TotalSeconds, 1), stillRunning = System.Diagnostics.Process.GetProcessesByName(closeName).Length }));
+                Close();
+            };
+            return;
+        }
         if (Arg("--selftest-vram") is { } vramPid && int.TryParse(vramPid, out var vpid) && Paths.DataOverride != null) // samples a running process's graphics memory three times and reports it
         {
             Load += async (_, _) =>

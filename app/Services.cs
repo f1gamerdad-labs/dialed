@@ -363,18 +363,38 @@ static class SimService
     public static Dictionary<string, bool> RunningMap() => All.ToDictionary(s => s.Id, IsRunning);
 
     /// <summary>Asks the sim to close like a normal exit and waits for it. It never force-kills the sim.</summary>
-    public static async Task<(bool ok, string message)> CloseAsync(SimDef sim, int timeoutMs = 30000)
+    public static Task<(bool ok, string message)> CloseAsync(SimDef sim, int timeoutMs = 30000) =>
+        CloseProcessesAsync(sim.ProcessNames, sim.Name, () => IsRunning(sim), timeoutMs);
+
+    /// <summary>
+    /// Asks the game to close the way a person would (closing its window), and gives it time to save. If its window has stopped
+    /// responding (a hung game never reads the request), it is ended after a short wait instead of letting the user wait for nothing.
+    /// A game that IS responding but has not closed (for example a "leave the session?" question) is left alone and reported.
+    /// </summary>
+    public static async Task<(bool ok, string message)> CloseProcessesAsync(string[] names, string display, Func<bool> stillRunning, int timeoutMs = 30000, int hungAfterMs = 8000)
     {
-        var procs = sim.ProcessNames.SelectMany(n => Process.GetProcessesByName(n)).ToArray();
+        var procs = names.SelectMany(n => Process.GetProcessesByName(n)).ToArray();
         if (procs.Length == 0) return (true, "");
         foreach (var p in procs) { try { p.CloseMainWindow(); } catch { /* already closing */ } }
         var sw = Stopwatch.StartNew();
+        bool endedHung = false;
         while (sw.ElapsedMilliseconds < timeoutMs)
         {
-            if (!IsRunning(sim)) { await Task.Delay(2000); return (true, ""); } // it writes its settings files while exiting
+            if (!stillRunning()) { await Task.Delay(endedHung ? 500 : 2000); return (true, ""); } // a game that closes by itself writes its settings files while exiting
+            if (!endedHung && sw.ElapsedMilliseconds >= hungAfterMs)
+            {
+                foreach (var p in names.SelectMany(n => Process.GetProcessesByName(n)))
+                {
+                    bool hung = false;
+                    try { hung = !p.Responding; } catch { /* gone already */ }
+                    if (!hung) continue;
+                    Paths.Log_($"close: {display} ({p.ProcessName}, pid {p.Id}) is not responding, ending it");
+                    try { p.Kill(true); endedHung = true; } catch (Exception ex) { Paths.Log_("close: could not end it: " + ex.Message); }
+                }
+            }
             await Task.Delay(500);
         }
-        return (false, $"{sim.Name} did not close within 30 seconds. Close it yourself, then apply again. It may be asking whether you want to leave the session.");
+        return (false, $"{display} did not close within 30 seconds. Close it yourself (in Task Manager if it will not respond), then apply again. It may be asking whether you want to leave the session.");
     }
 
     // ---------- logos: read from the user's own Steam folder, never bundled ----------
