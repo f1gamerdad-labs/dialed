@@ -28,6 +28,7 @@ public sealed class MainForm : Form
         string? Arg(string name) => args.FirstOrDefault(a => a.StartsWith(name + "=", StringComparison.Ordinal))?.Substring(name.Length + 1).Trim('"');
         Paths.DocsOverride = Arg("--docs");
         Paths.LmuOverride = Arg("--lmu");
+        foreach (var s in SimService.All) if (Arg("--sim-" + s.Id) is { } so) Paths.SimOverrides[s.Id] = so;
         Paths.DataOverride = Arg("--data");
         Paths.Ensure();
         settings = Settings.Load();
@@ -521,6 +522,48 @@ public sealed class MainForm : Form
                 Check("LMU: restore refuses the VR backup", !BackupService.Restore("lmu", "Config_DX11_VR 2026-11-17 17-28-48.ini").ok);
                 Check("LMU: restore refuses a path trick", !BackupService.Restore("lmu", @"..\player\Settings.JSON").ok);
                 Check("LMU: the app never lists or touches the VR config", !SimService.TargetValid(lmu, "Config_DX11_VR.ini"));
+            }
+
+            // ----- Automobilista 2 (--sim-ams2=<throwaway folder holding graphicsconfigdx11.xml and the VR xml files>) -----
+            if (Paths.SimOverrides.TryGetValue("ams2", out var aroot))
+            {
+                var ams2 = SimService.Ams2;
+                var xml = Path.Combine(aroot, "graphicsconfigdx11.xml");
+                var d = SimService.Describe().First(x => (string)x.GetType().GetProperty("id")!.GetValue(x)! == "ams2");
+                Check("AMS2: found", (bool)d.GetType().GetProperty("found")!.GetValue(d)! && !(bool)d.GetType().GetProperty("comingSoon")!.GetValue(d)!);
+                var bdir = SimService.BackupsDir(ams2)!;
+                Check("AMS2: backups folder sits next to the xml", bdir == Path.Combine(aroot, Paths.BackupsFolderName), bdir);
+                Check("AMS2: both exe names are watched", ams2.ProcessNames.SequenceEqual(new[] { "AMS2", "AMS2AVX" }));
+                var original = File.ReadAllBytes(xml);
+                var read = SimService.ReadAll(ams2);
+                Check("AMS2: reads the file", read.Length == 1 && File.ReadAllBytes(xml).SequenceEqual(original));
+                var w = SimService.Write(ams2, ams2.Files[0], "<changed/>");
+                Check("AMS2: write succeeds with a backup", w.ok && File.ReadAllText(xml) == "<changed/>" && w.backup != null && File.ReadAllBytes(w.backup).SequenceEqual(original), w.message);
+                Check("AMS2: no temp file left", !File.Exists(xml + ".tuner-tmp"));
+                var listed = BackupService.List().Where(i => (string)i.GetType().GetProperty("sim")!.GetValue(i)! == "ams2").ToArray();
+                Check("AMS2: lists its backup (xml extension)", listed.Length == 1, $"found {listed.Length}");
+                var rr = BackupService.Restore("ams2", Path.GetFileName(w.backup!));
+                Check("AMS2: restore puts the original bytes back", rr.ok && File.ReadAllBytes(xml).SequenceEqual(original), rr.message);
+                Check("AMS2: restore refuses a path trick", !BackupService.Restore("ams2", @"..\graphicsconfigdx11.xml").ok);
+                Check("AMS2: the app never touches a VR file", !SimService.TargetValid(ams2, "graphicsconfigopenvrdx11.xml") && !SimService.TargetValid(ams2, "oculussettings.xml"));
+                if (Paths.SimOverrides.TryGetValue("acc", out var croot)) // --sim-acc=<throwaway folder holding Config\menuSettings.json>
+                {
+                    var acc = SimService.Acc; var json = Path.Combine(croot, @"Config\menuSettings.json");
+                    var cd = SimService.Describe().First(x => (string)x.GetType().GetProperty("id")!.GetValue(x)! == "acc");
+                    Check("ACC: found and switched on", (bool)cd.GetType().GetProperty("found")!.GetValue(cd)! && !(bool)cd.GetType().GetProperty("comingSoon")!.GetValue(cd)!);
+                    var cb = SimService.BackupsDir(acc)!;
+                    Check("ACC: backups folder sits in the ACC documents folder, not in Config", cb == Path.Combine(croot, Paths.BackupsFolderName), cb);
+                    var corig = File.ReadAllBytes(json);
+                    Check("ACC: reads the file unchanged", SimService.ReadAll(acc).Length == 1 && File.ReadAllBytes(json).SequenceEqual(corig));
+                    var cw = SimService.Write(acc, acc.Files[0], "{}");
+                    Check("ACC: write succeeds with a byte-exact backup", cw.ok && File.ReadAllText(json) == "{}" && cw.backup != null && File.ReadAllBytes(cw.backup).SequenceEqual(corig), cw.message);
+                    Check("ACC: lists its backup (.json)", BackupService.List().Count(i => (string)i.GetType().GetProperty("sim")!.GetValue(i)! == "acc") == 1);
+                    var crr = BackupService.Restore("acc", Path.GetFileName(cw.backup!));
+                    Check("ACC: restore puts the original bytes back", crr.ok && File.ReadAllBytes(json).SequenceEqual(corig), crr.message);
+                    Check("ACC: restore refuses a path trick", !BackupService.Restore("acc", @"..\Config\menuSettings.json").ok);
+                }
+                foreach (var soon in new[] { SimService.AcEvo, SimService.RaceRoom, SimService.Pmr, SimService.BeamNg })
+                    Check($"{soon.Name}: coming soon, never read or written", soon.ComingSoon && SimService.Root(soon) == null && SimService.ReadAll(soon).Length == 0);
             }
         }
         catch (Exception ex) { Check("test ran to the end", false, ex.Message); }

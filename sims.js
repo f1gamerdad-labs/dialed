@@ -6,6 +6,8 @@
   var core = isNode ? require('./core.js') : root.TunerCore;
   var tIR = isNode ? require('./settings-table.js') : root.SETTINGS_TABLE;
   var tLMU = isNode ? require('./settings-table-lmu.js') : root.SETTINGS_TABLE_LMU;
+  var tAMS2 = isNode ? require('./settings-table-ams2.js') : root.SETTINGS_TABLE_AMS2;
+  var tACC = isNode ? require('./settings-table-acc.js') : root.SETTINGS_TABLE_ACC;
 
   // ---------- iRacing ----------
   var iracing = {
@@ -76,8 +78,76 @@
     requiredFiles: ['video', 'graphics']
   };
 
-  var SIMS = { iracing: iracing, lmu: lmu };
-  var ORDER = ['iracing', 'lmu'];
+  // ---------- Automobilista 2 ----------
+  function ams2CapInfo(ini) {
+    var g = ini['GraphicConfigData'] || {};
+    var refresh = parseFloat(g.RefreshRate), cap = NaN;
+    if (parseFloat(g.Vsync) > 0 && refresh > 0) cap = refresh; // AMS2 has no frame limiter in this file; V-sync is the only cap
+    return { cap: cap, refresh: refresh };
+  }
+  var ams2 = {
+    id: 'ams2', name: 'Automobilista 2', short: 'AMS2',
+    process: 'AMS2.exe',
+    steamAppId: '1066890',
+    table: tAMS2,
+    files: [{
+      id: 'main', name: 'graphicsconfigdx11.xml', label: 'AMS2 graphics file', rel: 'graphicsconfigdx11.xml',
+      hint: 'In Documents\\Automobilista 2. (Not the openvr, oculus or starvr ones.)',
+      sections: ['GraphicConfigData'],
+      match: function (n) { return /^graphicsconfigdx11\.xml$/i.test(n); },
+      parse: function (t) { return core.parseAms2Xml(t); },
+      patch: function (t, changes) { return core.patchAms2Xml(t, changes); }
+    }],
+    modes: [{ id: 'driving', label: 'Driving', section: 'GraphicConfigData', hint: 'Capture while driving on track. AMS2 uses the same graphics settings for replays.' }],
+    isVrFile: function (n) { return /vr|oculus/i.test(n); },
+    note: '<b>Driving and replays use the same settings in AMS2.</b> There is one graphics file, so every change applies to both. ' +
+      'Reiza does not publish what each number in the file means, so every suggestion here is shown as low confidence: change a few at a time and capture again.',
+    scopeLine: function () { return 'AMS2 has one set of graphics settings, so every change below applies to both driving and replays.'; },
+    scopeOf: function () { return 'Changes driving and replays'; },
+    capInfo: ams2CapInfo,
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    requiredFiles: ['main']
+  };
+
+  // ---------- sims that are listed but not switched on yet ----------
+  function soon(id, name, short, reason) { return { id: id, name: name, short: short, comingSoon: true, reason: reason }; }
+  // ---------- Assetto Corsa Competizione ----------
+  function accCapInfo(ini) {
+    var g = ini['customGraphicOptions'] || {};
+    var cap = parseFloat(g.frameLimit);
+    return { cap: cap > 0 ? cap : NaN, refresh: NaN }; // the refresh rate and V-sync are not in this file
+  }
+  var acc = {
+    id: 'acc', name: 'Assetto Corsa Competizione', short: 'ACC',
+    process: 'AC2-Win64-Shipping.exe',
+    steamAppId: '805550',
+    table: tACC,
+    files: [{
+      id: 'main', name: 'menuSettings.json', label: 'ACC settings file', rel: 'Config\\menuSettings.json',
+      hint: 'In Documents\\Assetto Corsa Competizione\\Config.',
+      sections: ['customGraphicOptions'],
+      match: function (n) { return /^menuSettings\.json$/i.test(n); },
+      parse: function (t) { return core.parseAccJson(t); },
+      patch: function (t, changes, section) { return core.patchAccJson(t, changes, section); }
+    }],
+    modes: [{ id: 'driving', label: 'Driving', section: 'customGraphicOptions', hint: 'Capture while driving on track. ACC uses the same graphics settings for replays.' }],
+    isVrFile: function () { return false; },
+    note: '<b>Set ACC\'s graphics preset to Custom.</b> Dialed changes the sliders on ACC\'s Custom graphics page (Video, then Graphics). ' +
+      'If a preset such as High or Epic is selected, the game ignores them. Kunos does not publish what each number means, so every suggestion is shown as low confidence: ' +
+      'after applying, open the Graphics page in ACC and check the sliders moved.',
+    scopeLine: function () { return 'ACC has one set of graphics settings, so every change below applies to both driving and replays.'; },
+    scopeOf: function () { return 'Changes driving and replays'; },
+    capInfo: accCapInfo,
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    requiredFiles: ['main']
+  };
+  var acevo = soon('acevo', 'Assetto Corsa EVO', 'EVO', 'No graphics settings file could be found for this early-access game.');
+  var raceroom = soon('raceroom', 'RaceRoom', 'RaceRoom', 'RaceRoom\'s settings file could not be found or tested.');
+  var pmr = soon('pmr', 'Project Motor Racing', 'PMR', 'Its graphics settings use numbered levels with no published meaning, so they cannot be checked yet.');
+  var beamng = soon('beamng', 'BeamNG.drive', 'BeamNG', 'BeamNG stores its main quality levels as words in a versioned folder; support is not built yet.');
+
+  var SIMS = { iracing: iracing, lmu: lmu, ams2: ams2, acc: acc, acevo: acevo, raceroom: raceroom, pmr: pmr, beamng: beamng };
+  var ORDER = ['iracing', 'lmu', 'ams2', 'acc', 'acevo', 'raceroom', 'pmr', 'beamng'];
 
   // ---------- helpers shared by the page and the tests ----------
   // texts: { fileId: text }  ->  one settings object with every file's sections merged.

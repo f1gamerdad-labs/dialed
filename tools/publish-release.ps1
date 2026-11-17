@@ -17,7 +17,7 @@ param(
   [Parameter(Mandatory)][ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version,
   [string[]]$Notes = @(),
   [string]$Repo = '',
-  [string]$MinHost = '0.2.0',   # the oldest Dialed.exe this page works with (0.2.0 added Report a problem and the log). Raise it only when the page needs a newer program
+  [string]$MinHost = '0.3.0',   # the oldest Dialed.exe this page works with (0.2.0 added Report a problem and the log). Raise it only when the page needs a newer program
   [string]$Package = '',        # path to Dialed-win-x64.zip. ALWAYS pass it: the website's Download button points at "latest", so every release must carry the full package
   [switch]$DryRun
 )
