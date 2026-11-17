@@ -166,6 +166,11 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 #introStart:focus-visible { outline:2px solid #fff; }
 
 /* ---------- "round saved" splash ---------- */
+.reportbox { width:min(640px, 100%); }
+.reportbody { padding:2px 28px 22px 28px; display:flex; flex-direction:column; gap:8px; }
+.reportbody textarea, .reportbody input[type=text] { width:100%; box-sizing:border-box; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font:inherit; resize:vertical; }
+.reportbody .rlabel { margin:6px 0 0; color:var(--text); font-weight:700; font-size:14px; }
+.rlist { margin:0 0 4px; padding-left:20px; color:var(--muted); font-size:14px; }
 .overlay.done { z-index:90; background:rgba(8,3,18,.88); }
 .donebox { width:min(560px, 100%); text-align:center; background:linear-gradient(160deg, var(--card2), var(--card)); border:1px solid var(--line); border-radius:22px; padding:30px 34px 28px; box-shadow:0 24px 80px rgba(0,0,0,.65), 0 0 0 1px rgba(52,210,123,.25); }
 .done.play .donebox { animation:pop .35s cubic-bezier(.2,1.4,.4,1); }

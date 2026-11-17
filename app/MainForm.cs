@@ -31,10 +31,30 @@ public sealed class MainForm : Form
         Paths.DataOverride = Arg("--data");
         Paths.Ensure();
         settings = Settings.Load();
+        Paths.Log_($"start: Dialed host {UpdateService.HostVersion}, page {UpdateService.CurrentVersion()}, Windows {Environment.OSVersion.Version}");
         if (!string.IsNullOrWhiteSpace(settings.UpdateRepo)) UpdateService.RepoSlug = settings.UpdateRepo!;
         if (args.Contains("--selftest-update") && Paths.DataOverride != null && Arg("--update-test-url") is { } testUrl)
         {
             Load += async (_, _) => { await RunUpdateSelfTestAsync(testUrl); Close(); };
+            return;
+        }
+        if (args.Contains("--selftest-report") && Paths.DataOverride != null) // builds a report zip from throwaway data and lists what is in it (nothing is posted)
+        {
+            Load += (_, _) =>
+            {
+                SimService.IgnoreRunning = true;
+                for (int i = 0; i < 6; i++) Paths.Log_("selftest line " + i); // make sure the log exists
+                var zip = ReportService.Build("self test message", "me@example.test", true, true, "{\"sim\":\"lmu\"}", SimService.Lmu, null);
+                using var z = System.IO.Compression.ZipFile.OpenRead(zip);
+                var names = z.Entries.Select(e => e.FullName).ToList();
+                string Txt(string n) { using var s = new StreamReader(z.GetEntry(n)!.Open()); return s.ReadToEnd(); }
+                File.WriteAllText(Path.Combine(Paths.Data, "selftest-report.json"), JsonSerializer.Serialize(new
+                {
+                    zip, names, system = Txt("system.txt"),
+                    json = names.Contains("settings/Settings.JSON") ? Txt("settings/Settings.JSON") : "",
+                }));
+                Close();
+            };
             return;
         }
         currentSim = SimService.ById(settings.LastSim) ?? SimService.IRacing;
@@ -133,6 +153,7 @@ public sealed class MainForm : Form
         if (capture != null) { capture.Cancel(); return; }
         capture = new CancellationTokenSource();
         var sim = currentSim;
+        Paths.Log_($"capture start: {sim.Name}, {settings.CaptureSeconds}s");
         try
         {
             var r = await CaptureService.RunAsync(sim, settings.CaptureSeconds, settings.Countdown, Post, capture.Token);
@@ -232,6 +253,7 @@ public sealed class MainForm : Form
                 }
                 r = SimService.WriteSet(sim, items);
             }
+            Paths.Log_($"write {sim.Name}: ok={r.ok} {r.message}");
             Post(new { type = "iniWritten", id, ok = r.ok, message = r.message, backup = r.backup });
         }
         catch (Exception ex)
@@ -271,6 +293,26 @@ public sealed class MainForm : Form
         }
     }
 
+    async Task ReportAsync(string message, string contact, bool withData, bool withSettings, string pageState, string summary)
+    {
+        try
+        {
+            var sim = currentSim; var ini = settings.LastIni;
+            Paths.Log_($"report requested (data={withData}, settings={withSettings})");
+            var zip = await Task.Run(() => ReportService.Build(message, contact, withData, withSettings, pageState, sim, ini));
+            var header = ReportService.SystemText(sim, ini);
+            var sent = await ReportService.PostAsync(message, contact, header + "\n" + summary);
+            var dir = Path.GetDirectoryName(zip)!;
+            var opened = Unelevated.OpenTarget(dir);
+            Post(new { type = "reportDone", ok = true, sent, path = zip, folderOpened = opened });
+        }
+        catch (Exception ex)
+        {
+            Paths.Log_("report failed: " + ex);
+            Post(new { type = "reportDone", ok = false, sent = false, path = "", error = ex.Message });
+        }
+    }
+
     void OnMessage(string json)
     {
         try
@@ -289,6 +331,23 @@ public sealed class MainForm : Form
                         busy = Busy.Running(), sims = SimService.Describe(), running = SimService.RunningMap(), sim = currentSim.Id,
                     });
                     break;
+                case "log": // errors from the page itself, so they end up in the same log
+                {
+                    var line = (r.GetProperty("line").GetString() ?? "").Replace('\r', ' ').Replace('\n', ' ');
+                    Paths.Log_("page: " + (line.Length > 600 ? line.Substring(0, 600) : line));
+                    break;
+                }
+                case "report":
+                {
+                    var msg = r.GetProperty("message").GetString() ?? "";
+                    var contact = r.TryGetProperty("contact", out var cp) ? cp.GetString() ?? "" : "";
+                    var withData = r.TryGetProperty("data", out var dp) && dp.GetBoolean();
+                    var withSettings = r.TryGetProperty("settings", out var sp2) && sp2.GetBoolean();
+                    var pageState = r.TryGetProperty("state", out var st) ? st.GetString() ?? "" : "";
+                    var summary = r.TryGetProperty("summary", out var su) ? su.GetString() ?? "" : "";
+                    _ = ReportAsync(msg, contact, withData, withSettings, pageState, summary);
+                    break;
+                }
                 case "checkUpdate": _ = CheckUpdateAsync(silent: false); break;
                 case "applyUpdate": _ = ApplyUpdateAsync(); break;
                 case "revertUpdate":

@@ -140,6 +140,7 @@
   function renderUpdates(h) {
     $('updatesCard').hidden = false;
     $('versionLine').textContent = 'Dialed v' + h.appVersion.content + ' (program v' + h.appVersion.host + ')';
+    var verEl = document.querySelector('.rail .ver'); if (verEl) verEl.textContent = 'v' + h.appVersion.content;
     $('autoUpdate').checked = !!h.updates.auto;
     $('checkUpdate').hidden = !h.updates.configured; $('autoUpdate').parentElement.hidden = !h.updates.configured;
     $('revertUpdate').hidden = !h.updates.canRevert;

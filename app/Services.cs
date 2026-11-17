@@ -78,9 +78,21 @@ static class Paths
         catch (Exception ex) { Log_("backup migration failed: " + ex.Message); }
     }
 
+    static readonly object LogLock = new();
+    const long LogLimit = 300_000; // about 3,000 lines; one older file is kept as app.log.1, so the log never grows without bound
     public static void Log_(string line)
     {
-        try { File.AppendAllText(Log, $"{DateTime.Now:s} {line}{Environment.NewLine}"); } catch { /* logging must never break the app */ }
+        try
+        {
+            lock (LogLock)
+            {
+                Directory.CreateDirectory(Data);
+                var fi = new FileInfo(Log);
+                if (fi.Exists && fi.Length > LogLimit) File.Move(Log, Log + ".1", true);
+                File.AppendAllText(Log, $"{DateTime.Now:s} {line}{Environment.NewLine}");
+            }
+        }
+        catch { /* logging must never break the app */ }
     }
 }
 

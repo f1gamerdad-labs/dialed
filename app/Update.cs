@@ -15,7 +15,7 @@ sealed record UpdateInfo(string Version, string[] Notes, string ContentUrl, stri
 static class UpdateService
 {
     /// <summary>The program itself. It changes only for the rarer updates that need a new download.</summary>
-    public const string HostVersion = "0.1.0";
+    public const string HostVersion = "0.2.0";
     /// <summary>"owner/repo" of the project's GitHub repository. Updates are switched off until this is set.</summary>
     public static string RepoSlug = "f1gamerdad-labs/dialed";
     /// <summary>Self-test only: a manifest address on this PC (http://localhost allowed).</summary>
