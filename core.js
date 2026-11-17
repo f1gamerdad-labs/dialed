@@ -288,7 +288,10 @@
     }
 
     // 3. Comfortably above the floor: spend spare capacity on visuals (not for the smoothness goal).
-    if (d.deficit <= -0.10 && d.goal.raise > 0 && d.vram !== 'pressure') {
+    // The usual margin is 10% above the floor. When the game is already holding the frame cap and the graphics card has clear spare
+    // room, raising graphics-card-heavy settings does little to the 1% lows, so a 5% margin is enough.
+    var raiseMargin = d.limiter === 'cap' && d.gpuHeadroom ? -0.05 : -0.10;
+    if (d.deficit <= raiseMargin && d.goal.raise > 0 && d.vram !== 'pressure') {
       var spare = d.limiter === 'cap' ? (d.gpuHeadroom ? 'gpu' : null) : d.limiter === 'gpu' ? 'cpu' : d.limiter === 'cpu' ? 'gpu' : null;
       if (spare) {
         var other = spare === 'gpu' ? 'cpu' : 'gpu';

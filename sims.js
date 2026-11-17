@@ -218,7 +218,8 @@
     isVrFile: function () { return false; },
     note: '<b>RaceRoom has one set of graphics settings,</b> so every change applies to both driving and replays. ' +
       'The settings it can change are the ones on the High Impact, Visual Effects, Track, Car and Cockpit pages. ' +
-      'Some of the numbers (such as which value means Low) have only been checked for the choice you currently have, so every suggestion is shown as low confidence: change a few at a time and capture again. ' +
+      'Some of the numbers (such as which value means Low) have only been checked at a few positions, so every suggestion is shown as low confidence: change a few at a time and capture again. ' +
+      'If your PC has spare capacity, Dialed can suggest turning up Shadows, Car reflection quality, Track level of detail and Particle detail by one step. ' +
       'RaceRoom rewrites this file when it closes, so Dialed closes it before applying.',
     scopeLine: function () { return 'RaceRoom has one set of graphics settings, so every change below applies to both driving and replays.'; },
     scopeOf: function () { return 'Changes driving and replays'; },
