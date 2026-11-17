@@ -243,8 +243,9 @@ static class SimService
         "AC EVO saves its video settings in a binary file (Saved Games\\ACE\\video.videosettings) that cannot be edited safely yet.");
     public static readonly SimDef RaceRoom = Soon("raceroom", "RaceRoom", "RRRE64", "211500", "raceroom racing experience",
         "RaceRoom's graphics settings file has not been found to test against yet.");
-    public static readonly SimDef Pmr = Soon("pmr", "Project Motor Racing", "ProjectMotorRacing-Win64-Shipping", "299970", "Project Motor Racing",
-        "Its settings file stores menu positions, not named levels, so which way is lower quality has to be checked in the game first.");
+    // Project Motor Racing: Documents\My Games\ProjectMotorRacing\savegame1\settings.xml. ProjectMotorRacing.exe is the launcher, ProjectMotorRacingGame.exe the game.
+    public static readonly SimDef Pmr = new("pmr", "Project Motor Racing", "ProjectMotorRacingGame|ProjectMotorRacing", "299970", "Project Motor Racing",
+        Paths.BackupsFolderName, new[] { new SimFile("main", "settings.xml", @"savegame1\settings.xml") }, DocsRel: @"My Games\ProjectMotorRacing");
     // BeamNG.drive: %LOCALAPPDATA%\BeamNG\BeamNG.drive\current\settings\settings.json. Backups go in %LOCALAPPDATA%\BeamNG\Dialed Backups,
     // outside BeamNG's own user folder (BeamNG.drive\current), which the game scans for mods and content.
     public static readonly SimDef BeamNg = new("beamng", "BeamNG.drive", "BeamNG.drive.x64", "284160", "BeamNG.drive",

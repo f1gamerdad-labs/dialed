@@ -525,6 +525,22 @@
     }).join('');
   }
 
+  // ---------- Project Motor Racing: savegame1\settings.xml ----------
+  // One <param name="Key" type="number" value="N"/> per setting. Section is always 'PMR'.
+  function parsePmrXml(text) {
+    var o = {}, re = /<param\s+name="([^"]+)"\s+type="[^"]*"\s+value="([^"]*)"\s*\/>/g, m;
+    while ((m = re.exec(text))) o[m[1]] = m[2];
+    return { PMR: o };
+  }
+  // Changes only the digits inside value="..." on the matching param line; every other byte stays as the game wrote it.
+  function patchPmrXml(text, changes) {
+    var want = {};
+    changes.forEach(function (c) { want[c.key] = c; });
+    return text.replace(/(<param\s+name=")([^"]+)("\s+type="[^"]*"\s+value=")([^"]*)("\s*\/>)/g, function (all, a, name, b, old, z) {
+      return want[name] ? a + name + b + String(want[name].to) + z : all;
+    });
+  }
+
   // ---------- BeamNG.drive: settings.json (flat JSON, one "Key":value per line) ----------
   // words: { key: [level words] } from the settings table. Word values are read as their index (0 = lowest) and written back as words.
   function parseBeamngJson(text, words) {
@@ -591,7 +607,7 @@
     return head + body;
   }
 
-  return { parseBeamngJson: parseBeamngJson, patchBeamngJson: patchBeamngJson, parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, parseIni: parseIni, diagnose: diagnose,
+  return { parsePmrXml: parsePmrXml, patchPmrXml: patchPmrXml, parseBeamngJson: parseBeamngJson, patchBeamngJson: patchBeamngJson, parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, parseIni: parseIni, diagnose: diagnose,
     recommend: recommend, patchIni: patchIni, snapshot: snapshot, assessRound: assessRound, GOALS: GOALS,
     parseLmuIni: parseLmuIni, patchLmuIni: patchLmuIni, parseLmuJson: parseLmuJson, patchLmuJson: patchLmuJson };
 });

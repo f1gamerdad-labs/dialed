@@ -584,7 +584,19 @@ public sealed class MainForm : Form
                     var brr = BackupService.Restore("beamng", Path.GetFileName(bw.backup!));
                     Check("BeamNG: restore puts the original bytes back", brr.ok && File.ReadAllBytes(bjson).SequenceEqual(borig), brr.message);
                 }
-                foreach (var soon in new[] { SimService.AcEvo, SimService.RaceRoom, SimService.Pmr })
+                if (Paths.SimOverrides.TryGetValue("pmr", out var proot)) // --sim-pmr=<throwaway folder holding savegame1\settings.xml>
+                {
+                    var pm = SimService.Pmr; var px = Path.Combine(proot, @"savegame1\settings.xml");
+                    var pd = SimService.Describe().First(x => (string)x.GetType().GetProperty("id")!.GetValue(x)! == "pmr");
+                    Check("PMR: found and switched on", (bool)pd.GetType().GetProperty("found")!.GetValue(pd)! && !(bool)pd.GetType().GetProperty("comingSoon")!.GetValue(pd)!);
+                    Check("PMR: watches the game and the launcher", pm.ProcessNames.SequenceEqual(new[] { "ProjectMotorRacingGame", "ProjectMotorRacing" }));
+                    var porig = File.ReadAllBytes(px);
+                    var pw = SimService.Write(pm, pm.Files[0], "<x/>");
+                    Check("PMR: write succeeds with a byte-exact backup", pw.ok && pw.backup != null && File.ReadAllBytes(pw.backup).SequenceEqual(porig) && Path.GetDirectoryName(pw.backup) == Path.Combine(proot, Paths.BackupsFolderName), pw.message);
+                    var prr = BackupService.Restore("pmr", Path.GetFileName(pw.backup!));
+                    Check("PMR: restore puts the original bytes back", prr.ok && File.ReadAllBytes(px).SequenceEqual(porig), prr.message);
+                }
+                foreach (var soon in new[] { SimService.AcEvo, SimService.RaceRoom })
                     Check($"{soon.Name}: coming soon, never read or written", soon.ComingSoon && SimService.Root(soon) == null && SimService.ReadAll(soon).Length == 0);
             }
         }

@@ -9,6 +9,7 @@
   var tAMS2 = isNode ? require('./settings-table-ams2.js') : root.SETTINGS_TABLE_AMS2;
   var tACC = isNode ? require('./settings-table-acc.js') : root.SETTINGS_TABLE_ACC;
   var tBEAMNG = isNode ? require('./settings-table-beamng.js') : root.SETTINGS_TABLE_BEAMNG;
+  var tPMR = isNode ? require('./settings-table-pmr.js') : root.SETTINGS_TABLE_PMR;
 
   // ---------- iRacing ----------
   var iracing = {
@@ -169,7 +170,35 @@
   };
   var acevo = soon('acevo', 'Assetto Corsa EVO', 'EVO', 'AC EVO saves its video settings in a binary file (Saved Games\\ACE\\video.videosettings) that cannot be edited safely yet.');
   var raceroom = soon('raceroom', 'RaceRoom', 'RaceRoom', 'RaceRoom\'s graphics settings file has not been found to test against yet.');
-  var pmr = soon('pmr', 'Project Motor Racing', 'PMR', 'Its settings file stores menu positions, not named levels, so which way is lower quality has to be checked in the game first.');
+  // ---------- Project Motor Racing ----------
+  var pmr = {
+    id: 'pmr', name: 'Project Motor Racing', short: 'PMR',
+    process: 'ProjectMotorRacingGame.exe',
+    steamAppId: '299970',
+    table: tPMR,
+    files: [{
+      id: 'main', name: 'settings.xml', label: 'PMR settings file', rel: 'savegame1\\settings.xml',
+      hint: 'In Documents\\My Games\\ProjectMotorRacing\\savegame1.',
+      sections: ['PMR'],
+      match: function (n) { return /^settings\.xml$/i.test(n); },
+      parse: function (t) { return core.parsePmrXml(t); },
+      patch: function (t, changes) { return core.patchPmrXml(t, changes); }
+    }],
+    modes: [{ id: 'driving', label: 'Driving', section: 'PMR', hint: 'Capture while driving on track. PMR uses the same graphics settings for replays.' }],
+    isVrFile: function () { return false; },
+    note: '<b>PMR stores each graphics choice as its position in the menu list.</b> Dialed only ever moves a setting one step down that list, so it always lands on a real menu choice. ' +
+      'The names of most positions are not known yet, so you will see "Step 2" where the menu would say something like Low, and every suggestion is low confidence. ' +
+      'After applying, open Graphics, then Advanced Graphics Settings in PMR and check the change.',
+    scopeLine: function () { return 'PMR has one set of graphics settings, so every change below applies to both driving and replays.'; },
+    scopeOf: function () { return 'Changes driving and replays'; },
+    capInfo: function () { return { cap: NaN, refresh: NaN }; }, // the frame-rate limit is stored as a menu position, so the target is the user's own
+    scenarios: [
+      '<b>A race start with a full grid</b> in <b>rain or at dusk</b>, on the busiest track you have.',
+      'Capture the <b>first lap</b> each time, from the same grid slot.'
+    ],
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    requiredFiles: ['main']
+  };
   // ---------- BeamNG.drive ----------
   function beamngCapInfo(ini) {
     var g = ini['BeamNG'] || {};
