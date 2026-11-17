@@ -81,6 +81,7 @@ summary { cursor:pointer; font-weight:900; } details p { color:var(--muted); mar
 .free h2 { margin-bottom:12px; } .free p { color:var(--muted); max-width:640px; margin:0 auto 14px; }
 .ticks { list-style:none; padding:0; margin:18px 0 24px; color:var(--muted); } .ticks li::before { content:"✓ "; color:var(--good); font-weight:900; }
 footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rail); padding:34px 0 50px; color:var(--dim); font-size:14px; } footer p { margin:0 0 10px; max-width:820px; }
+.newsform { display:flex; gap:12px; flex-wrap:wrap; } .newsform input { flex:1 1 260px; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:999px; padding:13px 20px; font:inherit; } .newsform input:focus { outline:2px solid var(--pink); border-color:transparent; } .newsform button { cursor:pointer; font:inherit; font-weight:900; }
 code { background:#0e0720; border:1px solid var(--line); border-radius:6px; padding:1px 7px; font-size:.9em; color:var(--muted); }
 </style>
 </head>
@@ -161,6 +162,19 @@ code { background:#0e0720; border:1px solid var(--line); border-radius:6px; padd
   <details><summary>Where do I send ideas?</summary><p>Use the <b>Ideas</b> button in the app, or the form it opens.</p></details>
 </div></section>
 
+<section id="updates"><div class="wrap">
+  <div class="card" style="padding:30px 28px">
+    <p class="eyebrow">Stay in the loop</p>
+    <h2 style="font-size:clamp(26px,4vw,36px)">Tell me when it gets better.</h2>
+    <p class="sub" style="margin-bottom:18px">One email when a new sim (ACC is next) or a big settings update lands. Nothing else, and you can unsubscribe in one click. You do not need to sign up to download or use Dialed.</p>
+    <form id="newsForm" class="newsform" action="https://app.kit.com/forms/10202736/subscriptions" method="post">
+      <input type="email" name="email_address" id="newsEmail" placeholder="Your email address" required autocomplete="email" aria-label="Email address">
+      <button class="btn" type="submit" id="newsBtn">Keep me posted</button>
+    </form>
+    <p class="meta" id="newsMsg" role="status" style="margin:12px 0 0">Kit sends a confirmation email first, so nobody can sign you up by mistake.</p>
+  </div>
+</div></section>
+
 <section id="tip"><div class="wrap">
   <div class="free">
     <p class="eyebrow">Free for now</p>
@@ -178,6 +192,22 @@ code { background:#0e0720; border:1px solid var(--line); border-radius:6px; padd
   <p>© 2026 F1GamerDad. All rights reserved. <a href="https://github.com/f1gamerdad-labs/dialed">Source and releases on GitHub</a> · <a href="https://ko-fi.com/f1gamerdad">Tip jar</a></p>
 </div></footer>
 <script>
+  // Update emails: posts to the Kit form "Dialed updates" without leaving the page.
+  (function () {
+    var f = document.getElementById('newsForm'), msg = document.getElementById('newsMsg'), btn = document.getElementById('newsBtn');
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      btn.disabled = true; btn.textContent = 'Sending...';
+      var body = new FormData(f);
+      fetch(f.action, { method: 'POST', body: body, mode: 'no-cors' }).then(function () {
+        f.hidden = true; msg.style.color = 'var(--good)';
+        msg.textContent = 'Nearly done: check your inbox and click the confirmation link. If it is not there in a few minutes, look in spam or promotions.';
+      }).catch(function () {
+        btn.disabled = false; btn.textContent = 'Keep me posted';
+        msg.style.color = '#ff8fc0'; msg.textContent = 'That did not go through. Please check your connection and try again.';
+      });
+    });
+  })();
   // Set this to the Ko-fi page address to show the tip button. Left empty, the button stays hidden.
   var TIP_URL = 'https://ko-fi.com/f1gamerdad';
   if (/^https:\/\/ko-fi\.com\//.test(TIP_URL)) { document.getElementById('tipLink').href = TIP_URL; document.getElementById('tipRow').hidden = false; }

@@ -30,6 +30,7 @@
     <Content Include="..\intro.js" Link="web\intro.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\warn.js" Link="web\warn.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\report.js" Link="web\report.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\news.js" Link="web\news.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\sims.js" Link="web\sims.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\settings-table-lmu.js" Link="web\settings-table-lmu.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\config.js" Link="web\config.js" CopyToOutputDirectory="PreserveNewest" />

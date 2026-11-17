@@ -166,6 +166,8 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 #introStart:focus-visible { outline:2px solid #fff; }
 
 /* ---------- "round saved" splash ---------- */
+.newsnote { position:fixed; right:22px; bottom:22px; z-index:60; width:min(380px, calc(100% - 44px)); background:linear-gradient(160deg, var(--card2), var(--card)); border:1px solid var(--pink); border-radius:16px; padding:16px 18px; box-shadow:0 18px 50px rgba(0,0,0,.6); }
+.newsnote-title { margin:0 0 4px; font-family:"Russo One"; font-size:17px; }
 .reportbox { width:min(640px, 100%); }
 .reportbody { padding:2px 28px 22px 28px; display:flex; flex-direction:column; gap:8px; }
 .reportbody textarea, .reportbody input[type=text] { width:100%; box-sizing:border-box; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font:inherit; resize:vertical; }

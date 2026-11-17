@@ -8,5 +8,8 @@ window.APP_CONFIG = {
   intro: { kind: 'file', source: 'assets/intro.mp4', title: 'Welcome to Dialed' },
 
   // Where people send ideas and feedback. Opens in their normal browser. Leave empty to hide the Ideas button.
-  suggestionsUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSfWQH6XsDcVcv5LVPNrQJKNKbrWUwWSaYq1-rCQd3Aq7Z3zEA/viewform'
+  // The website's update-email sign-up (a Kit form) and the Ko-fi tip jar. Leave empty to hide the matching button or prompt.
+  updatesUrl: 'https://f1gamerdad-labs.github.io/dialed/#updates',
+  tipUrl: 'https://ko-fi.com/f1gamerdad',
+  suggestionsUrl:'https://docs.google.com/forms/d/e/1FAIpQLSfWQH6XsDcVcv5LVPNrQJKNKbrWUwWSaYq1-rCQd3Aq7Z3zEA/viewform'
 };
