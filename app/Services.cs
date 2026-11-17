@@ -746,6 +746,8 @@ sealed record CaptureResult(string Name, string Path, string Text, double VramUs
 static class CaptureService
 {
     static void Beep(int freq, int ms) => Task.Run(() => { try { Console.Beep(freq, ms); } catch { /* no sound device */ } });
+    /// <summary>Several beeps one after another (a single background task, so they never overlap).</summary>
+    public static void BeepSeq(params (int freq, int ms)[] notes) => Task.Run(() => { foreach (var n in notes) { try { Console.Beep(n.freq, n.ms); } catch { /* no sound device */ } } });
 
     public static async Task<CaptureResult> RunAsync(SimDef sim, int seconds, int countdown, Action<object> report, CancellationToken ct)
     {

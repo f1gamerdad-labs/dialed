@@ -143,6 +143,7 @@ public sealed class MainForm : Form
             updateTimer.Start();
             _ = Task.Run(async () => { await Task.Delay(8000); if (settings.AutoUpdateCheck) await CheckUpdateAsync(silent: true); });
             hotkeyStatus = TryRegisterHotkey(settings.Hotkey);
+            Paths.Log_($"hotkey {settings.Hotkey.Text}: " + (hotkeyStatus == "" ? "registered" : "NOT registered (" + hotkeyStatus + ")"));
             core.Navigate("https://tuner.local/index.html");
         }
         catch (Exception ex)
@@ -165,7 +166,7 @@ public sealed class MainForm : Form
 
     protected override void WndProc(ref Message m)
     {
-        if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HOTKEY_ID) { _ = ToggleCaptureAsync(); return; }
+        if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HOTKEY_ID) { Paths.Log_("hotkey pressed: " + settings.Hotkey.Text); _ = ToggleCaptureAsync(); return; }
         base.WndProc(ref m);
     }
 
@@ -177,12 +178,28 @@ public sealed class MainForm : Form
     }
 
     // ---------- capture ----------
+    /// <summary>The game to capture: the one picked in the app if it is running, otherwise the only supported game that is running.
+    /// This way the hotkey works in whatever game you are in, even if a different sim is selected in the app.</summary>
+    SimDef ChooseCaptureSim()
+    {
+        if (SimService.IsRunning(currentSim)) return currentSim;
+        var running = SimService.All.Where(s => !s.ComingSoon && SimService.IsRunning(s)).ToList();
+        return running.Count == 1 ? running[0] : currentSim;
+    }
+
     async Task ToggleCaptureAsync()
     {
-        if (capture != null) { capture.Cancel(); return; }
+        if (capture != null) { Paths.Log_("capture: cancelled by hotkey or button"); capture.Cancel(); CaptureService.BeepSeq((520, 220)); return; }
         capture = new CancellationTokenSource();
-        var sim = currentSim;
+        var sim = ChooseCaptureSim();
+        if (sim != currentSim)
+        {
+            Paths.Log_($"capture: {currentSim.Name} is selected but {sim.Name} is the game running, so capturing {sim.Name}");
+            currentSim = sim; settings.LastSim = sim.Id; settings.Save();
+            Post(new { type = "capture", phase = "sim", sim = sim.Id }); // the page switches its picker to match
+        }
         Paths.Log_($"capture start: {sim.Name}, {settings.CaptureSeconds}s");
+        CaptureService.BeepSeq((784, 110), (1047, 150)); // "got it", so the press is audible even when the app is hidden behind a full-screen game
         try
         {
             var r = await CaptureService.RunAsync(sim, settings.CaptureSeconds, settings.Countdown, Post, capture.Token);
@@ -192,6 +209,7 @@ public sealed class MainForm : Form
         catch (Exception ex)
         {
             Paths.Log_("capture error: " + ex.Message);
+            CaptureService.BeepSeq((300, 200), (300, 200)); // two low beeps: it did not start
             Post(new { type = "capture", phase = "error", message = ex.Message });
         }
         finally { capture.Dispose(); capture = null; }
@@ -452,6 +470,7 @@ public sealed class MainForm : Form
                         Alt = r.GetProperty("alt").GetBoolean(), Key = r.GetProperty("key").GetString() ?? "F11",
                     };
                     var err = TryRegisterHotkey(h);
+                    Paths.Log_($"hotkey {h.Text}: " + (err == "" ? "registered" : "NOT registered (" + err + ")"));
                     if (err == "") { settings.Hotkey = h; settings.Save(); }
                     else TryRegisterHotkey(settings.Hotkey); // put the old one back
                     Post(new { type = "hotkey", ok = err == "", error = err, hotkey = HotkeyInfo() });
@@ -487,6 +506,12 @@ public sealed class MainForm : Form
         void Check(string name, bool pass, string detail = "") => checks.Add(new { name, pass, detail });
         try
         {
+            // ----- shared logs must not reveal the Windows user name -----
+            var redacted = ReportService.Redact(@"2026-11-18T05:00:00 moved 3 backup(s) to C:\Users\sean\Documents\iRacing and D:\x\sean\y; user sean says hi", "sean", @"C:\Users\sean");
+            Check("Report: the user name in a profile path is replaced", redacted.Contains(@"C:\Users\USER\Documents\iRacing"), redacted);
+            Check("Report: the user name as a folder in another path is replaced, plain words are not", redacted.Contains(@"D:\x\USER\y") && redacted.Contains("user sean says hi"), redacted);
+            Check("Report: text without the user name is unchanged", ReportService.Redact("capture start: RaceRoom, 60s", "sean", @"C:\Users\sean") == "capture start: RaceRoom, 60s");
+
             // ----- graphics memory sanity rule (RaceRoom reported 43,683 MB "dedicated" on an 8 GB card) -----
             const double MB = 1048576.0;
             Check("VRAM: a normal game keeps its dedicated figure (7265 MB of 7800 in use on the card)", Vram.Sampler.Plausible(7265 * MB, 6900 * MB, 7800 * MB, 8192L * 1048576) == 7265 * MB);

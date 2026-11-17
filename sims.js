@@ -168,6 +168,10 @@
       'Capture the <b>first lap</b> each time, from the same grid slot.'
     ],
     captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    displayTip: function (ini) {
+      var g = ini['graphicOptions'] || {};
+      return g.useFullscreen === '1' ? 'ACC is in Fullscreen mode. A full-screen game disappears whenever you click another monitor, which makes using Dialed awkward. In ACC, Options, Video, turn Fullscreen off (windowed) and use the borderless or maximised window option: it looks the same and keeps your frame rate.' : null;
+    },
     requiredFiles: ['main']
   };
   // ---------- Assetto Corsa EVO ----------
@@ -233,6 +237,10 @@
       'Capture the <b>first lap</b> each time, from the same grid slot.'
     ],
     captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    displayTip: function (ini) {
+      var g = ini['RaceRoom'] || {};
+      return g.windowMode === '1' ? 'RaceRoom is in Full Screen mode. A full-screen game disappears whenever you click another monitor, which makes using Dialed awkward. In RaceRoom, Graphics, Display, set Display Mode to Borderless Windowed: it looks the same and keeps your frame rate.' : null;
+    },
     requiredFiles: ['main']
   };
   // ---------- Project Motor Racing ----------
@@ -296,6 +304,10 @@
       'Drive the <b>same route at the same speed</b> each capture, with the same amount of traffic.'
     ],
     captureHint: 'Capture 60 seconds driving the same route each time, on a busy map with traffic if you can.',
+    displayTip: function (ini) {
+      var g = ini['BeamNG'] || {};
+      return g.GraphicDisplayModes === 'Fullscreen' ? 'BeamNG is in Fullscreen mode. A full-screen game disappears whenever you click another monitor, which makes using Dialed awkward. In BeamNG, Options, Graphics, set Display Mode to Borderless: it looks the same and keeps your frame rate.' : null;
+    },
     requiredFiles: ['main']
   };
 

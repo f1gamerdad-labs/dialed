@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Win32;
 
 namespace TunerApp;
@@ -48,6 +49,17 @@ static class ReportService
         catch { return null; }
     }
 
+    /// <summary>Replaces the Windows user name in file paths with "USER", so a shared log does not reveal it.</summary>
+    public static string Redact(string text, string? userName = null, string? profileDir = null)
+    {
+        userName ??= Environment.UserName;
+        profileDir ??= Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!string.IsNullOrEmpty(profileDir)) text = text.Replace(profileDir, @"C:\Users\USER", StringComparison.OrdinalIgnoreCase);
+        if (!string.IsNullOrEmpty(userName) && userName.Length >= 3)
+            text = Regex.Replace(text, @"(?<=[\\/])" + Regex.Escape(userName) + @"(?=[\\/])", "USER", RegexOptions.IgnoreCase);
+        return text;
+    }
+
     static void AddText(ZipArchive zip, string name, string text)
     {
         var e = zip.CreateEntry(name, CompressionLevel.Optimal);
@@ -91,7 +103,9 @@ static class ReportService
         foreach (var log in new[] { "app.log", "app.log.1" })
         {
             var p = Path.Combine(Paths.Data, log);
-            if (File.Exists(p)) AddFile(zip, "logs/" + log, p);
+            if (!File.Exists(p)) continue;
+            try { AddText(zip, "logs/" + log, Redact(File.ReadAllText(p))); }          // the log holds file paths, which contain the Windows user name
+            catch (Exception ex) { Paths.Log_($"report: could not add {log}: {ex.Message}"); }
         }
         if (withData)
         {

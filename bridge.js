@@ -304,6 +304,7 @@
       window.TunerUI.setState('rec', 'Recording', m.secondsLeft + ' s left. Keep driving.');
       status('Recording: ' + m.secondsLeft + ' s left. Keep driving.', 'bad');
     }
+    else if (m.phase === 'sim') { if (m.sim && sim().id !== m.sim) app.setSim(m.sim); } // the hotkey was pressed in a different game than the one selected: follow it
     else if (m.phase === 'cancelled') { setCapturing(false); endPhase(); status('Capture cancelled.'); }
     else if (m.phase === 'error') { setCapturing(false); endPhase(); status(m.message, 'bad'); }
     else if (m.phase === 'done') {

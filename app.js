@@ -317,6 +317,9 @@
     $('scopeLine').textContent = sim.scopeLine(mode);
     renderLastRound(prev, a, m);
     renderRows();
+    // sim-specific advice that is not about frame rate, for example "this game is in exclusive full screen, so it vanishes when you click another monitor"
+    var tip = sim.displayTip ? sim.displayTip(state.ini) : null;
+    if (tip && r.notes.indexOf(tip) < 0) r.notes.push(tip);
     $('notes').innerHTML = r.notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('');
     $('notesPanel').hidden = r.notes.length === 0;
     renderHistory();
