@@ -27,10 +27,12 @@ param(
   [double]$SilenceDb = -35,   # quieter than this counts as a pause (use -40 or -45 for a noisy room)
   [double]$MinGap = 0.35,     # a pause must last this many seconds to separate two phrases
   [string]$Ffmpeg = '',
+  [string[]]$Names = @(),     # record only some phrases? name them in order, e.g. -Names cancel,error (other clips are left alone)
   [switch]$Preview
 )
 $ErrorActionPreference = 'Stop'
-$names = 'announce', '3', '2', '1', 'start', 'done', 'cancel', 'error'
+$partial = $Names.Count -gt 0
+$names = if ($partial) { $Names } else { 'announce', '3', '2', '1', 'start', 'done', 'cancel', 'error' }
 if (-not (Test-Path $In)) { throw "Cannot find $In" }
 if (-not $Ffmpeg) { $c = Get-Command ffmpeg -ErrorAction SilentlyContinue; if ($c) { $Ffmpeg = $c.Source } }
 if (-not $Ffmpeg -or -not (Test-Path $Ffmpeg)) { throw "ffmpeg was not found. Install it or pass -Ffmpeg <path to ffmpeg.exe>." }
@@ -63,7 +65,10 @@ try {
   if ($dur - $cursor -ge 0.12 -and ($ends.Count -ge $starts.Count)) { $segs += [pscustomobject]@{ Start = $cursor; End = $dur } }
   "Found $($segs.Count) phrase(s) in $([math]::Round($dur,1)) s:"
   for ($i = 0; $i -lt $segs.Count; $i++) { $label = if ($i -lt $names.Count) { $names[$i] } else { '(extra)' }; "  {0,2}. {1,6:N2} s to {2,6:N2} s  ({3:N2} s long)  -> {4}" -f ($i + 1), $segs[$i].Start, $segs[$i].End, ($segs[$i].End - $segs[$i].Start), $label }
-  if ($segs.Count -lt 5 -or $segs.Count -gt $names.Count) {
+  if ($partial -and $segs.Count -ne $names.Count) {
+    throw "Expected $($names.Count) phrase(s) ($($names -join ', ')) but found $($segs.Count). Adjust -SilenceDb or -MinGap."
+  }
+  if (-not $partial -and ($segs.Count -lt 5 -or $segs.Count -gt $names.Count)) {
     throw "Expected 5 to $($names.Count) phrases but found $($segs.Count). Leave about a second of quiet between phrases and little noise, or adjust -SilenceDb (try -40 or -30) and -MinGap (try 0.25 to 0.6)."
   }
   if ($Preview) { "Preview only: nothing written. Check the order above, then run again without -Preview."; return }
