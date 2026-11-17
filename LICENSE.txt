@@ -1,0 +1,11 @@
+Copyright (c) 2026 F1GamerDad. All rights reserved.
+
+This software and its source code are published so that people can download and use Dialed.
+No licence is granted to copy, modify, redistribute or sell the source code or the program
+without written permission from the copyright holder.
+
+Third-party components (PresentMon, Lato, Russo One, WebView2, .NET) remain under their own
+licences; see THIRD_PARTY_NOTICES.md. Simulator names and logos belong to their owners.
+
+The software is provided "as is", without warranty of any kind. Changing game settings files
+is done at your own risk; Dialed keeps backups of every file it changes.
