@@ -18,6 +18,7 @@ param(
   [string[]]$Notes = @(),
   [string]$Repo = '',
   [string]$MinHost = '0.1.0',   # raise this only when the page needs a newer Dialed.exe than users may have
+  [string]$Package = '',        # path to Dialed-win-x64.zip. ALWAYS pass it: the website's Download button points at "latest", so every release must carry the full package
   [switch]$DryRun
 )
 $ErrorActionPreference = 'Stop'
@@ -69,5 +70,7 @@ if ($DryRun) { "`nDry run: nothing was published."; return }
 if (-not $Repo) { throw "Pass -Repo owner/repo to publish." }
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { throw "The GitHub CLI (gh) is not installed or not on PATH." }
 $notesFile = Join-Path $out 'notes.md'; ("## Dialed $Version`n`n" + (($Notes | ForEach-Object { "- $_" }) -join "`n")) | Set-Content $notesFile -Encoding UTF8
-gh release create "v$Version" $zip $manifestPath --repo $Repo --title "Dialed $Version" --notes-file $notesFile
+if (-not $Package) { throw "Pass -Package <path to Dialed-win-x64.zip>. Without it the website's Download link breaks, because 'latest' would have no package." }
+if ((Split-Path $Package -Leaf) -ne 'Dialed-win-x64.zip') { throw "The package must be named Dialed-win-x64.zip (the website links to that exact name)." }
+gh release create "v$Version" $zip $manifestPath $Package --repo $Repo --title "Dialed $Version" --notes-file $notesFile
 "`nPublished. Dialed will offer this update to everyone on an older version."
