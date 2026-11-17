@@ -37,6 +37,7 @@ if (-not $Ffmpeg -or -not (Test-Path $Ffmpeg)) { throw "ffmpeg was not found. In
 $ci = [Globalization.CultureInfo]::InvariantCulture
 $tmp = Join-Path $env:TEMP ("voice-" + [guid]::NewGuid().ToString('N')); New-Item -ItemType Directory $tmp | Out-Null
 function Run-Ffmpeg([string[]]$ffArgs, [string]$errFile) {
+  $ffArgs = $ffArgs | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } } # Start-Process joins arguments with spaces, so paths such as "D:\OBS Videos\..." need quotes
   $p = Start-Process -FilePath $Ffmpeg -ArgumentList $ffArgs -NoNewWindow -Wait -PassThru -RedirectStandardError $errFile
   if ($p.ExitCode -ne 0) { throw "ffmpeg failed (exit $($p.ExitCode)): " + ((Get-Content $errFile -Tail 6) -join ' | ') }
 }
