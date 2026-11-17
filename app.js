@@ -151,6 +151,11 @@
     }).join('');
     $('modeField').hidden = sim.modes.length < 2;
     $('simNote').innerHTML = sim.note || ''; $('simNote').hidden = !sim.note; // what "driving" and "replay" mean in this sim
+    // heavy test sessions for this sim (scenario text is trusted, written in sims.js)
+    var scen = sim.scenarios || [];
+    $('scenList').innerHTML = scen.map(function (s) { return '<li>' + s + '</li>'; }).join('');
+    $('testCard').hidden = scen.length === 0;
+    $('launchSim').textContent = 'Launch ' + (sim.short || sim.name);
     var many = sim.files.length > 1, fileWord = many ? 'files' : 'file';
     $('applyHint').innerHTML = 'In the Windows app this saves the change straight into ' + esc(sim.name) + '\'s own settings ' + fileWord +
       ' and first backs up the old ' + fileWord + ' into a folder called <code>Dialed Backups</code> next to ' + (many ? 'them' : 'it') +
@@ -348,7 +353,7 @@
         '<td class="chg ' + (c.dir === 'up' ? 'good' : c.dir === 'revert' ? 'revert' : 'warn') + '">' + esc(c.fromLabel) + ' &rarr; ' + esc(c.toLabel) + '</td>' +
         '<td>' + (c.dir === 'revert' ? '' : dots(c.relief)) + '</td><td>' + (c.dir === 'revert' ? '' : dots(c.visual)) + '</td>' +
         '<td>' + (c.confidence ? '<span class="conf conf-' + c.confidence + '">' + c.confidence + '</span><span class="tag">' + esc(c.confWhy) + '</span>' : '') + '</td>' +
-        '<td>' + esc(c.why) + '</td></tr>';
+        '<td>' + esc(c.why) + (c.dir !== 'revert' && window.TunerLooks ? '<div class="look"><b>' + (c.dir === 'up' ? 'You gain:' : 'You will see:') + '</b> ' + esc(window.TunerLooks.describe(c)) + '</div>' : '') + '</td></tr>';
     });
     $('changes').innerHTML = rows.length
       ? '<tr><th></th><th>Setting</th><th>Change</th><th title="How much load it takes off what is limiting you">Gain</th><th title="How much you will notice it on track">Look</th><th>Confidence</th><th>Why</th></tr>' + html

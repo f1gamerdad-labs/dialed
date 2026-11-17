@@ -56,7 +56,13 @@
   window.addEventListener('focus', function () { // picks up in-game changes and newly opened programs
     if (!capturing) { loadSim(); send({ type: 'busyCheck' }); }
   });
-  app.onSim(function (s) { send({ type: 'setSim', sim: s.id }); $('iniPanel').hidden = true; loadSim(); listBackups(); });
+  function showLaunch() { var s = sim(); $('launchRow').hidden = !(s.steamAppId && !s.comingSoon); }
+  app.onSim(function (s) { send({ type: 'setSim', sim: s.id }); $('iniPanel').hidden = true; loadSim(); listBackups(); showLaunch(); });
+  showLaunch();
+  $('launchSim').addEventListener('click', function () {
+    if (window.TunerHost.running[sim().id]) { status(sim().name + ' is already running.', 'warn'); return; }
+    send({ type: 'launchSim', sim: sim().id }); status('Asking Steam to start ' + sim().name + '...', '');
+  });
 
   $('capBtn').addEventListener('click', function () { send({ type: 'startCapture' }); });
   $('openCaps').addEventListener('click', function () { send({ type: 'openFolder', which: 'captures' }); });
@@ -245,6 +251,9 @@
         break;
       case 'update':
         onUpdate(m);
+        break;
+      case 'simLaunched':
+        status(m.ok ? 'Steam is starting ' + sim().name + '. Set up your test session, then capture.' : 'Could not start it through Steam. Start the game from Steam yourself (Dialed is already open, so that is fine).', m.ok ? 'good' : 'warn');
         break;
       case 'folderOpened':
         if (!m.ok) status('Could not open the folder from here. You can find it at ' + (m.path || 'the app data folder') + '.', 'warn');

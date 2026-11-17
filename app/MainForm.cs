@@ -368,6 +368,15 @@ public sealed class MainForm : Form
                     Post(new { type = "simFiles", sim = sim.Id, files = SimService.ReadAll(sim) });
                     break;
                 }
+                case "launchSim": // starts a Steam game through Steam, in the user's normal (non-admin) session
+                {
+                    var s = SimService.ById(r.GetProperty("sim").GetString());
+                    var ok = s != null && !s.ComingSoon && s.SteamAppId != null && s.SteamAppId.All(char.IsDigit) && !SimService.IsRunning(s)
+                        && Unelevated.OpenTarget("steam://rungameid/" + s.SteamAppId);
+                    Paths.Log_($"launch {s?.Name}: {ok}");
+                    Post(new { type = "simLaunched", ok });
+                    break;
+                }
                 case "openUrl":
                     OpenExternal(r.GetProperty("url").GetString() ?? "");
                     break;

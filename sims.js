@@ -33,6 +33,13 @@
     scopeLine: function (mode) { return 'These changes go to your ' + (mode.id === 'replay' ? 'replay' : 'driving') + ' settings only.'; },
     scopeOf: function (c) { return c.section === 'Replay Graphics' ? 'Changes your replay settings' : 'Changes your driving settings'; },
     capInfo: null, // core's default is iRacing's
+    scenarios: [
+      '<b>Daytona road course</b> with a full multiclass field, at dusk or night: lots of cars, lights and long sight lines.',
+      '<b>Porsche 911 GT3 Cup in the rain</b> on a track with rain enabled: spray, wet reflections and a tight pack.',
+      '<b>Hockenheim</b> race start with a full grid: the stadium section with grandstands is one of the heaviest spots.',
+      '<b>Long Beach</b> street circuit: walls, grandstands and crowds close to the track.',
+      'Use an <b>AI race or a busy hosted session</b>, not Test Drive: an empty track hides most of the load. For Replay, capture the start of a busy race replay.'
+    ],
     captureHint: 'Capture 60 seconds on track with a full field, same track and car each time.',
     requiredFiles: ['main']
   };
@@ -75,6 +82,12 @@
     scopeLine: function () { return 'LMU has one set of graphics settings, so every change below applies to both driving and replays.'; },
     scopeOf: function (c) { return c.scope === 'replay' ? 'Changes replays only' : 'Changes driving and replays'; },
     capInfo: lmuCapInfo,
+    scenarios: [
+      '<b>Le Mans at night in the rain</b> with a full Hypercar, LMP2 and GT3 AI grid: the heaviest test LMU has.',
+      '<b>Spa-Francorchamps race start in the rain</b> with a full field.',
+      '<b>Bahrain at night</b> with a full grid: floodlights and lots of cars in view.',
+      'Capture the <b>first lap</b> each time, from the same grid slot.'
+    ],
     captureHint: 'Capture 60 seconds on track with a full field, same track and car each time.',
     requiredFiles: ['video', 'graphics']
   };
@@ -106,6 +119,12 @@
     scopeLine: function () { return 'AMS2 has one set of graphics settings, so every change below applies to both driving and replays.'; },
     scopeOf: function () { return 'Changes driving and replays'; },
     capInfo: ams2CapInfo,
+    scenarios: [
+      '<b>Interlagos race start in the rain</b> with a full grid.',
+      '<b>Nürburgring Nordschleife</b> with a full field: long, tree-lined and very busy.',
+      '<b>Daytona at night</b> with a full multiclass grid.',
+      'Capture the <b>first lap</b> each time, from the same grid slot.'
+    ],
     captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
     requiredFiles: ['main']
   };
@@ -139,12 +158,18 @@
     scopeLine: function () { return 'ACC has one set of graphics settings, so every change below applies to both driving and replays.'; },
     scopeOf: function () { return 'Changes driving and replays'; },
     capInfo: accCapInfo,
+    scenarios: [
+      '<b>Spa-Francorchamps race start in heavy rain</b> with a full AI grid: the classic ACC stress test.',
+      '<b>Nürburgring at night</b> with a full grid.',
+      '<b>Monza race start</b>: the whole field bunched into turn 1.',
+      'Capture the <b>first lap</b> each time, from the same grid slot.'
+    ],
     captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
     requiredFiles: ['main']
   };
-  var acevo = soon('acevo', 'Assetto Corsa EVO', 'EVO', 'No graphics settings file could be found for this early-access game.');
-  var raceroom = soon('raceroom', 'RaceRoom', 'RaceRoom', 'RaceRoom\'s settings file could not be found or tested.');
-  var pmr = soon('pmr', 'Project Motor Racing', 'PMR', 'Its graphics settings use numbered levels with no published meaning, so they cannot be checked yet.');
+  var acevo = soon('acevo', 'Assetto Corsa EVO', 'EVO', 'AC EVO saves its video settings in a binary file (Saved Games\\ACE\\video.videosettings) that cannot be edited safely yet.');
+  var raceroom = soon('raceroom', 'RaceRoom', 'RaceRoom', 'RaceRoom\'s graphics settings file has not been found to test against yet.');
+  var pmr = soon('pmr', 'Project Motor Racing', 'PMR', 'Its settings file stores menu positions, not named levels, so which way is lower quality has to be checked in the game first.');
   // ---------- BeamNG.drive ----------
   function beamngCapInfo(ini) {
     var g = ini['BeamNG'] || {};
@@ -171,6 +196,11 @@
     scopeLine: function () { return 'BeamNG has one set of graphics settings, so every change below applies everywhere in the game.'; },
     scopeOf: function () { return 'Changes the whole game'; },
     capInfo: beamngCapInfo,
+    scenarios: [
+      '<b>West Coast, USA</b> downtown with <b>traffic switched on</b>: lots of AI cars, buildings and lights.',
+      '<b>Italy</b> through the towns with traffic switched on.',
+      'Drive the <b>same route at the same speed</b> each capture, with the same amount of traffic.'
+    ],
     captureHint: 'Capture 60 seconds driving the same route each time, on a busy map with traffic if you can.',
     requiredFiles: ['main']
   };

@@ -71,6 +71,13 @@
 
         <div class="info" id="simNote" hidden></div>
 
+        <div class="card" id="testCard" hidden>
+          <p class="eyebrow">A good test session</p>
+          <p class="hint" style="margin:0 0 8px">Test where your PC works hardest, and use exactly the same session for every capture so the rounds compare fairly. The busiest moment is usually the first lap with a full field.</p>
+          <ul class="scen" id="scenList"></ul>
+          <p id="launchRow" hidden style="margin:12px 0 0"><button class="ghost" id="launchSim">Launch the game</button> <span class="hint">Starts it through Steam with Dialed already open, so the Windows permission prompt cannot freeze the game. Then set up the session above yourself: games do not let other programs pick the track and cars.</span></p>
+        </div>
+
         <div class="card" id="appPanel" hidden>
           <p class="eyebrow">Capture</p>
           <div class="reminder"><b>Before you capture, close as many other programs as you can.</b> That means OBS, Chrome and other browsers, Discord, overlays, and anything running in the system tray (check the arrow by the clock). Background programs are the most common cause of stutter and they skew your results. <span id="busyNow"></span></div>
@@ -271,6 +278,7 @@
 <script src="settings-table-ams2.js"></script>
 <script src="settings-table-acc.js"></script>
 <script src="settings-table-beamng.js"></script>
+<script src="looks.js"></script>
 <script src="sims.js"></script>
 <script src="app.js"></script>
 <script src="bridge.js"></script>

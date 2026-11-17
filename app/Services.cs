@@ -240,11 +240,11 @@ static class SimService
     public static readonly SimDef Acc = new("acc", "Assetto Corsa Competizione", "AC2-Win64-Shipping", "805550", "Assetto Corsa Competizione",
         Paths.BackupsFolderName, new[] { new SimFile("main", "menuSettings.json", @"Config\menuSettings.json") }, DocsRel: "Assetto Corsa Competizione");
     public static readonly SimDef AcEvo = Soon("acevo", "Assetto Corsa EVO", "AssettoCorsaEVO", "3058630", "Assetto Corsa EVO",
-        "No graphics settings file could be found for this early-access game.");
+        "AC EVO saves its video settings in a binary file (Saved Games\\ACE\\video.videosettings) that cannot be edited safely yet.");
     public static readonly SimDef RaceRoom = Soon("raceroom", "RaceRoom", "RRRE64", "211500", "raceroom racing experience",
-        "RaceRoom's settings file could not be found or tested.");
+        "RaceRoom's graphics settings file has not been found to test against yet.");
     public static readonly SimDef Pmr = Soon("pmr", "Project Motor Racing", "ProjectMotorRacing-Win64-Shipping", "299970", "Project Motor Racing",
-        "Its graphics settings use numbered levels with no published meaning, so they cannot be checked yet.");
+        "Its settings file stores menu positions, not named levels, so which way is lower quality has to be checked in the game first.");
     // BeamNG.drive: %LOCALAPPDATA%\BeamNG\BeamNG.drive\current\settings\settings.json. Backups go in %LOCALAPPDATA%\BeamNG\Dialed Backups,
     // outside BeamNG's own user folder (BeamNG.drive\current), which the game scans for mods and content.
     public static readonly SimDef BeamNg = new("beamng", "BeamNG.drive", "BeamNG.drive.x64", "284160", "BeamNG.drive",

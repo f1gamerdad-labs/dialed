@@ -170,6 +170,8 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 #introStart:focus-visible { outline:2px solid #fff; }
 
 /* ---------- "round saved" splash ---------- */
+.look { margin-top:6px; font-size:13px; color:var(--muted); } .look b { color:var(--text); font-weight:700; }
+.scen { margin:0; padding-left:20px; } .scen li { margin:5px 0; } .scen b { color:var(--text); }
 .newsnote { position:fixed; right:22px; bottom:22px; z-index:60; width:min(380px, calc(100% - 44px)); background:linear-gradient(160deg, var(--card2), var(--card)); border:1px solid var(--pink); border-radius:16px; padding:16px 18px; box-shadow:0 18px 50px rgba(0,0,0,.6); }
 .newsnote-title { margin:0 0 4px; font-family:"Russo One"; font-size:17px; }
 .reportbox { width:min(640px, 100%); }
