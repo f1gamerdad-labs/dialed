@@ -241,8 +241,9 @@ static class SimService
         Paths.BackupsFolderName, new[] { new SimFile("main", "menuSettings.json", @"Config\menuSettings.json") }, DocsRel: "Assetto Corsa Competizione");
     public static readonly SimDef AcEvo = Soon("acevo", "Assetto Corsa EVO", "AssettoCorsaEVO", "3058630", "Assetto Corsa EVO",
         "AC EVO saves its video settings in a binary file (Saved Games\\ACE\\video.videosettings) that cannot be edited safely yet.");
-    public static readonly SimDef RaceRoom = Soon("raceroom", "RaceRoom", "RRRE64", "211500", "raceroom racing experience",
-        "RaceRoom's graphics settings file has not been found to test against yet.");
+    // RaceRoom: Documents\My Games\SimBin\RaceRoom Racing Experience\UserData\graphics_options.xml. Backups sit beside UserData, not inside it.
+    public static readonly SimDef RaceRoom = new("raceroom", "RaceRoom", "RRRE64|RRRE", "211500", "raceroom racing experience",
+        Paths.BackupsFolderName, new[] { new SimFile("main", "graphics_options.xml", @"UserData\graphics_options.xml") }, DocsRel: @"My Games\SimBin\RaceRoom Racing Experience");
     // Project Motor Racing: Documents\My Games\ProjectMotorRacing\savegame1\settings.xml. ProjectMotorRacing.exe is the launcher, ProjectMotorRacingGame.exe the game.
     public static readonly SimDef Pmr = new("pmr", "Project Motor Racing", "ProjectMotorRacingGame|ProjectMotorRacing", "299970", "Project Motor Racing",
         Paths.BackupsFolderName, new[] { new SimFile("main", "settings.xml", @"savegame1\settings.xml") }, DocsRel: @"My Games\ProjectMotorRacing");

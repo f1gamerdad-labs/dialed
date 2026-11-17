@@ -596,7 +596,18 @@ public sealed class MainForm : Form
                     var prr = BackupService.Restore("pmr", Path.GetFileName(pw.backup!));
                     Check("PMR: restore puts the original bytes back", prr.ok && File.ReadAllBytes(px).SequenceEqual(porig), prr.message);
                 }
-                foreach (var soon in new[] { SimService.AcEvo, SimService.RaceRoom })
+                if (Paths.SimOverrides.TryGetValue("raceroom", out var rrroot)) // --sim-raceroom=<throwaway folder holding UserData\graphics_options.xml>
+                {
+                    var rrSim = SimService.RaceRoom; var rx = Path.Combine(rrroot, @"UserData\graphics_options.xml");
+                    var rd = SimService.Describe().First(x => (string)x.GetType().GetProperty("id")!.GetValue(x)! == "raceroom");
+                    Check("RaceRoom: found and switched on", (bool)rd.GetType().GetProperty("found")!.GetValue(rd)! && !(bool)rd.GetType().GetProperty("comingSoon")!.GetValue(rd)!);
+                    var rorig = File.ReadAllBytes(rx);
+                    var rw = SimService.Write(rrSim, rrSim.Files[0], "<x/>");
+                    Check("RaceRoom: write succeeds with a byte-exact backup outside UserData", rw.ok && rw.backup != null && File.ReadAllBytes(rw.backup).SequenceEqual(rorig) && Path.GetDirectoryName(rw.backup) == Path.Combine(rrroot, Paths.BackupsFolderName), rw.message);
+                    var rrr = BackupService.Restore("raceroom", Path.GetFileName(rw.backup!));
+                    Check("RaceRoom: restore puts the original bytes back", rrr.ok && File.ReadAllBytes(rx).SequenceEqual(rorig), rrr.message);
+                }
+                foreach (var soon in new[] { SimService.AcEvo })
                     Check($"{soon.Name}: coming soon, never read or written", soon.ComingSoon && SimService.Root(soon) == null && SimService.ReadAll(soon).Length == 0);
             }
         }

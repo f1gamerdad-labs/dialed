@@ -525,6 +525,25 @@
     }).join('');
   }
 
+  // ---------- RaceRoom: UserData\graphics_options.xml ----------
+  // One <name type="bool|int32|uint32|float32|...">value</name> per line. Section is always 'RaceRoom'. Booleans read as 1/0.
+  function parseRaceRoomXml(text) {
+    var o = {}, re = /<([A-Za-z0-9_]+)\s+type="([^"]+)">([^<]*)<\/\1>/g, m;
+    while ((m = re.exec(text))) o[m[1]] = m[2] === 'bool' ? (m[3] === 'true' ? '1' : '0') : m[3];
+    return { RaceRoom: o };
+  }
+  // Changes only the text inside the matching tag; every other byte stays as the game wrote it.
+  function patchRaceRoomXml(text, changes) {
+    var want = {};
+    changes.forEach(function (c) { want[c.key] = c; });
+    return text.replace(/(<)([A-Za-z0-9_]+)(\s+type=")([^"]+)(">)([^<]*)(<\/\2>)/g, function (all, a, name, b, type, c, old, z) {
+      var ch = want[name];
+      if (!ch) return all;
+      var v = type === 'bool' ? (ch.to ? 'true' : 'false') : (/^float/.test(type) ? Number(ch.to).toFixed(8) : String(ch.to));
+      return a + name + b + type + c + v + z;
+    });
+  }
+
   // ---------- Project Motor Racing: savegame1\settings.xml ----------
   // One <param name="Key" type="number" value="N"/> per setting. Section is always 'PMR'.
   function parsePmrXml(text) {
@@ -607,7 +626,7 @@
     return head + body;
   }
 
-  return { parsePmrXml: parsePmrXml, patchPmrXml: patchPmrXml, parseBeamngJson: parseBeamngJson, patchBeamngJson: patchBeamngJson, parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, parseIni: parseIni, diagnose: diagnose,
+  return { parseRaceRoomXml: parseRaceRoomXml, patchRaceRoomXml: patchRaceRoomXml, parsePmrXml: parsePmrXml, patchPmrXml: patchPmrXml, parseBeamngJson: parseBeamngJson, patchBeamngJson: patchBeamngJson, parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, parseIni: parseIni, diagnose: diagnose,
     recommend: recommend, patchIni: patchIni, snapshot: snapshot, assessRound: assessRound, GOALS: GOALS,
     parseLmuIni: parseLmuIni, patchLmuIni: patchLmuIni, parseLmuJson: parseLmuJson, patchLmuJson: patchLmuJson };
 });

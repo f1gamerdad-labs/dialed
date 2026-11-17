@@ -10,6 +10,7 @@
   var tACC = isNode ? require('./settings-table-acc.js') : root.SETTINGS_TABLE_ACC;
   var tBEAMNG = isNode ? require('./settings-table-beamng.js') : root.SETTINGS_TABLE_BEAMNG;
   var tPMR = isNode ? require('./settings-table-pmr.js') : root.SETTINGS_TABLE_PMR;
+  var tRR = isNode ? require('./settings-table-raceroom.js') : root.SETTINGS_TABLE_RACEROOM;
 
   // ---------- iRacing ----------
   var iracing = {
@@ -169,7 +170,40 @@
     requiredFiles: ['main']
   };
   var acevo = soon('acevo', 'Assetto Corsa EVO', 'EVO', 'AC EVO saves its video settings in a binary file (Saved Games\\ACE\\video.videosettings) that cannot be edited safely yet.');
-  var raceroom = soon('raceroom', 'RaceRoom', 'RaceRoom', 'RaceRoom\'s graphics settings file has not been found to test against yet.');
+  // ---------- RaceRoom Racing Experience ----------
+  var raceroom = {
+    id: 'raceroom', name: 'RaceRoom', short: 'RaceRoom',
+    process: 'RRRE64.exe',
+    steamAppId: '211500',
+    table: tRR,
+    files: [{
+      id: 'main', name: 'graphics_options.xml', label: 'RaceRoom graphics file', rel: 'UserData\\graphics_options.xml',
+      hint: 'In Documents\\My Games\\SimBin\\RaceRoom Racing Experience\\UserData.',
+      sections: ['RaceRoom'],
+      match: function (n) { return /^graphics_options\.xml$/i.test(n); },
+      parse: function (t) { return core.parseRaceRoomXml(t); },
+      patch: function (t, changes) { return core.patchRaceRoomXml(t, changes); }
+    }],
+    modes: [{ id: 'driving', label: 'Driving', section: 'RaceRoom', hint: 'Capture while driving on track. RaceRoom uses the same graphics settings for replays.' }],
+    isVrFile: function () { return false; },
+    note: '<b>RaceRoom has one set of graphics settings,</b> so every change applies to both driving and replays. ' +
+      'The settings it can change are the ones on the High Impact, Visual Effects, Track, Car and Cockpit pages. ' +
+      'Some of the numbers (such as which value means Low) have only been checked for the choice you currently have, so every suggestion is shown as low confidence: change a few at a time and capture again. ' +
+      'RaceRoom rewrites this file when it closes, so Dialed closes it before applying.',
+    scopeLine: function () { return 'RaceRoom has one set of graphics settings, so every change below applies to both driving and replays.'; },
+    scopeOf: function () { return 'Changes driving and replays'; },
+    capInfo: function (ini) {
+      var g = ini['RaceRoom'] || {}, refresh = parseFloat(g.screenRefreshRate);
+      return { cap: parseFloat(g.enableVSync) > 0 && refresh > 0 ? refresh : NaN, refresh: refresh }; // V-sync is the only cap in this file
+    },
+    scenarios: [
+      '<b>Nürburgring Nordschleife</b> or <b>Spa</b> race start with a full grid, in <b>rain</b> if you can.',
+      '<b>Hockenheim</b> race start with a full grid: the stadium section is one of the heaviest spots.',
+      'Capture the <b>first lap</b> each time, from the same grid slot.'
+    ],
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    requiredFiles: ['main']
+  };
   // ---------- Project Motor Racing ----------
   var pmr = {
     id: 'pmr', name: 'Project Motor Racing', short: 'PMR',
