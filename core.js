@@ -525,6 +525,37 @@
     }).join('');
   }
 
+  // ---------- BeamNG.drive: settings.json (flat JSON, one "Key":value per line) ----------
+  // words: { key: [level words] } from the settings table. Word values are read as their index (0 = lowest) and written back as words.
+  function parseBeamngJson(text, words) {
+    var data = JSON.parse(text.replace(/^\uFEFF/, '')), o = {};
+    Object.keys(data).forEach(function (k) {
+      var v = data[k];
+      if (v && typeof v === 'object') return;
+      if (words && words[k]) { var i = words[k].indexOf(String(v)); o[k] = i >= 0 ? String(i) : 'unknown:' + v; return; }
+      o[k] = v === true ? '1' : v === false ? '0' : String(v);
+    });
+    return { BeamNG: o };
+  }
+  // Changes only the value of matching top-level "Key":value lines. When a word setting changes, the overall preset is set to "Custom",
+  // because BeamNG only keeps individual quality levels when the overall preset is Custom.
+  function patchBeamngJson(text, changes, words) {
+    var want = {}, wordChange = false;
+    changes.forEach(function (c) { want[c.key] = c; if (words && words[c.key]) wordChange = true; });
+    return text.split(/(\r?\n)/).map(function (line) {
+      var m = line.match(/^(\s*)"([^"\\]+)"(\s*:\s*)(.*?)(,?)\s*$/);
+      if (!m) return line;
+      if (wordChange && m[2] === 'GraphicOverallQuality' && m[4] !== '"Custom"') return m[1] + '"' + m[2] + '"' + m[3] + '"Custom"' + m[5];
+      var c = want[m[2]];
+      if (!c) return line;
+      var val;
+      if (words && words[m[2]]) val = '"' + words[m[2]][c.to] + '"';
+      else if (m[4] === 'true' || m[4] === 'false') val = c.to ? 'true' : 'false';
+      else val = String(c.to);
+      return m[1] + '"' + m[2] + '"' + m[3] + val + m[5];
+    }).join('');
+  }
+
   // ---------- Automobilista 2: graphicsconfigdx11.xml ----------
   // One <prop name="Key" key="value" /> line per setting inside the <data> element (the <class> list above it only declares types).
   // Section is always 'GraphicConfigData'. The Mode line is split into Width, Height and RefreshRate (Hz).
@@ -560,7 +591,7 @@
     return head + body;
   }
 
-  return { parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, parseIni: parseIni, diagnose: diagnose,
+  return { parseBeamngJson: parseBeamngJson, patchBeamngJson: patchBeamngJson, parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, parseIni: parseIni, diagnose: diagnose,
     recommend: recommend, patchIni: patchIni, snapshot: snapshot, assessRound: assessRound, GOALS: GOALS,
     parseLmuIni: parseLmuIni, patchLmuIni: patchLmuIni, parseLmuJson: parseLmuJson, patchLmuJson: patchLmuJson };
 });

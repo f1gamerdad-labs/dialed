@@ -8,6 +8,7 @@
   var tLMU = isNode ? require('./settings-table-lmu.js') : root.SETTINGS_TABLE_LMU;
   var tAMS2 = isNode ? require('./settings-table-ams2.js') : root.SETTINGS_TABLE_AMS2;
   var tACC = isNode ? require('./settings-table-acc.js') : root.SETTINGS_TABLE_ACC;
+  var tBEAMNG = isNode ? require('./settings-table-beamng.js') : root.SETTINGS_TABLE_BEAMNG;
 
   // ---------- iRacing ----------
   var iracing = {
@@ -144,7 +145,35 @@
   var acevo = soon('acevo', 'Assetto Corsa EVO', 'EVO', 'No graphics settings file could be found for this early-access game.');
   var raceroom = soon('raceroom', 'RaceRoom', 'RaceRoom', 'RaceRoom\'s settings file could not be found or tested.');
   var pmr = soon('pmr', 'Project Motor Racing', 'PMR', 'Its graphics settings use numbered levels with no published meaning, so they cannot be checked yet.');
-  var beamng = soon('beamng', 'BeamNG.drive', 'BeamNG', 'BeamNG stores its main quality levels as words in a versioned folder; support is not built yet.');
+  // ---------- BeamNG.drive ----------
+  function beamngCapInfo(ini) {
+    var g = ini['BeamNG'] || {};
+    var cap = parseFloat(g.fpsLimitEnabled) > 0 ? parseFloat(g.fpsLimit) : NaN;
+    return { cap: cap > 0 ? cap : NaN, refresh: NaN }; // the refresh-rate key in this file is not reliable, so the target falls back to the user's own
+  }
+  var beamng = {
+    id: 'beamng', name: 'BeamNG.drive', short: 'BeamNG',
+    process: 'BeamNG.drive.x64.exe',
+    steamAppId: '284160',
+    table: tBEAMNG,
+    files: [{
+      id: 'main', name: 'settings.json', label: 'BeamNG settings file', rel: 'BeamNG.drive\\current\\settings\\settings.json',
+      hint: 'In %LOCALAPPDATA%\\BeamNG\\BeamNG.drive\\current\\settings. (Not the one in the cloud folder.)',
+      sections: ['BeamNG'],
+      match: function (n) { return /^settings\.json$/i.test(n); },
+      parse: function (t) { return core.parseBeamngJson(t, tBEAMNG.words); },
+      patch: function (t, changes) { return core.patchBeamngJson(t, changes, tBEAMNG.words); }
+    }],
+    modes: [{ id: 'driving', label: 'Driving', section: 'BeamNG', hint: 'Capture while driving, ideally on a busy map with traffic. BeamNG uses the same graphics settings for replays.' }],
+    isVrFile: function () { return false; },
+    note: '<b>BeamNG uses one set of graphics settings.</b> The levels and the processor/graphics-card/memory cost of each setting come from BeamNG\'s own option descriptions. ' +
+      'Applying a change sets BeamNG\'s overall quality preset to Custom, the same as changing a slider in the game. Dialed never raises Lighting or Shadows to Ultra, which BeamNG marks as experimental.',
+    scopeLine: function () { return 'BeamNG has one set of graphics settings, so every change below applies everywhere in the game.'; },
+    scopeOf: function () { return 'Changes the whole game'; },
+    capInfo: beamngCapInfo,
+    captureHint: 'Capture 60 seconds driving the same route each time, on a busy map with traffic if you can.',
+    requiredFiles: ['main']
+  };
 
   var SIMS = { iracing: iracing, lmu: lmu, ams2: ams2, acc: acc, acevo: acevo, raceroom: raceroom, pmr: pmr, beamng: beamng };
   var ORDER = ['iracing', 'lmu', 'ams2', 'acc', 'acevo', 'raceroom', 'pmr', 'beamng'];

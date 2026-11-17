@@ -35,6 +35,7 @@
     <Content Include="..\settings-table-lmu.js" Link="web\settings-table-lmu.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\settings-table-ams2.js" Link="web\settings-table-ams2.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\settings-table-acc.js" Link="web\settings-table-acc.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\settings-table-beamng.js" Link="web\settings-table-beamng.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\config.js" Link="web\config.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\version.json" Link="web\version.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\styles.css" Link="web\styles.css" CopyToOutputDirectory="PreserveNewest" />

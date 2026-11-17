@@ -214,7 +214,7 @@ sealed record SimFile(string Id, string Name, string Rel);
 /// <summary>Process may list several names separated by "|". DocsRel: the sim keeps its settings under Documents\DocsRel instead of its Steam folder.
 /// Reason: when set, the sim is a "Coming soon" tile (listed, but never read or written).</summary>
 sealed record SimDef(string Id, string Name, string Process, string? SteamAppId, string? SteamFolder, string? BackupsRel, SimFile[] Files,
-    string? DocsRel = null, string? Reason = null)
+    string? DocsRel = null, string? Reason = null, string? LocalRel = null) // LocalRel: settings live under %LOCALAPPDATA%\LocalRel
 {
     public bool ComingSoon => Reason != null;
     public string[] ProcessNames => Process.Split('|', StringSplitOptions.RemoveEmptyEntries);
@@ -245,8 +245,10 @@ static class SimService
         "RaceRoom's settings file could not be found or tested.");
     public static readonly SimDef Pmr = Soon("pmr", "Project Motor Racing", "ProjectMotorRacing-Win64-Shipping", "299970", "Project Motor Racing",
         "Its graphics settings use numbered levels with no published meaning, so they cannot be checked yet.");
-    public static readonly SimDef BeamNg = Soon("beamng", "BeamNG.drive", "BeamNG.drive.x64", "284160", "BeamNG.drive",
-        "BeamNG stores its main quality levels as words in a versioned folder; support is not built yet.");
+    // BeamNG.drive: %LOCALAPPDATA%\BeamNG\BeamNG.drive\current\settings\settings.json. Backups go in %LOCALAPPDATA%\BeamNG\Dialed Backups,
+    // outside BeamNG's own user folder (BeamNG.drive\current), which the game scans for mods and content.
+    public static readonly SimDef BeamNg = new("beamng", "BeamNG.drive", "BeamNG.drive.x64", "284160", "BeamNG.drive",
+        Paths.BackupsFolderName, new[] { new SimFile("main", "settings.json", @"BeamNG.drive\current\settings\settings.json") }, LocalRel: "BeamNG");
     public static readonly SimDef[] All = { IRacing, Lmu, Ams2, Acc, AcEvo, RaceRoom, Pmr, BeamNg };
     public static SimDef? ById(string? id) => All.FirstOrDefault(s => s.Id == id);
 
@@ -286,6 +288,11 @@ static class SimService
         if (sim.ComingSoon) return null;
         if (sim.Id == "lmu" && Paths.LmuOverride != null) return Directory.Exists(Paths.LmuOverride) ? Paths.LmuOverride : null;
         if (Paths.SimOverrides.TryGetValue(sim.Id, out var ov)) return Directory.Exists(ov) ? ov : null;
+        if (sim.LocalRel != null)
+        {
+            var l = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), sim.LocalRel);
+            return Directory.Exists(l) ? l : null;
+        }
         if (sim.DocsRel != null)
         {
             var d = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), sim.DocsRel);

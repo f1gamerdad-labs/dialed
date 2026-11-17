@@ -562,7 +562,20 @@ public sealed class MainForm : Form
                     Check("ACC: restore puts the original bytes back", crr.ok && File.ReadAllBytes(json).SequenceEqual(corig), crr.message);
                     Check("ACC: restore refuses a path trick", !BackupService.Restore("acc", @"..\Config\menuSettings.json").ok);
                 }
-                foreach (var soon in new[] { SimService.AcEvo, SimService.RaceRoom, SimService.Pmr, SimService.BeamNg })
+                if (Paths.SimOverrides.TryGetValue("beamng", out var broot)) // --sim-beamng=<throwaway folder holding BeamNG.drive\current\settings\settings.json>
+                {
+                    var bng = SimService.BeamNg; var bjson = Path.Combine(broot, @"BeamNG.drive\current\settings\settings.json");
+                    var bd = SimService.Describe().First(x => (string)x.GetType().GetProperty("id")!.GetValue(x)! == "beamng");
+                    Check("BeamNG: found and switched on", (bool)bd.GetType().GetProperty("found")!.GetValue(bd)! && !(bool)bd.GetType().GetProperty("comingSoon")!.GetValue(bd)!);
+                    var bb = SimService.BackupsDir(bng)!;
+                    Check("BeamNG: backups sit outside the game's user folder", bb == Path.Combine(broot, Paths.BackupsFolderName), bb);
+                    var borig = File.ReadAllBytes(bjson);
+                    var bw = SimService.Write(bng, bng.Files[0], "{}");
+                    Check("BeamNG: write succeeds with a byte-exact backup", bw.ok && bw.backup != null && File.ReadAllBytes(bw.backup).SequenceEqual(borig), bw.message);
+                    var brr = BackupService.Restore("beamng", Path.GetFileName(bw.backup!));
+                    Check("BeamNG: restore puts the original bytes back", brr.ok && File.ReadAllBytes(bjson).SequenceEqual(borig), brr.message);
+                }
+                foreach (var soon in new[] { SimService.AcEvo, SimService.RaceRoom, SimService.Pmr })
                     Check($"{soon.Name}: coming soon, never read or written", soon.ComingSoon && SimService.Root(soon) == null && SimService.ReadAll(soon).Length == 0);
             }
         }
