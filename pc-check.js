@@ -10,6 +10,20 @@
   function discrete(name) { return /nvidia|geforce|rtx|gtx|quadro|radeon rx|radeon pro|\barc\b/i.test(name || '') && !/graphics\s*\d*$/i.test(name || ''); }
   function integrated(name) { return /intel.*(uhd|iris|hd graphics|graphics)|radeon\(tm\) graphics|radeon graphics/i.test(name || '') && !discrete(name); }
 
+  // Windows' own screen numbers (DISPLAY3 ...) do not match the numbers in Settings, so screens are named by their model, and identical
+  // screens are told apart by where they sit, left to right.
+  function labelScreens(disp) {
+    var order = disp.slice().sort(function (a, b) { return (a.x || 0) - (b.x || 0); });
+    var count = {}; order.forEach(function (d) { var k = d.monitor || d.name; count[k] = (count[k] || 0) + 1; });
+    var seen = {}, WORDS = ['left', 'middle', 'right'];
+    order.forEach(function (d) {
+      var k = d.monitor || d.name; seen[k] = (seen[k] || 0) + 1;
+      var base = d.monitor ? d.monitor : 'A screen';
+      var place = count[k] > 1 ? (count[k] === 3 ? WORDS[seen[k] - 1] : 'number ' + seen[k] + ' from the left') : '';
+      d.label = base + (place ? ' (' + place + ' screen)' : '') + (d.monitor ? '' : ' (' + d.name + ')');
+    });
+  }
+
   function evaluate(f, opts) {
     var out = [], now = (opts && opts.now) || new Date();
     function add(id, level, title, text, fix) { out.push({ id: id, level: level, title: title, text: text, fix: fix || '' }); }
@@ -69,18 +83,19 @@
 
     // ---- displays ----
     var disp = f.displays || [], gpus = f.gpus || [];
+    labelScreens(disp);
     disp.forEach(function (d) {
       if (!d.hz || !d.maxHz) return;
       if (d.hz < d.maxHz - 1) {
         var big = d.hz <= 60 && d.maxHz >= 100;
-        add('hz-' + d.name, big ? 'fix' : 'check', d.name + ' is running at ' + d.hz + ' Hz but can do ' + d.maxHz + ' Hz',
+        add('hz-' + d.name, big ? 'fix' : 'check', d.label + ' is running at ' + d.hz + ' Hz but can do ' + d.maxHz + ' Hz',
           'Windows is using ' + d.hz + ' Hz at ' + d.width + 'x' + d.height + ' on this screen, but the screen supports up to ' + d.maxHz + ' Hz at that size.' + (big ? ' A lot of PCs are left at 60 Hz after a new monitor or a driver update.' : ''),
           'Settings, System, Display, Advanced display, pick this monitor, and choose the highest refresh rate. If it will not go higher, check the cable (use DisplayPort for high refresh) and the monitor\'s own menu.');
       }
     });
     if (disp.length) {
       var ok = disp.filter(function (d) { return d.hz && d.maxHz && d.hz >= d.maxHz - 1; });
-      if (ok.length === disp.length) add('hz', 'ok', 'Every screen is at its highest refresh rate', disp.map(function (d) { return d.name + ': ' + d.hz + ' Hz'; }).join('. ') + '.');
+      if (ok.length === disp.length) add('hz', 'ok', 'Every screen is at its highest refresh rate', disp.map(function (d) { return d.label + ': ' + d.hz + ' Hz'; }).join('. ') + '.');
     }
     var hasDiscrete = gpus.some(function (g) { return discrete(g.name); });
     if (hasDiscrete && disp.length) {
@@ -90,7 +105,7 @@
           'Every screen is connected through the processor\'s built-in graphics (' + onIgpu[0].adapter + '), so your graphics card may not be doing the work.',
           'Turn the PC off and move the monitor cable from the motherboard video ports to the ports on your graphics card.');
       } else if (onIgpu.length) {
-        add('igpu-some', 'info', onIgpu.map(function (d) { return d.name; }).join(', ') + ' is on the built-in graphics',
+        add('igpu-some', 'info', onIgpu.map(function (d) { return d.label; }).join(', ') + ' is on the built-in graphics',
           'That screen is connected through ' + onIgpu[0].adapter + ', not your graphics card. That is fine for a spare screen (telemetry, chat), but the screen you race on should be on the graphics card. Running it at ' + onIgpu[0].hz + ' Hz is normal for a built-in port.');
       }
     }
@@ -109,8 +124,8 @@
       var busy = (nv.utilPct || 0) >= 30 || (nv.clockMaxMHz && nv.clockMHz >= nv.clockMaxMHz * 0.6);
       if (nv.pcieWidthMax && nv.pcieWidth) {
         if (!busy) {
-          add('pcie', 'info', 'Graphics card link: x' + nv.pcieWidth + ' now (up to x' + nv.pcieWidthMax + ')',
-            'The graphics card was idle when this was read, and the link slows itself down when idle, so the reading is not reliable. Run this check again while iRacing or LMU is running a session.');
+          add('pcie', 'info', 'Graphics card connection not checked (the card was idle)',
+            'Your graphics card plugs into the motherboard with a number of data lanes (x16 is the full width). A card that is not working turns some of them off to save power, so it cannot be judged while idle. To check it, run this again while iRacing or LMU is running a session.');
         } else if (nv.pcieWidth < nv.pcieWidthMax) {
           add('pcie', 'fix', 'Your graphics card is running at x' + nv.pcieWidth + ' instead of x' + nv.pcieWidthMax,
             'The card is connected with fewer lanes than it supports, which can limit it. Common causes are the wrong slot, dust or a loose card, or a second device (such as an extra drive) sharing the lanes.',
@@ -149,16 +164,21 @@
       if (f.os.build < 19041) add('os', 'check', 'Your Windows version is old', f.os.caption + ' (build ' + f.os.build + ').', 'Update Windows.');
       else add('os', 'ok', 'Windows version', f.os.caption + ' (build ' + f.os.build + ').');
     }
-    if (f.cpu) add('cpu', 'info', 'Processor', f.cpu.name + ': ' + f.cpu.cores + ' cores, ' + f.cpu.threads + ' threads.');
-
     if (f.errors && f.errors.length) add('errors', 'info', 'Some checks could not run', f.errors.join(' | '));
     out.sort(function (a, b) { return LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level]; });
+    // one line describing the PC, for the top of the results and for pasting into a chat
+    var parts = [];
+    if (f.cpu && f.cpu.name) parts.push(f.cpu.name.replace(/\(R\)|\(TM\)|\s+@.*$/g, '').replace(/\s+/g, ' ').trim() + ' (' + f.cpu.cores + ' cores, ' + f.cpu.threads + ' threads)');
+    if (ram.length) parts.push(ram.reduce(function (s, r) { return s + r.capGB; }, 0) + ' GB ' + (MEM_TYPE[ram[0].type] || 'memory') + ' at ' + Math.min.apply(null, ram.map(function (r) { return r.configured || 0; }).filter(Boolean)) + ' MT/s');
+    var dg = gpus.filter(function (g) { return discrete(g.name); })[0] || gpus[0]; if (dg) parts.push(dg.name);
+    if (f.os && f.os.caption) parts.push(f.os.caption.replace(/^Microsoft\s+/, ''));
+    out.system = parts.join(', ');
     return out;
   }
 
   var LABEL = { fix: 'Fix this', check: 'Worth a look', info: 'Good to know', ok: 'Fine' };
   function asText(findings) {
-    var lines = ['PC check (Dialed)'];
+    var lines = ['PC check (Dialed)']; if (findings.system) lines.push('Your PC: ' + findings.system);
     findings.forEach(function (x) { lines.push('[' + LABEL[x.level] + '] ' + x.title + (x.text ? ': ' + x.text : '') + (x.fix && x.level !== 'ok' ? ' Fix: ' + x.fix : '')); });
     return lines.join('\n');
   }
@@ -177,6 +197,7 @@
     $('pcSummary').textContent = counts.fix || counts.check
       ? (counts.fix ? plural(counts.fix, 'thing', 'things') + ' to fix' : '') + (counts.fix && counts.check ? ' and ' : '') + (counts.check ? plural(counts.check, 'thing', 'things') + ' worth a look' : '') + '.'
       : 'Nothing to fix. Your PC looks set up well.';
+    $('pcSystem').textContent = findings.system ? 'Your PC: ' + findings.system : '';
     $('pcList').innerHTML = findings.map(function (x) {
       return '<div class="pcf ' + x.level + '"><span class="pct">' + LABEL[x.level] + '</span><div><b>' + esc(x.title) + '</b>' + (x.text ? '<p>' + esc(x.text) + '</p>' : '') +
         (x.fix && x.level !== 'ok' ? '<p class="pcfix"><b>What to do:</b> ' + esc(x.fix) + '</p>' : '') + '</div></div>';

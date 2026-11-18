@@ -151,14 +151,42 @@ static class PcCheck
         [DllImport("user32.dll", CharSet = CharSet.Ansi)] static extern bool EnumDisplayDevices(string? dev, uint n, ref DISPLAY_DEVICE d, uint flags);
         [DllImport("user32.dll", CharSet = CharSet.Ansi)] static extern bool EnumDisplaySettings(string dev, int mode, ref DEVMODE m);
 
+        /// <summary>Real monitor model names, keyed by the part of the hardware id Windows shares between the two lists, e.g. "AOCB305\5&amp;2670e056&amp;0&amp;UID4352".</summary>
+        static Dictionary<string, string> ModelNames()
+        {
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                using var s = new ManagementObjectSearcher(@"root\wmi", "SELECT InstanceName, UserFriendlyName FROM WmiMonitorID");
+                foreach (ManagementObject o in s.Get())
+                {
+                    var inst = o["InstanceName"]?.ToString() ?? ""; if (inst.StartsWith("DISPLAY\\", StringComparison.OrdinalIgnoreCase)) inst = inst[8..];
+                    if (inst.EndsWith("_0")) inst = inst[..^2];
+                    var chars = o["UserFriendlyName"] as ushort[] ?? (o["UserFriendlyName"] as object[])?.Select(Convert.ToUInt16).ToArray() ?? Array.Empty<ushort>();
+                    var name = new string(chars.Where(c => c != 0).Select(c => (char)c).ToArray()).Trim();
+                    if (inst.Length > 0 && name.Length > 0) map[inst] = name;
+                }
+            }
+            catch { /* names are a nicety; the check still works without them */ }
+            return map;
+        }
+
         public static List<object> Scan()
         {
             var res = new List<object>();
+            var names = ModelNames();
             for (uint i = 0; ; i++)
             {
                 var d = new DISPLAY_DEVICE { cb = (uint)Marshal.SizeOf<DISPLAY_DEVICE>() };
                 if (!EnumDisplayDevices(null, i, ref d, 0)) break;
                 if ((d.StateFlags & 1) == 0) continue;            // not attached to the desktop
+                string? model = null;
+                var mon = new DISPLAY_DEVICE { cb = (uint)Marshal.SizeOf<DISPLAY_DEVICE>() };
+                if (EnumDisplayDevices(d.DeviceName, 0, ref mon, 1))   // 1 = give the monitor's interface path, which holds its hardware id
+                {
+                    var id = mon.DeviceID ?? ""; var a = id.IndexOf("DISPLAY#", StringComparison.OrdinalIgnoreCase); var b = id.LastIndexOf("#{", StringComparison.Ordinal);
+                    if (a >= 0 && b > a) names.TryGetValue(id[(a + 8)..b].Replace('#', '\\'), out model);
+                }
                 var cur = new DEVMODE { dmSize = (ushort)Marshal.SizeOf<DEVMODE>() };
                 if (!EnumDisplaySettings(d.DeviceName, -1, ref cur)) continue;
                 uint max = 0;
@@ -168,7 +196,7 @@ static class PcCheck
                     if (!EnumDisplaySettings(d.DeviceName, j, ref m)) break;
                     if (m.dmPelsWidth == cur.dmPelsWidth && m.dmPelsHeight == cur.dmPelsHeight && m.dmDisplayFrequency > max) max = m.dmDisplayFrequency;
                 }
-                res.Add(new { name = d.DeviceName.TrimStart('\\', '.'), adapter = d.DeviceString, width = (int)cur.dmPelsWidth, height = (int)cur.dmPelsHeight, hz = (int)cur.dmDisplayFrequency, maxHz = (int)max });
+                res.Add(new { name = d.DeviceName.TrimStart('\\', '.'), monitor = model, x = cur.dmPositionX, primary = (d.StateFlags & 4) != 0, adapter = d.DeviceString, width = (int)cur.dmPelsWidth, height = (int)cur.dmPelsHeight, hz = (int)cur.dmDisplayFrequency, maxHz = (int)max });
             }
             return res;
         }
