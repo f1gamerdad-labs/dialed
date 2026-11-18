@@ -37,7 +37,9 @@ foreach ($l in $links) { Copy-Item (Join-Path (Join-Path $root 'app') $l.Groups[
 # the assets folder is a wildcard in the project file
 Copy-Item (Join-Path $root 'assets') (Join-Path $stage 'assets') -Recurse -Force
 Remove-Item (Join-Path $stage 'assets\app.ico') -ErrorAction SilentlyContinue   # the icon belongs to the program, not the page
-Get-ChildItem $stage -Recurse -Include *.mp4,*.exe,*.dll | Remove-Item -Force      # page updates never carry big media or program files
+# Page updates never carry big media or program files, except the welcome video: once an update is installed the app uses the downloaded page
+# instead of the bundled one, so a video left out here would disappear after "Update now".
+Get-ChildItem $stage -Recurse -Include *.mp4,*.exe,*.dll | Where-Object { $_.Name -ne 'intro.mp4' } | Remove-Item -Force
 
 # 2. stamp the version
 $utf8 = New-Object System.Text.UTF8Encoding($false)   # UTF-8 WITHOUT a byte-order mark: Windows PowerShell's -Encoding UTF8 adds one, and it can upset JSON readers
