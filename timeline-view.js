@@ -6,7 +6,7 @@
   var caps = [], vramPressure = false;
 
   function chart(tl) {
-    var W = 760, H = 220, L = 44, R = 12, T = 12, B = 28, pw = W - L - R, ph = H - T - B;
+    var W = 760, H = 232, L = 44, R = 12, T = 26, B = 28, pw = W - L - R, ph = H - T - B;
     var top = Math.max(tl.spikeAtMs * 1.4, tl.points.reduce(function (m, p) { return Math.max(m, p.max); }, 0) * 1.05, 20);
     function x(t) { return L + (tl.seconds ? t / tl.seconds : 0) * pw; }
     function y(ms) { return T + ph - Math.min(1, ms / top) * ph; }
@@ -16,7 +16,7 @@
     var bars = tl.points.map(function (p) { var hh = Math.max(1, T + ph - y(p.max)); return '<rect x="' + (x(p.t) - barW / 2).toFixed(1) + '" y="' + y(p.max).toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + hh.toFixed(1) + '" class="tlbar' + (p.max > tl.spikeAtMs ? ' hot' : '') + '"/>'; }).join('');
     var line = '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(tl.spikeAtMs).toFixed(1) + '" y2="' + y(tl.spikeAtMs).toFixed(1) + '" class="tlspike"/><text x="' + (W - R) + '" y="' + (y(tl.spikeAtMs) - 4).toFixed(1) + '" class="tltxt" text-anchor="end">stutter line</text>';
     var dots = tl.spikes.slice(0, 200).map(function (s2) { return '<circle cx="' + x(s2.t).toFixed(1) + '" cy="' + y(s2.ms).toFixed(1) + '" r="4" class="tldot ' + s2.side + '"/>'; }).join('');
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" class="tlsvg"><text x="12" y="12" class="tltxt">ms</text>' + g + bars + line + dots + '</svg>';
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" class="tlsvg"><text x="4" y="12" class="tltxt">milliseconds per frame</text>' + g + bars + line + dots + '</svg>';
   }
 
   function show(i) {

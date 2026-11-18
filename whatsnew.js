@@ -33,7 +33,7 @@
   function open() {
     $('wnTitle').textContent = TITLE + (version ? ' (version ' + version + ')' : '');
     $('wnList').innerHTML = ITEMS.map(function (i) { return '<li><b>' + esc(i[0]) + '</b><span>' + esc(i[1]) + '</span></li>'; }).join('');
-    $('whatsnew').hidden = false; $('wnOk').focus();
+    $('whatsnew').hidden = false; $('wnOk').focus({ preventScroll: true }); $('wnList').parentNode.scrollTop = 0;
   }
   function close() { $('whatsnew').hidden = true; if (version) set(KEY, version); }
   function ready() { return (!$('tour') || $('tour').hidden) && (!$('intro') || $('intro').hidden); }

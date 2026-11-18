@@ -19,10 +19,13 @@
     return out;
   }
   // plain-language lines for the preview window
-  function describe(p) {
-    var lines = ['Sim: ' + p.sim + (p.mode ? ' (' + p.mode + ')' : ''), 'Result: ' + p.verdict,
+  function cap(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
+  // ctx (optional): { simName, names: { settingKey: 'Readable name' } }, so the preview reads like a person wrote it
+  function describe(p, ctx) {
+    ctx = ctx || {}; var names = ctx.names || {};
+    var lines = ['Sim: ' + (ctx.simName || p.sim) + (p.mode ? ' (' + cap(p.mode) + ')' : ''), 'Result: ' + cap(p.verdict),
       '1% low FPS: ' + p.before.low1 + ' to ' + p.after.low1, 'Average FPS: ' + p.before.avg + ' to ' + p.after.avg, 'Stutters per minute: ' + p.before.stuttersPerMin + ' to ' + p.after.stuttersPerMin];
-    p.changes.forEach(function (c) { lines.push('Changed ' + c.setting + ': ' + c.from + ' to ' + c.to); });
+    p.changes.forEach(function (c) { lines.push('Changed ' + (names[c.setting] || c.setting) + ': ' + c.from + ' to ' + c.to); });
     if (p.hardware) lines.push('Your PC: ' + [p.hardware.cpu, p.hardware.gpu, p.hardware.ram, p.hardware.screens ? p.hardware.screens + ' screen(s)' : null].filter(Boolean).join(', '));
     else lines.push('Your PC: not included (run the PC check first to include it)');
     return lines;
@@ -40,7 +43,8 @@
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function open(d) {
     pending = buildPayload(d);
-    $('commList').innerHTML = describe(pending).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('');
+    var names = {}; (d.applied || []).forEach(function (c) { if (c.key && c.name) names[c.key] = c.name; });
+    $('commList').innerHTML = describe(pending, { simName: d.simName, names: names }).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('');
     $('commStatus').textContent = ''; $('commSend').disabled = false; $('community').hidden = false;
   }
   function close() { $('community').hidden = true; }

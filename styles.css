@@ -410,3 +410,34 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 @keyframes bIn { from { opacity:0; transform:translateY(20px) scale(.9); } to { opacity:1; transform:none; } }
 @media (prefers-reduced-motion: reduce) { .badgetoast { animation:none; } }
 .wnlist { list-style:none; margin:0; padding:0; display:grid; gap:12px; } .wnlist li { display:grid; gap:2px; } .wnlist b { font-size:15px; } .wnlist span { color:var(--muted); font-size:13.5px; line-height:1.45; }
+
+/* ---- design pass: one primary button, one ghost button, one checkbox, aligned setup card (keep this block last) ---- */
+button.btn, #run, #apply, #capBtn, #updateNow, #introStart, #doneGo, #tourNext, #reportSend, #newsYes, #shareCopy, #celeOk, #pcRun, #profSave, #wnOk, #commSend {
+  all:unset; box-sizing:border-box; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 24px; border-radius:12px;
+  background:var(--grad); color:#fff; font-family:"Russo One"; font-size:15px; letter-spacing:.03em; line-height:1; white-space:nowrap; text-align:center; box-shadow:0 6px 18px rgba(255,45,138,.35);
+}
+button.btn:hover, #run:hover, #apply:hover, #capBtn:hover, #updateNow:hover, #introStart:hover, #doneGo:hover, #tourNext:hover, #reportSend:hover, #newsYes:hover, #shareCopy:hover, #celeOk:hover, #pcRun:hover, #profSave:hover, #wnOk:hover, #commSend:hover { filter:brightness(1.1); }
+#run:disabled, #apply:disabled, #profSave:disabled, #commSend:disabled, #pcRun:disabled, #reportSend:disabled { opacity:.4; cursor:not-allowed; filter:none; box-shadow:none; }
+#run:focus-visible, #apply:focus-visible, #capBtn:focus-visible, #updateNow:focus-visible, #introStart:focus-visible, #doneGo:focus-visible, #tourNext:focus-visible, #reportSend:focus-visible, #newsYes:focus-visible, #shareCopy:focus-visible, #celeOk:focus-visible, #pcRun:focus-visible, #profSave:focus-visible, #wnOk:focus-visible, #commSend:focus-visible, button.ghost:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+#doneGo { min-height:48px; padding:0 30px; font-size:16px; }
+button.ghost { display:inline-flex; align-items:center; justify-content:center; min-height:40px; line-height:1; white-space:nowrap; }
+/* buttons that sit next to a primary button share its height */
+.pcbtns .ghost, .sharebtns .ghost, .profnew .ghost, .modal-foot .ghost, .updatebtns .ghost, .celeact .ghost { min-height:44px; }
+#celeOff { all:unset; cursor:pointer; margin-top:6px; font-size:11px; color:var(--muted); opacity:.6; text-decoration:underline; text-underline-offset:2px; min-height:0; display:inline; }
+#celeOff:hover, #celeOff:focus-visible { opacity:1; }
+.pcbtns, .sharebtns, .profnew { align-items:center; }
+
+input[type=checkbox] { appearance:none; -webkit-appearance:none; flex:none; width:18px; height:18px; margin:0; border:1.5px solid var(--dim, #7d6ca3); border-radius:5px; background:rgba(255,255,255,.04); cursor:pointer; position:relative; vertical-align:middle; }
+input[type=checkbox]:hover { border-color:var(--pink); }
+input[type=checkbox]:checked { background:var(--grad); border-color:transparent; }
+input[type=checkbox]:checked::after { content:""; position:absolute; left:5px; top:1.5px; width:4px; height:9px; border:solid #fff; border-width:0 2.2px 2.2px 0; transform:rotate(45deg); }
+input[type=checkbox]:disabled { opacity:.45; cursor:not-allowed; }
+input[type=checkbox]:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+
+#prefsCard .field { margin:0; }
+.prefhz { height:46px; display:flex; align-items:center; padding:0; }
+#prefsCard .checkrow { margin-top:16px; } #prefsCard p { margin-top:14px; }
+.profnew input, #protectFilter { height:46px; box-sizing:border-box; padding:0 14px; }
+#protectFilter { margin:6px 0 14px; }
+/* dialogs never grow taller than the window: their body scrolls instead */
+.overlay .modal { max-height:calc(100vh - 32px); display:flex; flex-direction:column; } .overlay .modal .reportbody { overflow-y:auto; min-height:0; }

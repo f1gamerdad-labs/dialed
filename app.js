@@ -264,7 +264,7 @@
     if (a.delta && window.TunerBadges) window.TunerBadges.event('verdict', { verdict: a.verdict, gainPct: b.low1 > 0 ? (m.low1 - b.low1) / b.low1 * 100 : 0, spikesPerMin: m.spikesPerMin });
     var cb = $('commBtn');
     if (cb) cb.addEventListener('click', function () {
-      window.TunerCommunity.open({ simId: state.sim.id, mode: currentMode().id, appVersion: window.TunerHost && window.TunerHost.contentVersion, verdict: a.verdict, before: b, after: m, applied: prev.applied, hardware: window.TunerPc && window.TunerPc.hardware ? window.TunerPc.hardware() : null });
+      window.TunerCommunity.open({ simId: state.sim.id, simName: state.sim.name, mode: currentMode().id, appVersion: window.TunerHost && window.TunerHost.contentVersion, verdict: a.verdict, before: b, after: m, applied: prev.applied, hardware: window.TunerPc && window.TunerPc.hardware ? window.TunerPc.hardware() : null });
     });
     var sb = $('shareBtn');
     if (sb) sb.addEventListener('click', function () {
