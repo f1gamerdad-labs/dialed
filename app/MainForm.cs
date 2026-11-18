@@ -32,6 +32,7 @@ public sealed class MainForm : Form
         Paths.DataOverride = Arg("--data");
         Paths.Ensure();
         settings = Settings.Load();
+        SoundPack.UseVoice = settings.CueVoice;
         Paths.Log_($"start: Dialed host {UpdateService.HostVersion}, page {UpdateService.CurrentVersion()}, Windows {Environment.OSVersion.Version}");
         if (!string.IsNullOrWhiteSpace(settings.UpdateRepo)) UpdateService.RepoSlug = settings.UpdateRepo!;
         if (args.Contains("--selftest-update") && Paths.DataOverride != null && Arg("--update-test-url") is { } testUrl)
@@ -391,6 +392,7 @@ public sealed class MainForm : Form
                         updates = new { configured = UpdateService.Configured, auto = settings.AutoUpdateCheck, canRevert = UpdateService.CanRevert },
                         hotkey = HotkeyInfo(), hotkeyError = hotkeyStatus, iniDir = Paths.IRacingDocs,
                         ini = IniService.List(), lastIni = settings.LastIni, seconds = settings.CaptureSeconds, countdown = settings.Countdown,
+                        cueVoice = settings.CueVoice, voiceClips = SoundPack.ClipsExist(),
                         busy = Busy.Running(), sims = SimService.Describe(), running = SimService.RunningMap(), sim = currentSim.Id,
                     });
                     break;
@@ -429,6 +431,11 @@ public sealed class MainForm : Form
                     break;
                 case "setUpdateCheck":
                     settings.AutoUpdateCheck = r.GetProperty("enabled").GetBoolean(); settings.Save();
+                    break;
+                case "setCueVoice":
+                    settings.CueVoice = r.GetProperty("voice").GetBoolean(); settings.Save();
+                    SoundPack.UseVoice = settings.CueVoice; SoundPack.ForgetAll();
+                    Paths.Log_("countdown sound: " + (settings.CueVoice ? "voice" : "beeps"));
                     break;
                 case "setSim":
                     currentSim = SimService.ById(r.GetProperty("sim").GetString()) ?? SimService.IRacing;

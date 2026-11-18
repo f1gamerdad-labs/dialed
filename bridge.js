@@ -205,12 +205,16 @@
     send({ type: 'setHotkey', ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey, key: key });
   });
 
+  $('cueSelect').addEventListener('change', function () { send({ type: 'setCueVoice', voice: $('cueSelect').value === 'voice' }); });
+
   // ---------- messages from the app ----------
   wv.addEventListener('message', function (e) {
     var m = e.data;
     switch (m.type) {
       case 'hello':
         $('hotkeyBox').value = m.hotkey.text;
+        $('cueField').hidden = !m.voiceClips;               // the voice/beeps choice only makes sense when the recorded clips are installed
+        $('cueSelect').value = m.cueVoice === false ? 'beeps' : 'voice';
         window.TunerHost.hotkeyText = m.hotkey.text;
         $('sCap').textContent = 'Hotkey ' + m.hotkey.text;
         showBusy(m.busy);

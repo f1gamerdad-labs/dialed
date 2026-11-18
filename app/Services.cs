@@ -117,6 +117,8 @@ sealed class Settings
     public string? LastSim { get; set; }
     /// <summary>Look for page updates when the app opens (and every few hours). Contacts only the project's GitHub releases.</summary>
     public bool AutoUpdateCheck { get; set; } = true;
+    /// <summary>Spoken capture cues (the recorded voice) instead of plain beeps. Only matters when the voice clips are present.</summary>
+    public bool CueVoice { get; set; } = true;
     /// <summary>Optional "owner/repo" override, for testing a fork.</summary>
     public string? UpdateRepo { get; set; }
 
@@ -756,8 +758,12 @@ static class SoundPack
     public static string? FolderOverride { get; set; }
     public static string Folder => FolderOverride ?? Path.Combine(UpdateService.ActiveWeb(), "assets", "sounds");
 
-    public static string? Find(string name) { var p = Path.Combine(Folder, name + ".wav"); return File.Exists(p) ? p : null; }
+    /// <summary>False when the player chose plain beeps: every cue then reports "no clip" and the caller beeps instead.</summary>
+    public static bool UseVoice { get; set; } = true;
+    public static string? Find(string name) { if (!UseVoice) return null; var p = Path.Combine(Folder, name + ".wav"); return File.Exists(p) ? p : null; }
     public static bool Has(string name) => Find(name) != null;
+    /// <summary>Are the recorded clips there at all? (The page only offers the voice/beeps choice when they are.)</summary>
+    public static bool ClipsExist() => Names.Any(n => File.Exists(Path.Combine(Folder, n + ".wav")));
 
     /// <summary>Plays the clip and returns true, or returns false (and the caller beeps) when there is no usable clip.</summary>
     public static bool Play(string name)

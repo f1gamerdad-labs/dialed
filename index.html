@@ -93,11 +93,12 @@
           <div class="row">
             <div class="field" id="iniSelectField"><label for="iniSelect">iRacing graphics file</label><select id="iniSelect"></select></div>
             <div class="field"><label for="hotkeyBox">Capture hotkey</label><input id="hotkeyBox" readonly placeholder="Click, then press keys"></div>
+            <div class="field" id="cueField" hidden><label for="cueSelect">Countdown sound</label><select id="cueSelect"><option value="voice">F1GamerDad's voice</option><option value="beeps">Plain beeps</option></select></div>
             <div class="field"><button id="capBtn">Start capture</button></div>
           </div>
           <p class="status" id="capStatus"></p>
           <div class="reminder"><b>Open this app before you start the sim.</b> Windows asks for permission when the app opens, and that prompt can freeze a full-screen game. Once the app is open, you never see it again, and the hotkey works from inside the game.</div>
-    <p class="hint">Click Start capture, or press the hotkey while you are in <span id="capSimName">the sim</span>. You get a 10 second countdown with beeps, then 60 seconds are recorded, then two beeps. Drive (or watch a replay) with the same track, car and field each time.</p>
+    <p class="hint">Click Start capture, or press the hotkey while you are in <span id="capSimName">the sim</span>. You get a 10 second countdown (spoken or beeps, your choice), then 60 seconds are recorded, then a sound to say it is done. Drive (or watch a replay) with the same track, car and field each time.</p>
           <p style="margin:12px 0 0"><button class="ghost" id="openCaps">Open captures folder</button> <button class="ghost" id="openBackups">Open backups folder</button></p>
         </div>
 

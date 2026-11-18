@@ -10,6 +10,21 @@
   function discrete(name) { return /nvidia|geforce|rtx|gtx|quadro|radeon rx|radeon pro|\barc\b/i.test(name || '') && !/graphics\s*\d*$/i.test(name || ''); }
   function integrated(name) { return /intel.*(uhd|iris|hd graphics|graphics)|radeon\(tm\) graphics|radeon graphics/i.test(name || '') && !discrete(name); }
 
+  // The speed a kit is sold at is often written in its part number (F4-3600C16D, CMK32GX4M2D3600C18, KF436C17BB, "3600 Series" ...).
+  // Returns { mt, strong } or null. "strong" means a maker's pattern matched; the plain-number fallback is a weaker clue.
+  var PART_PATTERNS = [[/DDR[345][-_ ]?(\d{4,5})/i, 1], [/\bF[345]-(\d{4,5})/i, 1], [/[A-Z](\d{4,5})C\d{2}/, 1], [/KF[345](\d{2})C\d{2}/i, 100], [/BL\d+G(\d{2})C\d{2}/i, 100],
+    [/PV[A-Z]\d+G(\d{3})C\d/i, 10], [/(\d{4,5})\s*series/i, 1]];
+  var STD_SPEEDS = '2133|2400|2666|2933|3000|3200|3466|3600|3733|3800|4000|4133|4266|4400|4800|5200|5600|6000|6400|6800|7200|7600|8000';
+  function partSpeed(part) {
+    part = String(part || '');
+    for (var i = 0; i < PART_PATTERNS.length; i++) {
+      var m = PART_PATTERNS[i][0].exec(part);
+      if (m) { var mt = parseInt(m[1], 10) * PART_PATTERNS[i][1]; if (mt >= 1600 && mt <= 9000) return { mt: mt, strong: true }; }
+    }
+    var g = new RegExp('(?<!\\d)(' + STD_SPEEDS + ')(?!\\d)').exec(part);
+    return g ? { mt: parseInt(g[1], 10), strong: false } : null;
+  }
+
   // Windows' own screen numbers (DISPLAY3 ...) do not match the numbers in Settings, so screens are named by their model, and identical
   // screens are told apart by where they sit, left to right.
   function labelScreens(disp) {
@@ -36,11 +51,17 @@
       var speeds = ram.map(function (r) { return r.configured; });
       var running = Math.min.apply(null, speeds.filter(Boolean)), rated = Math.max.apply(null, ram.map(function (r) { return r.rated || 0; }));
       var total = ram.reduce(function (s, r) { return s + r.capGB; }, 0);
+      var named = null;
+      ram.forEach(function (r) { var p = partSpeed(r.part); if (p && (!named || p.mt > named.mt)) named = { mt: p.mt, strong: p.strong, part: r.part }; });
       var jedec = (ram[0].type === 26 && running && running <= 2666) || (ram[0].type === 34 && running && running <= 4800);
       if (slow.length) {
         add('ram-speed', 'fix', 'Your memory is running slower than it is rated for',
           'Your ' + type + ' is running at ' + running + ' MT/s, but the modules are rated for ' + rated + ' MT/s. This usually means XMP (Intel) or EXPO/DOCP (AMD) is switched off in the BIOS, so the memory runs at a slow default speed.',
           'Restart, open the BIOS, and turn on XMP, DOCP or EXPO (the name depends on your motherboard). Save and restart, then run this check again. If the PC will not start afterwards, reset the BIOS to defaults and try a lower profile.');
+      } else if (named && running && running < named.mt * 0.9) {
+        add('ram-speed', named.strong ? 'fix' : 'check', 'Your memory is running slower than its part number suggests',
+          'Your ' + type + ' is running at ' + running + ' MT/s, but the part number ("' + named.part + '") suggests a ' + named.mt + ' MT/s kit. This usually means XMP (Intel) or EXPO/DOCP (AMD) is switched off in the BIOS. This is worked out from the name on the sticks, so check the label to be sure.',
+          'Check the speed printed on the sticks or the box. If it matches ' + named.mt + ', restart, open the BIOS, and turn on XMP, DOCP or EXPO. Save and restart, then run this check again.');
       } else if (jedec) {
         add('ram-speed', 'check', 'Your memory is running at a basic default speed',
           'Your ' + type + ' is running at ' + running + ' MT/s. That is the standard default, and most gaming kits are rated higher. If your memory is sold as a faster kit (the speed is usually printed on the sticks or the box), XMP or EXPO is probably off.',
@@ -183,7 +204,7 @@
     return lines.join('\n');
   }
 
-  var api = { evaluate: evaluate, asText: asText, LABEL: LABEL };
+  var api = { evaluate: evaluate, asText: asText, partSpeed: partSpeed, LABEL: LABEL };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
   if (typeof document === 'undefined') return;
 
