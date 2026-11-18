@@ -5,6 +5,8 @@
   var KEY = 'dialed.whatsNewSeen';
   var TITLE = 'What\'s new in Dialed';
   var ITEMS = [
+    ['Share my result', 'After a round you can now send an anonymous before/after result. You see exactly what it contains first, and nothing is sent unless you press Send.'],
+    ['A proper installer', 'New downloads come as Dialed-Setup.exe, which adds Dialed to your Start menu and to Installed apps.'],
     ['PC check', 'Finds things outside the sim that cost frame rate: memory not at its rated speed, the wrong power plan, a screen below its top refresh rate, and more. It tells you what to fix.'],
     ['Frame times', 'Results now draws your capture over time and marks every stutter, with a plain-language reading of what is causing it.'],
     ['About your setup', 'Tell Dialed how your screen syncs, whether you stream, and which settings it must never touch.'],
