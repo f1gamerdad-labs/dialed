@@ -219,7 +219,7 @@
   // ---------- the screen ----------
   var $ = function (id) { return document.getElementById(id); };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  var last = [];
+  var last = [], lastFacts = null;
   function render(findings, raw) {
     last = findings;
     var counts = { fix: 0, check: 0 }; findings.forEach(function (x) { if (counts[x.level] !== undefined) counts[x.level]++; });
@@ -242,6 +242,7 @@
     if (fine.length) h += '<div class="pcgroup"><h3>All fine</h3><ul class="pclist pctick">' + fine.map(row).join('') + '</ul></div>';
     $('pcList').innerHTML = h;
     $('pcResults').hidden = false; $('pcCopy').hidden = false;
+    if (root.TunerBadges) root.TunerBadges.event('pc', { ready: !!findings.ready });
   }
   function run() {
     var btn = $('pcRun'), host = window.TunerHost;
@@ -250,7 +251,7 @@
     host.pcCheck().then(function (m) {
       btn.disabled = false; btn.textContent = 'Run PC check again';
       if (!m.ok) { $('pcSummary').textContent = 'The check could not run: ' + (m.message || 'unknown error') + '. Use Report a problem and the log will help.'; return; }
-      render(evaluate(m.facts), m.facts);
+      lastFacts = m.facts; render(evaluate(m.facts), m.facts);
     });
   }
   var b = $('pcRun'); if (b) b.addEventListener('click', run);
@@ -259,5 +260,14 @@
     var text = asText(last), done = function () { c.textContent = 'Copied'; setTimeout(function () { c.textContent = 'Copy as text'; }, 1500); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { c.textContent = 'Could not copy'; });
   });
-  root.TunerPc = { run: run, evaluate: evaluate };
+  // A short, anonymous description of the PC for "Share my result": model names and sizes only, and only once the PC check has been run.
+  function hardware() {
+    var f = lastFacts; if (!f) return null;
+    var ram = (f.ram || []).filter(function (r) { return r.capGB > 0; }), gpu = (f.gpus || []).filter(function (g) { return discrete(g.name); })[0] || (f.gpus || [])[0];
+    var prim = (f.displays || [])[0];
+    return { cpu: f.cpu ? f.cpu.name.replace(/\(R\)|\(TM\)|\s+@.*$/g, '').replace(/\s+/g, ' ').trim() : null, gpu: gpu ? gpu.name : null,
+      ram: ram.length ? ram.reduce(function (s, r) { return s + r.capGB; }, 0) + ' GB ' + (MEM_TYPE[ram[0].type] || '') + ' ' + Math.min.apply(null, ram.map(function (r) { return r.configured || 0; }).filter(Boolean)) + ' MT/s' : null,
+      screens: (f.displays || []).length || null, refreshHz: prim ? prim.hz : null };
+  }
+  root.TunerPc = { run: run, evaluate: evaluate, hardware: hardware };
 })(typeof self !== 'undefined' ? self : this);

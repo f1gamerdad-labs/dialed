@@ -15,5 +15,10 @@ window.APP_CONFIG = {
   // keyed by the setting's name in the sim's file (or "simId:key"), for example:  learn: { 'MaxCarsToDraw': 'https://www.youtube.com/watch?v=VIDEOID&t=95s' }
   learn: {},
 
+  // Optional: let players share an anonymous before/after result with you. Make a Google Form with ONE long-answer question, then paste its formResponse
+  // address and that question's entry id here. While resultsUrl is empty the Share my result button stays hidden.
+  resultsUrl: '',
+  resultsField: '',
+
   suggestionsUrl:'https://docs.google.com/forms/d/e/1FAIpQLSfWQH6XsDcVcv5LVPNrQJKNKbrWUwWSaYq1-rCQd3Aq7Z3zEA/viewform'
 };

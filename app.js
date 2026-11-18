@@ -257,9 +257,15 @@
           (v.status === 'applied' ? '<span class="good">' : '<span class="bad">') + STATUS_TEXT[v.status] + '</span></td></tr>';
       }).join('') + '</table></div>';
     if (a.delta && window.TunerShare) h += '<p style="margin:12px 0 0"><button class="ghost" id="shareBtn">Make a share image</button></p>';
+    if (a.delta && window.TunerCommunity && window.TunerCommunity.enabled()) h += '<p style="margin:8px 0 0"><button class="ghost" id="commBtn">Share my result (optional)</button></p>';
     if (a.reverts.length) h += '<p style="margin:12px 0 0"><b>' + a.reverts.length + ' revert suggestion' + (a.reverts.length > 1 ? 's are' : ' is') + ' in the list below.</b></p>';
     if (a.notes.length) h += '<ul class="notes" style="margin-top:12px">' + a.notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>';
     p.innerHTML = h; p.hidden = false;
+    if (a.delta && window.TunerBadges) window.TunerBadges.event('verdict', { verdict: a.verdict, gainPct: b.low1 > 0 ? (m.low1 - b.low1) / b.low1 * 100 : 0, spikesPerMin: m.spikesPerMin });
+    var cb = $('commBtn');
+    if (cb) cb.addEventListener('click', function () {
+      window.TunerCommunity.open({ simId: state.sim.id, mode: currentMode().id, appVersion: window.TunerHost && window.TunerHost.contentVersion, verdict: a.verdict, before: b, after: m, applied: prev.applied, hardware: window.TunerPc && window.TunerPc.hardware ? window.TunerPc.hardware() : null });
+    });
     var sb = $('shareBtn');
     if (sb) sb.addEventListener('click', function () {
       window.TunerShare.open({ simName: state.sim.name, verdict: a.verdict, before: { low1: b.low1, avgFps: b.avgFps, spikesPerMin: b.spikesPerMin }, after: { low1: m.low1, avgFps: m.avgFps, spikesPerMin: m.spikesPerMin }, applied: prev.applied });
@@ -466,6 +472,7 @@
       };
       hist.push(round);
       Store.save(hist);
+      if (window.TunerBadges) window.TunerBadges.event('round');
       var no = roundNo(hist, round);
       clearCaptures(); // the next round needs fresh captures
       // The results on screen describe the settings from before this round, so clear them: no stale numbers, and Apply cannot run twice.

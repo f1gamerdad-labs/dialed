@@ -509,6 +509,37 @@ public sealed class MainForm : Form
                     Post(new { type = "hotkey", ok = err == "", error = err, hotkey = HotkeyInfo() });
                     break;
                 }
+                case "postForm": // "Share my result": a Google Form response, only to docs.google.com/forms, only with what the player saw in the preview
+                {
+                    var formUrl = r.GetProperty("url").GetString() ?? "";
+                    var posted = false;
+                    if (System.Text.RegularExpressions.Regex.IsMatch(formUrl, @"^https://docs\.google\.com/forms/d/e/[A-Za-z0-9_-]+/formResponse$"))
+                    {
+                        var fields = new List<KeyValuePair<string, string>>();
+                        foreach (var p in r.GetProperty("fields").EnumerateObject())
+                            if (System.Text.RegularExpressions.Regex.IsMatch(p.Name, @"^entry\.\d+$")) fields.Add(new(p.Name, (p.Value.GetString() ?? "").Length > 6000 ? (p.Value.GetString() ?? "")[..6000] : p.Value.GetString() ?? ""));
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+                                using var resp = await http.PostAsync(formUrl, new FormUrlEncodedContent(fields));
+                                var code = (int)resp.StatusCode; Paths.Log_("shared result posted: HTTP " + code);
+                                Post(new { type = "formPosted", ok = code >= 200 && code < 400 });
+                            }
+                            catch (Exception ex) { Paths.Log_("shared result failed: " + ex.Message); Post(new { type = "formPosted", ok = false }); }
+                        });
+                        posted = true;
+                    }
+                    if (!posted) Post(new { type = "formPosted", ok = false });
+                    break;
+                }
+                case "createShortcuts":
+                {
+                    var (desktop, startMenu, error) = Shortcuts.Create();
+                    Post(new { type = "shortcuts", ok = desktop || startMenu, desktop, startMenu, message = error });
+                    break;
+                }
                 case "saveImage": // the share card: a PNG the page drew, saved into Documents\Dialed\Share cards
                 {
                     try

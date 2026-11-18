@@ -71,7 +71,7 @@
   var $ = function (id) { return document.getElementById(id); }, current = null;
   function dataUrl() { return $('shareCanvas').toDataURL('image/png'); }
   function open(d) {
-    current = d; $('shareStatus').textContent = ''; $('share').hidden = false;
+    current = d; $('shareStatus').textContent = ''; $('share').hidden = false; if (root.TunerBadges) root.TunerBadges.event('share');
     (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { return draw($('shareCanvas'), d); });
   }
   function close() { $('share').hidden = true; }

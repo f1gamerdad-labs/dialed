@@ -398,3 +398,15 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 .proflist { margin-top:12px; display:grid; gap:8px; } .profrow { display:flex; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:9px 12px; } .profrow > div { flex:1; min-width:0; } .profrow small { display:block; color:var(--muted); }
 
 .tssteps { margin:0; padding-left:22px; display:grid; gap:8px; line-height:1.5; max-width:78ch; } .tssteps li::marker { color:var(--pink); font-weight:900; }
+
+/* ---- badges (badges.js) ---- */
+.badgegrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; margin-top:6px; }
+.badge { display:flex; gap:12px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:10px 12px; opacity:.5; }
+.badge.on { opacity:1; border-color:rgba(255,210,63,.55); background:rgba(255,210,63,.07); }
+.badge .bstar { font-size:24px; color:var(--muted); width:28px; text-align:center; } .badge.on .bstar { color:var(--yellow); }
+.badge small { display:block; color:var(--muted); font-size:12px; line-height:1.35; }
+.badgetoast { position:fixed; right:18px; bottom:18px; z-index:120; display:flex; gap:12px; align-items:center; background:linear-gradient(180deg,#2a1552,#1a0f36); border:1px solid rgba(255,210,63,.6); border-radius:14px; padding:12px 18px; box-shadow:0 10px 40px rgba(0,0,0,.5); animation:bIn .4s cubic-bezier(.2,1.4,.4,1) both; }
+.badgetoast.out { opacity:0; transform:translateY(10px); transition:opacity .5s, transform .5s; }
+.badgetoast .bt-star { font-size:26px; color:var(--yellow); } .badgetoast small { display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+@keyframes bIn { from { opacity:0; transform:translateY(20px) scale(.9); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce) { .badgetoast { animation:none; } }

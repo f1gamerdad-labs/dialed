@@ -205,6 +205,8 @@
     send({ type: 'setHotkey', ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey, key: key });
   });
 
+  $('shortcutBtn').hidden = false;                                                        // only the Windows app can make shortcuts
+  $('shortcutBtn').addEventListener('click', function () { $('shortcutMsg').textContent = 'Adding...'; send({ type: 'createShortcuts' }); });
   $('cueSelect').addEventListener('change', function () { send({ type: 'setCueVoice', voice: $('cueSelect').value === 'voice' }); });
 
   // ---------- messages from the app ----------
@@ -216,6 +218,7 @@
         $('cueField').hidden = !m.voiceClips;               // the voice/beeps choice only makes sense when the recorded clips are installed
         $('cueSelect').value = m.cueVoice === false ? 'beeps' : 'voice';
         window.TunerHost.hotkeyText = m.hotkey.text;
+        window.TunerHost.contentVersion = m.appVersion && m.appVersion.content;
         window.TunerHost.screenHz = m.screenHz || 0;          // the refresh rate of the main screen, used as the default target
         if (window.TunerPrefs) window.TunerPrefs.refresh();
         $('sCap').textContent = 'Hotkey ' + m.hotkey.text;
@@ -252,6 +255,13 @@
           '. Start the game once so it creates its settings, or drop the file(s) below.', 'warn');
         break;
       }
+      case 'formPosted':
+        if (window.TunerCommunity) window.TunerCommunity.posted(m);
+        break;
+      case 'shortcuts':
+        $('shortcutMsg').textContent = m.ok ? 'Added to ' + [m.startMenu ? 'the Start menu' : '', m.desktop ? 'your desktop' : ''].filter(Boolean).join(' and ') + '.' : 'Could not add the shortcuts' + (m.message ? ': ' + m.message : '') + '.';
+        $('shortcutMsg').className = 'status ' + (m.ok ? 'good' : 'bad');
+        break;
       case 'imageSaved':
         if (window.TunerShare) window.TunerShare.saved(m);
         break;
@@ -353,7 +363,7 @@
           (m.busy && m.busy.length ? ' Note: ' + m.busy.join(', ') + ' was running, which may have skewed this capture.' : ''), m.busy && m.busy.length ? 'warn' : 'good');
       } catch (err) { chain = null; status(err.message, 'bad'); }
       if (more) { chain.done++; setTimeout(function () { if (chain && !capturing) send({ type: 'startCapture' }); }, 3000); }
-      else chain = null;
+      else { if (chain && chain.total >= 3 && window.TunerBadges) window.TunerBadges.event('threeRuns'); chain = null; }
     }
   }
 

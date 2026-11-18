@@ -61,6 +61,7 @@
     var values = snapshot(st.ini, st.sim.table.settings, section);
     if (!Object.keys(values).length) { msg('No settings were found in the file you loaded.', 'bad'); return; }
     save(add(load(), st.sim.id, mode, name, values)); $('profName').value = '';
+    if (root.TunerBadges) root.TunerBadges.event('profile');
     msg('Saved "' + name + '" (' + Object.keys(values).length + ' settings).', 'good'); render();
   }
 
