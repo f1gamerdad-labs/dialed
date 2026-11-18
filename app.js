@@ -119,7 +119,8 @@
   var STATUS = {}; // simId -> { found: bool } once the Windows app has looked
 
   function renderPicker() {
-    $('simPicker').innerHTML = sims.ORDER.map(function (id) {
+    // Sims that are switched on sit under the app name; the ones still to come are listed below the steps.
+    function tile(id) {
       var s = sims.SIMS[id], on = s === state.sim, st = STATUS[id] || {};
       var soon = !!s.comingSoon, notInstalled = !soon && st.installed === false, missing = !soon && !notInstalled && st.found === false;
       var tip = s.name + (soon ? ' - coming soon. ' + s.reason : notInstalled ? ' (not installed on this PC)' : missing ? ' (settings file not found on this PC)' : '');
@@ -127,7 +128,11 @@
       return '<button class="simbtn' + (on ? ' on' : '') + (missing || notInstalled ? ' missing' : '') + (soon ? ' soon' : '') + '" data-sim="' + id +
         '" aria-pressed="' + on + '"' + (soon ? ' disabled aria-disabled="true"' : '') + ' title="' + esc(tip) + '">' + logo +
         '<span class="nm">' + esc(s.short) + '</span>' + (soon ? '<span class="tagsoon">Coming soon</span>' : notInstalled ? '<span class="tagsoon">Not installed</span>' : '') + '</button>';
-    }).join('');
+    }
+    var live = sims.ORDER.filter(function (id) { return !sims.SIMS[id].comingSoon; }), soon = sims.ORDER.filter(function (id) { return sims.SIMS[id].comingSoon; });
+    $('simPicker').innerHTML = live.map(tile).join('');
+    $('simSoon').innerHTML = soon.map(tile).join('');
+    $('soonBlock').hidden = soon.length === 0;
   }
   $('simPicker').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-sim]'); if (b) setSim(b.dataset.sim);
