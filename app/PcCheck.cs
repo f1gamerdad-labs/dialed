@@ -76,6 +76,9 @@ static class PcCheck
         return f;
     }
 
+    /// <summary>Refresh rate of the main (primary) screen in Hz, or 0 if Windows does not say. Used as Dialed's default frame rate target.</summary>
+    public static int PrimaryRefresh() { try { return Displays.PrimaryHz(); } catch { return 0; } }
+
     // ---------- helpers ----------
     static IEnumerable<ManagementObject> Wmi(string query, string scope = @"root\cimv2")
     {
@@ -182,6 +185,18 @@ static class PcCheck
             }
             catch { /* names are a nicety; the check still works without them */ }
             return map;
+        }
+
+        public static int PrimaryHz()
+        {
+            for (uint i = 0; ; i++)
+            {
+                var d = new DISPLAY_DEVICE { cb = (uint)Marshal.SizeOf<DISPLAY_DEVICE>() };
+                if (!EnumDisplayDevices(null, i, ref d, 0)) return 0;
+                if ((d.StateFlags & 1) == 0 || (d.StateFlags & 4) == 0) continue;   // attached, and the primary one
+                var cur = new DEVMODE { dmSize = (ushort)Marshal.SizeOf<DEVMODE>() };
+                return EnumDisplaySettings(d.DeviceName, -1, ref cur) ? (int)cur.dmDisplayFrequency : 0;
+            }
         }
 
         public static List<object> Scan()

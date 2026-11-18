@@ -148,7 +148,8 @@
   function diagnose(m, ini, opts) {
     var info = (opts.capInfo || iracingCapInfo)(ini), cap = info.cap, refresh = info.refresh;
 
-    var target = opts.target > 0 ? opts.target : (isFinite(cap) ? cap : (refresh > 0 ? refresh : 60));
+    // typed target, else the frame cap, else the refresh rate (from the file, or from the player's screen when the file does not say), else 60
+    var target = opts.target > 0 ? opts.target : (isFinite(cap) ? cap : (refresh > 0 ? refresh : (opts.screenHz > 0 ? opts.screenHz : 60)));
     var goal = GOALS[opts.goal] || GOALS.balanced;
     var floorFps = target * goal.floor;
 
@@ -217,6 +218,8 @@
     var gopt = (ini && ini['Graphics Options']) || {};
     var changes = [], notes = [], used = {};
     var mem = readHistory((ctx && ctx.history) || []);
+    // The player's own preferences: settings never to change, settings never to turn up, streaming, and the sync technology in use.
+    var prefs = (ctx && ctx.prefs) || {}, never = prefs.never || {}, noUp = prefs.noUp || {};
     var power = d.goal === GOALS.eyecandy ? 2 : 1; // eye candy protects high-impact visuals harder
 
     // How far can we trust the diagnosis this round?
@@ -253,6 +256,7 @@
       return table.settings.map(function (s) {
         var o = optOf(s);
         if (o[s.key] === undefined || !active(s, o) || mem.reverted[s.key]) return null;
+        if (never[s.key] || (dir > 0 && noUp[s.key])) return null;   // the player said to leave this alone (or never to turn it up)
         var i = levelIndex(s, parseFloat(o[s.key]));
         if (i < 0) return null;
         // exact: the table's levels are only partly known, so a value the table does not list is left alone rather than guessed at
@@ -291,7 +295,8 @@
     // The usual margin is 10% above the floor. When the game is already holding the frame cap and the graphics card has clear spare
     // room, raising graphics-card-heavy settings does little to the 1% lows, so a 5% margin is enough.
     var raiseMargin = d.limiter === 'cap' && d.gpuHeadroom ? -0.05 : -0.10;
-    if (d.deficit <= raiseMargin && d.goal.raise > 0 && d.vram !== 'pressure') {
+    // Someone who streams or records needs the headroom for the encoder, so nothing is turned up for them.
+    if (d.deficit <= raiseMargin && d.goal.raise > 0 && d.vram !== 'pressure' && !prefs.streaming) {
       var spare = d.limiter === 'cap' ? (d.gpuHeadroom ? 'gpu' : null) : d.limiter === 'gpu' ? 'cpu' : d.limiter === 'cpu' ? 'gpu' : null;
       if (spare) {
         var other = spare === 'gpu' ? 'cpu' : 'gpu';
@@ -325,7 +330,16 @@
     if (d.stutter !== 'ok' && m.spikeSide === 'gpu')
       notes.push('Most stutters start on the graphics card side. Graphics memory pressure and shader or texture loading are the usual causes.');
     if (!isFinite(d.cap))
-      notes.push('No frame rate limit is set. Capping a few FPS below your refresh rate usually gives steadier frame times.');
+      notes.push(prefs.sync === 'vrr' && prefs.screenHz > 0
+        ? 'You use G-Sync or FreeSync and no frame rate limit is set. Capping about 3 FPS below your refresh rate (' + Math.round(prefs.screenHz - 3) + ' FPS) keeps it working smoothly.'
+        : 'No frame rate limit is set. Capping a few FPS below your refresh rate usually gives steadier frame times.');
+    if (prefs.sync === 'vsync')
+      notes.push('V-sync is on: when your frame rate dips below your refresh rate' + (prefs.screenHz > 0 ? ' (' + Math.round(prefs.screenHz) + ' Hz)' : '') + ', V-sync can drop you to half of it, which feels like a big stutter. That is why Dialed treats your refresh rate as the target and watches the 1% lows closely.');
+    if (prefs.streaming)
+      notes.push('You stream or record while racing, so Dialed does not suggest turning anything up. Capture with your streaming or recording software running while you race, so the numbers include its cost.');
+    var guarded = table.settings.filter(function (s) { return (never[s.key] || noUp[s.key]) && optOf(s)[s.key] !== undefined; }).map(function (s) { return s.name; });
+    if (guarded.length)
+      notes.push('Not touching the settings you asked to protect: ' + guarded.join(', ') + '.');
     if (d.limiter === 'unknown')
       notes.push('This capture has no graphics card timing columns, so the tool cannot tell which part is the limit. Capture with PresentMon 2.x for a full diagnosis.');
 

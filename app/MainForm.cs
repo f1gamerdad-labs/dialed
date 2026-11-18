@@ -392,7 +392,7 @@ public sealed class MainForm : Form
                         updates = new { configured = UpdateService.Configured, auto = settings.AutoUpdateCheck, canRevert = UpdateService.CanRevert },
                         hotkey = HotkeyInfo(), hotkeyError = hotkeyStatus, iniDir = Paths.IRacingDocs,
                         ini = IniService.List(), lastIni = settings.LastIni, seconds = settings.CaptureSeconds, countdown = settings.Countdown,
-                        cueVoice = settings.CueVoice, voiceClips = SoundPack.ClipsExist(),
+                        cueVoice = settings.CueVoice, voiceClips = SoundPack.ClipsExist(), screenHz = PcCheck.PrimaryRefresh(),
                         busy = Busy.Running(), sims = SimService.Describe(), running = SimService.RunningMap(), sim = currentSim.Id,
                     });
                     break;

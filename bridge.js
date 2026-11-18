@@ -216,6 +216,8 @@
         $('cueField').hidden = !m.voiceClips;               // the voice/beeps choice only makes sense when the recorded clips are installed
         $('cueSelect').value = m.cueVoice === false ? 'beeps' : 'voice';
         window.TunerHost.hotkeyText = m.hotkey.text;
+        window.TunerHost.screenHz = m.screenHz || 0;          // the refresh rate of the main screen, used as the default target
+        if (window.TunerPrefs) window.TunerPrefs.refresh();
         $('sCap').textContent = 'Hotkey ' + m.hotkey.text;
         showBusy(m.busy);
         renderUpdates(m);

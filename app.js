@@ -276,7 +276,8 @@
     var goal = document.querySelector('input[name=goal]:checked').value;
     var names = state.caps.map(function (c) { return c.name; });
     var m = core.summarise(state.caps);
-    var d = core.diagnose(m, state.ini, { goal: goal, target: parseFloat($('target').value), capInfo: sim.capInfo || undefined });
+    var prefs = window.TunerPrefs ? window.TunerPrefs.forSim(sim.id) : {};   // the player's own choices: protected settings, streaming, sync, screen refresh rate
+    var d = core.diagnose(m, state.ini, { goal: goal, target: parseFloat($('target').value), capInfo: sim.capInfo || undefined, screenHz: prefs.screenHz });
     var hist = Store.load(), pi = pendingIndex(hist, sim.id, section), prev = pi >= 0 ? hist[pi] : null;
     if (prev) { prev.section = sectionOf(prev); prev.no = roundNo(hist, prev); }
     var a = prev ? core.assessRound(prev, m, d, state.ini, sim.table, names) : null;
@@ -287,7 +288,7 @@
       var key = prev.at;
       ctxHistory = ctxHistory.map(function (h) { return h.at === key ? Object.assign({}, h, { result: { verdict: a.verdict } }) : h; });
     }
-    var r = core.recommend(m, d, state.ini, sim.table, section, { history: ctxHistory });
+    var r = core.recommend(m, d, state.ini, sim.table, section, { history: ctxHistory, prefs: prefs });
     state.result = { m: m, d: d, r: r, goal: goal, names: names, section: section, sim: sim.id };
     state.assess = a;
 
