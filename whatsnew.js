@@ -3,6 +3,8 @@
 (function (root) {
   'use strict';
   var KEY = 'dialed.whatsNewSeen';
+  // The release these notes describe. Change it (and ITEMS) only when there is something new to tell people; small fixes in between do not reopen the window.
+  var RELEASE = '0.3.11';
   var TITLE = 'What\'s new in Dialed';
   var ITEMS = [
     ['Share my result', 'After a round you can now send an anonymous before/after result. You see exactly what it contains first, and nothing is sent unless you press Send.'],
@@ -45,7 +47,7 @@
   if ($('whatsnew')) {
     $('wnOk').addEventListener('click', close);
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('whatsnew').hidden) close(); });
-    fetch('version.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (v) { version = v && v.version; setTimeout(function () { attempt(0); }, 3200); }).catch(function () { /* no version, no window */ });
+    version = RELEASE; setTimeout(function () { attempt(0); }, 3200);
     var link = document.querySelector('[data-whatsnew]'); if (link) { link.hidden = false; link.addEventListener('click', function () { if (version) open(); }); }
   }
   root.TunerWhatsNew = { open: open };
