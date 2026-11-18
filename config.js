@@ -13,8 +13,8 @@ window.APP_CONFIG = {
   tipUrl: 'https://ko-fi.com/f1gamerdad',
   // Optional: let players share an anonymous before/after result with you. Make a Google Form with ONE long-answer question, then paste its formResponse
   // address and that question's entry id here. While resultsUrl is empty the Share my result button stays hidden.
-  resultsUrl: '',
-  resultsField: '',
+  resultsUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSfWrwmZ3n3KqlGoRuGACsLJFmrn2-wdOaeTTr9InDtzMNQjmQ/formResponse',
+  resultsField: 'entry.32374642',
 
   suggestionsUrl:'https://docs.google.com/forms/d/e/1FAIpQLSfWQH6XsDcVcv5LVPNrQJKNKbrWUwWSaYq1-rCQd3Aq7Z3zEA/viewform'
 };
