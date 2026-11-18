@@ -17,3 +17,6 @@ assets/intro.mp4
 # editor / OS
 .vs/
 Thumbs.db
+
+# the website hosts the welcome video
+!docs/assets/intro.mp4
