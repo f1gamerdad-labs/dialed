@@ -18,6 +18,7 @@ param(
   [string[]]$Notes = @(),
   [string]$Repo = '',
   [string]$MinHost = '0.3.0',   # the oldest Dialed.exe this page works with (0.2.0 added Report a problem and the log). Raise it only when the page needs a newer program
+  [string]$Installer = '',     # optional: path to Dialed-Setup.exe (tools\make-installer.ps1). It is attached to the release too, so the website can link to latest/download/Dialed-Setup.exe
   [string]$Package = '',        # path to Dialed-win-x64.zip. ALWAYS pass it: the website's Download button points at "latest", so every release must carry the full package
   [switch]$DryRun
 )
@@ -75,5 +76,11 @@ if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { throw "The GitHub CLI
 $notesFile = Join-Path $out 'notes.md'; [IO.File]::WriteAllText($notesFile, ("## Dialed $Version`n`n" + (($Notes | ForEach-Object { "- $_" }) -join "`n") + "`n"), $utf8)
 if (-not $Package) { throw "Pass -Package <path to Dialed-win-x64.zip>. Without it the website's Download link breaks, because 'latest' would have no package." }
 if ((Split-Path $Package -Leaf) -ne 'Dialed-win-x64.zip') { throw "The package must be named Dialed-win-x64.zip (the website links to that exact name)." }
-gh release create "v$Version" $zip $manifestPath $Package --repo $Repo --title "Dialed $Version" --notes-file $notesFile
+$assets = @($zip, $manifestPath, $Package)
+if ($Installer) {
+  if ((Split-Path $Installer -Leaf) -ne 'Dialed-Setup.exe') { throw "The installer must be named Dialed-Setup.exe (the website links to that exact name)." }
+  if (-not (Test-Path $Installer)) { throw "Cannot find $Installer" }
+  $assets += $Installer
+}
+gh release create "v$Version" @assets --repo $Repo --title "Dialed $Version" --notes-file $notesFile
 "`nPublished. Dialed will offer this update to everyone on an older version."
