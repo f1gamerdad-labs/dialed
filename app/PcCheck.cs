@@ -151,19 +151,32 @@ static class PcCheck
         [DllImport("user32.dll", CharSet = CharSet.Ansi)] static extern bool EnumDisplayDevices(string? dev, uint n, ref DISPLAY_DEVICE d, uint flags);
         [DllImport("user32.dll", CharSet = CharSet.Ansi)] static extern bool EnumDisplaySettings(string dev, int mode, ref DEVMODE m);
 
+        static readonly Dictionary<string, string> MakerNames = new()
+        {
+            ["AOC"] = "AOC", ["GSM"] = "LG", ["SAM"] = "Samsung", ["DEL"] = "Dell", ["ACI"] = "ASUS", ["AUS"] = "ASUS", ["BNQ"] = "BenQ", ["MSI"] = "MSI", ["GBT"] = "Gigabyte",
+            ["LEN"] = "Lenovo", ["HWP"] = "HP", ["PHL"] = "Philips", ["ACR"] = "Acer", ["VSC"] = "ViewSonic", ["NEC"] = "NEC", ["IVM"] = "iiyama", ["EIZ"] = "EIZO", ["XMI"] = "Xiaomi"
+        };
+
         /// <summary>Real monitor model names, keyed by the part of the hardware id Windows shares between the two lists, e.g. "AOCB305\5&amp;2670e056&amp;0&amp;UID4352".</summary>
         static Dictionary<string, string> ModelNames()
         {
             var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             try
             {
-                using var s = new ManagementObjectSearcher(@"root\wmi", "SELECT InstanceName, UserFriendlyName FROM WmiMonitorID");
+                using var s = new ManagementObjectSearcher(@"root\wmi", "SELECT InstanceName, UserFriendlyName, ManufacturerName FROM WmiMonitorID");
                 foreach (ManagementObject o in s.Get())
                 {
                     var inst = o["InstanceName"]?.ToString() ?? ""; if (inst.StartsWith("DISPLAY\\", StringComparison.OrdinalIgnoreCase)) inst = inst[8..];
                     if (inst.EndsWith("_0")) inst = inst[..^2];
-                    var chars = o["UserFriendlyName"] as ushort[] ?? (o["UserFriendlyName"] as object[])?.Select(Convert.ToUInt16).ToArray() ?? Array.Empty<ushort>();
-                    var name = new string(chars.Where(c => c != 0).Select(c => (char)c).ToArray()).Trim();
+                    string Text(string prop) { var c = o[prop] as ushort[] ?? (o[prop] as object[])?.Select(Convert.ToUInt16).ToArray() ?? Array.Empty<ushort>(); return new string(c.Where(x => x != 0).Select(x => (char)x).ToArray()).Trim(); }
+                    var name = Text("UserFriendlyName"); var maker = Text("ManufacturerName");
+                    // Windows often gives only the model ("Q32G3WG3R3"), so put the maker in front, spelling out the common three-letter codes.
+                    if (name.Length > 0 && maker.Length > 0)
+                    {
+                        var brand = MakerNames.TryGetValue(maker.ToUpperInvariant(), out var b) ? b : maker;
+                        if (name.StartsWith(maker, StringComparison.OrdinalIgnoreCase)) name = name[maker.Length..].TrimStart(' ', '-');
+                        if (!name.StartsWith(brand, StringComparison.OrdinalIgnoreCase)) name = brand + " " + name;
+                    }
                     if (inst.Length > 0 && name.Length > 0) map[inst] = name;
                 }
             }

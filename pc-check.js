@@ -219,10 +219,19 @@
       ? (counts.fix ? plural(counts.fix, 'thing', 'things') + ' to fix' : '') + (counts.fix && counts.check ? ' and ' : '') + (counts.check ? plural(counts.check, 'thing', 'things') + ' worth a look' : '') + '.'
       : 'Nothing to fix. Your PC looks set up well.';
     $('pcSystem').textContent = findings.system ? 'Your PC: ' + findings.system : '';
-    $('pcList').innerHTML = findings.map(function (x) {
-      return '<div class="pcf ' + x.level + '"><span class="pct">' + LABEL[x.level] + '</span><div><b>' + esc(x.title) + '</b>' + (x.text ? '<p>' + esc(x.text) + '</p>' : '') +
-        (x.fix && x.level !== 'ok' ? '<p class="pcfix"><b>What to do:</b> ' + esc(x.fix) + '</p>' : '') + '</div></div>';
-    }).join('');
+    // Three groups: things to act on (cards), things to know (compact rows), and everything that is fine (one line each).
+    var attn = findings.filter(function (x) { return x.level === 'fix' || x.level === 'check'; });
+    var know = findings.filter(function (x) { return x.level === 'info'; });
+    var fine = findings.filter(function (x) { return x.level === 'ok'; });
+    function row(x) { return '<li><b>' + esc(x.title) + '</b>' + (x.text ? '<span>' + esc(x.text) + '</span>' : '') + '</li>'; }
+    var h = '';
+    if (attn.length) h += '<div class="pcgroup"><h3>' + (attn.some(function (x) { return x.level === 'fix'; }) ? 'Needs attention' : 'Worth a look') + '</h3>' + attn.map(function (x) {
+      return '<div class="pcard pc-' + x.level + '"><div class="pchead"><span class="pcbadge">' + LABEL[x.level] + '</span><b>' + esc(x.title) + '</b></div>' +
+        (x.text ? '<p>' + esc(x.text) + '</p>' : '') + (x.fix ? '<p class="pcwhat"><b>What to do</b>' + esc(x.fix) + '</p>' : '') + '</div>';
+    }).join('') + '</div>';
+    if (know.length) h += '<div class="pcgroup"><h3>Good to know</h3><ul class="pclist">' + know.map(row).join('') + '</ul></div>';
+    if (fine.length) h += '<div class="pcgroup"><h3>All fine</h3><ul class="pclist pctick">' + fine.map(row).join('') + '</ul></div>';
+    $('pcList').innerHTML = h;
     $('pcResults').hidden = false; $('pcCopy').hidden = false;
   }
   function run() {
