@@ -1,7 +1,7 @@
 /* Share my result (optional). After a round, a player can send an anonymous summary of what they changed and what it did, so Dialed can one day
    say "PCs like yours gained about 12% from this". Nothing is sent without the player seeing the exact content and pressing Send.
    It goes to a Google Form set in APP_CONFIG.resultsUrl and APP_CONFIG.resultsField. With no URL configured, the button never appears.
-   Never included: names, file paths, capture file names, email, IP-based details of any kind (the form does not collect them). */
+   Never included by Dialed: names, file paths, capture file names or email. Only what the preview shows is sent. */
 (function (root) {
   'use strict';
 
