@@ -319,7 +319,7 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
   .grid8 span.pick { border-color:var(--pink); color:#fff; box-shadow:0 0 0 2px rgba(255,45,138,.5); }
 }
 /* primary buttons that are styled by name (tour, problem report, update-email offer) */
-#tourNext, #reportSend, #newsYes { all:unset; box-sizing:border-box; cursor:pointer; background:var(--grad); color:#fff; font-family:"Russo One"; font-size:15px; padding:11px 24px; border-radius:12px; white-space:nowrap; box-shadow:0 6px 18px rgba(255,45,138,.35); }
+#tourNext, #reportSend, #newsYes, #shareCopy { all:unset; box-sizing:border-box; cursor:pointer; background:var(--grad); color:#fff; font-family:"Russo One"; font-size:15px; padding:11px 24px; border-radius:12px; white-space:nowrap; box-shadow:0 6px 18px rgba(255,45,138,.35); }
 #tourNext:hover, #reportSend:hover, #newsYes:hover { filter:brightness(1.1); }
 #tourNext:focus-visible, #reportSend:focus-visible, #newsYes:focus-visible { outline:2px solid #fff; outline-offset:3px; }
 #reportSend:disabled { opacity:.55; cursor:default; filter:none; }
@@ -383,3 +383,12 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 .pcsum.good { color:#4fdca0; } .pcsum.warn { color:var(--yellow); } .pcsum.bad { color:#ff6b8a; }
 
 .learnrow { margin-top:6px; } a.learn { font-size:12px; font-weight:700; color:var(--pink); text-decoration:none; } a.learn:hover { text-decoration:underline; }
+
+/* ---- frame time chart (timeline-view.js) ---- */
+.tlsvg { width:100%; height:auto; display:block; }
+.tlgrid { stroke:var(--line); stroke-width:1; } .tltxt { fill:var(--muted); font-size:11px; font-family:Lato,sans-serif; }
+.tlbar { fill:#9b4dff; opacity:.85; } .tlbar.hot { fill:#ff4fa3; }
+.tlspike { stroke:var(--yellow); stroke-width:1; stroke-dasharray:4 4; opacity:.8; }
+.tldot { stroke:#fff; stroke-width:1; } .tldot.gpu { fill:#ff4fa3; } .tldot.cpu { fill:#ffd23f; } .tldot.unknown { fill:#b6a6d9; }
+.tlnotes { margin:12px 0 4px; padding-left:20px; display:grid; gap:4px; line-height:1.45; }
+.sharebtns { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px; }

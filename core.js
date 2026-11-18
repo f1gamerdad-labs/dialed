@@ -62,6 +62,41 @@
   }
   function mean(a) { var f = a.filter(isFinite); return f.length ? f.reduce(function (x, y) { return x + y; }, 0) / f.length : NaN; }
 
+  // A picture of one capture over time: the slowest frame in each slice of the run, and every stutter with the side (processor or graphics card)
+  // that held it up. Stutters use the same rule as summarise(), so the graph and the numbers always agree.
+  function timeline(cap, buckets) {
+    buckets = buckets || 240;
+    var ft = cap.ft || [], n = ft.length, total = ft.reduce(function (x, y) { return x + y; }, 0);
+    if (!n || !(total > 0)) return { seconds: 0, points: [], spikes: [], medianMs: NaN, spikeAtMs: NaN };
+    var med = pct(sorted(ft), 0.5), medCpu = pct(sorted(cap.cpuBusy || []), 0.5), medGpu = pct(sorted(cap.gpuBusy || []), 0.5);
+    var spikeAt = Math.max(med * 2, med + 4), width = total / buckets, t = 0, points = [], spikes = [], b = -1, i;
+    for (i = 0; i < n; i++) {
+      var idx = Math.min(buckets - 1, Math.floor(t / width));
+      if (idx !== b) { b = idx; points.push({ t: idx * width / 1000, avg: 0, max: 0, n: 0 }); }
+      var p = points[points.length - 1]; p.avg += ft[i]; p.n++; if (ft[i] > p.max) p.max = ft[i];
+      if (ft[i] > spikeAt) {
+        var dc = (cap.cpuBusy || [])[i] - medCpu, dg = (cap.gpuBusy || [])[i] - medGpu;
+        spikes.push({ t: t / 1000, ms: ft[i], side: isFinite(dg) && dg > dc ? 'gpu' : isFinite(dc) ? 'cpu' : 'unknown' });
+      }
+      t += ft[i];
+    }
+    points.forEach(function (p) { p.avg = p.n ? p.avg / p.n : 0; });
+    return { seconds: total / 1000, points: points, spikes: spikes, medianMs: med, spikeAtMs: spikeAt };
+  }
+  // Plain-language reading of a timeline. vramPressure: true when graphics memory is nearly full (from the diagnosis).
+  function stutterNotes(tl, vramPressure) {
+    var out = [], s = tl.spikes;
+    if (!tl.points.length) return out;
+    if (!s.length) { out.push('Smooth: no stutters in this capture.'); return out; }
+    var early = s.filter(function (x) { return x.t <= 15; }).length, cpu = s.filter(function (x) { return x.side === 'cpu'; }).length, gpu = s.filter(function (x) { return x.side === 'gpu'; }).length;
+    var worst = s.reduce(function (a, x) { return x.ms > a.ms ? x : a; }, s[0]);
+    out.push(s.length + (s.length === 1 ? ' stutter' : ' stutters') + ', the worst a ' + Math.round(worst.ms) + ' ms freeze at ' + Math.round(worst.t) + ' s.');
+    if (s.length >= 2 && early / s.length >= 0.6) out.push('Most of them are in the first 15 seconds. That is usually the game loading shaders and textures as the session starts, and it settles down. Drive a lap or two before you capture.');
+    else if (cpu > gpu * 1.5 && cpu >= 2) out.push('Most start on the processor side. Close background programs first, then look at car and mirror settings.');
+    else if (gpu > cpu * 1.5 && gpu >= 2) out.push(vramPressure ? 'Most start on the graphics card side, and graphics memory is nearly full. Lower texture and shadow settings.' : 'Most start on the graphics card side, which usually means shader or texture loading.');
+    return out;
+  }
+
   function summarise(caps) {
     if (!Array.isArray(caps)) caps = [caps];
     var ft = [], cpu = [], gpu = [], util = [], vramSize = NaN, vramUsed = NaN;
@@ -718,7 +753,7 @@
     return head + body;
   }
 
-  return { parseEvoProto: parseEvoProto, patchEvoProto: patchEvoProto, parseRaceRoomXml: parseRaceRoomXml, patchRaceRoomXml: patchRaceRoomXml, parsePmrXml: parsePmrXml, patchPmrXml: patchPmrXml, parseBeamngJson: parseBeamngJson, patchBeamngJson: patchBeamngJson, parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, parseIni: parseIni, diagnose: diagnose,
+  return { parseEvoProto: parseEvoProto, patchEvoProto: patchEvoProto, parseRaceRoomXml: parseRaceRoomXml, patchRaceRoomXml: patchRaceRoomXml, parsePmrXml: parsePmrXml, patchPmrXml: patchPmrXml, parseBeamngJson: parseBeamngJson, patchBeamngJson: patchBeamngJson, parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, timeline: timeline, stutterNotes: stutterNotes, parseIni: parseIni, diagnose: diagnose,
     recommend: recommend, patchIni: patchIni, snapshot: snapshot, assessRound: assessRound, GOALS: GOALS,
     parseLmuIni: parseLmuIni, patchLmuIni: patchLmuIni, parseLmuJson: parseLmuJson, patchLmuJson: patchLmuJson };
 });

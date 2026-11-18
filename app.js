@@ -256,9 +256,14 @@
         return '<tr><td>' + esc(v.name) + '</td><td>' + esc(c.fromLabel) + ' &rarr; ' + esc(c.toLabel) + '</td><td>' +
           (v.status === 'applied' ? '<span class="good">' : '<span class="bad">') + STATUS_TEXT[v.status] + '</span></td></tr>';
       }).join('') + '</table></div>';
+    if (a.delta && window.TunerShare) h += '<p style="margin:12px 0 0"><button class="ghost" id="shareBtn">Make a share image</button></p>';
     if (a.reverts.length) h += '<p style="margin:12px 0 0"><b>' + a.reverts.length + ' revert suggestion' + (a.reverts.length > 1 ? 's are' : ' is') + ' in the list below.</b></p>';
     if (a.notes.length) h += '<ul class="notes" style="margin-top:12px">' + a.notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>';
     p.innerHTML = h; p.hidden = false;
+    var sb = $('shareBtn');
+    if (sb) sb.addEventListener('click', function () {
+      window.TunerShare.open({ simName: state.sim.name, verdict: a.verdict, before: { low1: b.low1, avgFps: b.avgFps, spikesPerMin: b.spikesPerMin }, after: { low1: m.low1, avgFps: m.avgFps, spikesPerMin: m.spikesPerMin }, applied: prev.applied });
+    });
     if (a.delta && window.TunerCelebrate) {
       var gain = Math.round(m.low1) - Math.round(b.low1);
       window.TunerCelebrate.round(prev.at, a.verdict, { line: '1% low FPS: ' + Math.round(b.low1) + ' &rarr; ' + Math.round(m.low1) + ' (' + (gain > 0 ? '+' : '') + gain + ')' });
@@ -317,6 +322,7 @@
       tile('Stutters', m.spikesPerMin.toFixed(1) + ' / min', { ok: 'good', some: 'warn', bad: 'bad' }[d.stutter],
         m.spikes ? 'Mostly from the ' + (m.spikeSide === 'gpu' ? 'graphics card' : 'processor') + ' side' : 'None found');
 
+    if (window.TunerTimeline) window.TunerTimeline.render(state.caps, d.vram === 'pressure');   // the frame-time chart under the capture table
     $('capTable').innerHTML = '<tr><th>Capture</th><th class="n">Length</th><th class="n">Avg FPS</th><th class="n">1% low</th><th class="n">0.1% low</th><th class="n">GPU busy</th><th class="n">Stutters / min</th></tr>' +
       state.caps.map(function (c) {
         var s = core.summarise(c);

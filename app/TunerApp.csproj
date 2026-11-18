@@ -36,6 +36,8 @@
     <Content Include="..\pc-check.js" Link="web\pc-check.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\prefs.js" Link="web\prefs.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\learn.js" Link="web\learn.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\share-card.js" Link="web\share-card.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\timeline-view.js" Link="web\timeline-view.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\celebrate.js" Link="web\celebrate.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\sims.js" Link="web\sims.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\settings-table-lmu.js" Link="web\settings-table-lmu.js" CopyToOutputDirectory="PreserveNewest" />

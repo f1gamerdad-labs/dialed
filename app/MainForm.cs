@@ -509,6 +509,28 @@ public sealed class MainForm : Form
                     Post(new { type = "hotkey", ok = err == "", error = err, hotkey = HotkeyInfo() });
                     break;
                 }
+                case "saveImage": // the share card: a PNG the page drew, saved into Documents\Dialed\Share cards
+                {
+                    try
+                    {
+                        var raw = r.GetProperty("name").GetString() ?? "Dialed.png";
+                        var safe = System.Text.RegularExpressions.Regex.Replace(Path.GetFileNameWithoutExtension(raw), @"[^A-Za-z0-9 _\-]", "-");
+                        if (safe.Length == 0) safe = "Dialed";
+                        var b64 = r.GetProperty("data").GetString() ?? "";
+                        if (b64.Length > 12_000_000) throw new InvalidOperationException("the image is too large");
+                        var bytes = Convert.FromBase64String(b64);
+                        if (bytes.Length < 8 || bytes[0] != 0x89 || bytes[1] != (byte)'P' || bytes[2] != (byte)'N' || bytes[3] != (byte)'G') throw new InvalidOperationException("that is not a PNG image");
+                        var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Dialed", "Share cards");
+                        Directory.CreateDirectory(dir);
+                        var file = Path.Combine(dir, safe + ".png"); int n = 2;
+                        while (File.Exists(file)) file = Path.Combine(dir, $"{safe} ({n++}).png");
+                        File.WriteAllBytes(file, bytes);
+                        Unelevated.OpenTarget(dir);
+                        Post(new { type = "imageSaved", ok = true, path = file });
+                    }
+                    catch (Exception ex) { Paths.Log_("share image: " + ex.Message); Post(new { type = "imageSaved", ok = false, message = ex.Message }); }
+                    break;
+                }
                 case "openFolder":
                 {
                     var sim = SimService.ById(r.TryGetProperty("sim", out var sp) ? sp.GetString() : null) ?? currentSim;

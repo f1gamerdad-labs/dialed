@@ -252,6 +252,9 @@
           '. Start the game once so it creates its settings, or drop the file(s) below.', 'warn');
         break;
       }
+      case 'imageSaved':
+        if (window.TunerShare) window.TunerShare.saved(m);
+        break;
       case 'pcCheck':
         if (pending[m.id]) { pending[m.id](m); delete pending[m.id]; }
         break;

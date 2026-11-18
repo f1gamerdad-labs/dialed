@@ -155,6 +155,11 @@
         <div id="results" hidden>
           <div class="card" id="sumCard"><p class="eyebrow" id="resultsTitle">What your PC is doing</p><div class="tiles" id="tiles"></div></div>
           <div class="card" id="tableCard"><p class="eyebrow">Your captures</p><div class="scroll"><table id="capTable"></table></div></div>
+          <div class="card" id="timelineCard"><p class="eyebrow">Your frame times</p>
+            <div class="row"><div class="field"><label for="tlPick">Capture</label><select id="tlPick"></select></div></div>
+            <div id="tlChart" aria-label="Frame time over the capture"></div>
+            <ul class="tlnotes" id="tlNotes"></ul>
+            <p class="opt-note">Each bar is the slowest frame in a slice of the capture. Lower is smoother. Dots are stutters: pink started on the graphics card side, yellow on the processor side.</p></div>
           <section class="card" id="lastRound" hidden></section>
           <div class="card" id="changesCard">
             <p class="eyebrow">Recommended changes</p>
@@ -269,6 +274,16 @@
   </div>
 </div>
 <!-- Report a problem -->
+<div class="overlay" id="share" hidden role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+  <div class="modal reportbox" style="width:min(980px,100%)">
+    <div class="modal-head"><h2 id="shareTitle">Share your result</h2><button class="ghost" id="shareClose">Close</button></div>
+    <div class="reportbody">
+      <canvas id="shareCanvas" width="1200" height="630" style="width:100%;height:auto;border-radius:12px;display:block"></canvas>
+      <div class="sharebtns"><button id="shareCopy">Copy image</button> <button class="ghost" id="shareSave">Save image</button> <span class="status" id="shareStatus" role="status"></span></div>
+      <p class="hint">Made on your PC. Nothing is uploaded. Post it anywhere you like.</p>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="protect" hidden role="dialog" aria-modal="true" aria-labelledby="protectTitle">
   <div class="modal reportbox">
     <div class="modal-head"><h2 id="protectTitle">Settings to protect</h2><button class="ghost" id="protectClose">Done</button></div>
@@ -347,6 +362,8 @@
 <script src="ui.js"></script>
 <script src="intro.js"></script>
 <script src="warn.js"></script>
+<script src="share-card.js"></script>
+<script src="timeline-view.js"></script>
 <script src="learn.js"></script>
 <script src="prefs.js"></script>
 <script src="pc-check.js"></script>
