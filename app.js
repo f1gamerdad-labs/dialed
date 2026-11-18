@@ -263,9 +263,13 @@
     p.innerHTML = h; p.hidden = false;
     if (a.delta && window.TunerBadges) window.TunerBadges.event('verdict', { verdict: a.verdict, gainPct: b.low1 > 0 ? (m.low1 - b.low1) / b.low1 * 100 : 0, spikesPerMin: m.spikesPerMin });
     var cb = $('commBtn');
-    if (cb) cb.addEventListener('click', function () {
-      window.TunerCommunity.open({ simId: state.sim.id, simName: state.sim.name, mode: currentMode().id, appVersion: window.TunerHost && window.TunerHost.contentVersion, verdict: a.verdict, before: b, after: m, applied: prev.applied, hardware: window.TunerPc && window.TunerPc.hardware ? window.TunerPc.hardware() : null });
-    });
+    function shareData() {
+      var kept = {}; a.verify.forEach(function (v, i) { if (prev.applied[i]) kept[prev.applied[i].key] = v.status; });
+      return { simId: state.sim.id, simName: state.sim.name, mode: currentMode().id, appVersion: window.TunerHost && window.TunerHost.contentVersion, verdict: a.verdict, before: b, after: m, applied: prev.applied, kept: kept,
+        limiter: prev.limiter || null, runs: prev.runs || null, roundKey: prev.at, hardware: window.TunerPc && window.TunerPc.hardware ? window.TunerPc.hardware() : null };
+    }
+    if (cb) cb.addEventListener('click', function () { window.TunerCommunity.open(shareData()); });
+    if (a.delta && window.TunerCommunity && window.TunerCommunity.enabled() && window.TunerCommunity.autoOn()) window.TunerCommunity.auto(shareData());
     var sb = $('shareBtn');
     if (sb) sb.addEventListener('click', function () {
       window.TunerShare.open({ simName: state.sim.name, verdict: a.verdict, before: { low1: b.low1, avgFps: b.avgFps, spikesPerMin: b.spikesPerMin }, after: { low1: m.low1, avgFps: m.avgFps, spikesPerMin: m.spikesPerMin }, applied: prev.applied });
@@ -465,7 +469,8 @@
       var round = {
         id: hist.filter(function (h) { return (h.sim || 'iracing') === sim.id; }).length + 1, at: new Date().toISOString(), sim: sim.id, goal: res.goal, section: res.section, iniName: state.iniName,
         baseline: core.snapshot(res.m, res.names),
-        applied: sel.map(function (c) { return { key: c.key, name: c.name, section: c.section, from: c.from, to: c.to, fromLabel: c.fromLabel, toLabel: c.toLabel, visual: c.visual, dir: c.dir }; }),
+        applied: sel.map(function (c) { return { key: c.key, name: c.name, section: c.section, from: c.from, to: c.to, fromLabel: c.fromLabel, toLabel: c.toLabel, visual: c.visual, dir: c.dir, confidence: c.confidence }; }),
+        limiter: res.d.limiter, runs: state.caps.length,
         skipped: state.rows.filter(function (c) { return !chosen[c.key]; }).map(function (c) { return c.key; }),
         result: null
       };
