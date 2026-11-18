@@ -180,6 +180,13 @@
       else add('storage', 'ok', 'Your drives are all SSD', ssd.map(function (d) { return d.name + ' (' + d.gb + ' GB, ' + d.bus + ')'; }).join('; ') + '.');
     }
 
+    // ---- programs running right now ----
+    if (Array.isArray(f.busy)) {
+      if (f.busy.length) add('busy', 'check', 'Other programs are running: ' + f.busy.join(', '),
+        'Browsers, streaming software, overlays and chat apps use processor and graphics card time and are the most common cause of stutter.', 'Close them (including the ones in the system tray, near the clock) before you race or capture.');
+      else add('busy', 'ok', 'No known frame rate hogs are running', 'No browsers, streaming software or overlays were found running.');
+    }
+
     // ---- Windows version ----
     if (f.os && f.os.build) {
       if (f.os.build < 19041) add('os', 'check', 'Your Windows version is old', f.os.caption + ' (build ' + f.os.build + ').', 'Update Windows.');
@@ -194,6 +201,7 @@
     var dg = gpus.filter(function (g) { return discrete(g.name); })[0] || gpus[0]; if (dg) parts.push(dg.name);
     if (f.os && f.os.caption) parts.push(f.os.caption.replace(/^Microsoft\s+/, ''));
     out.system = parts.join(', ');
+    out.ready = !out.some(function (x) { return x.level === 'fix' || x.level === 'check'; });   // "Ready to race"
     return out;
   }
 
@@ -216,8 +224,9 @@
     last = findings;
     var counts = { fix: 0, check: 0 }; findings.forEach(function (x) { if (counts[x.level] !== undefined) counts[x.level]++; });
     $('pcSummary').textContent = counts.fix || counts.check
-      ? (counts.fix ? plural(counts.fix, 'thing', 'things') + ' to fix' : '') + (counts.fix && counts.check ? ' and ' : '') + (counts.check ? plural(counts.check, 'thing', 'things') + ' worth a look' : '') + '.'
-      : 'Nothing to fix. Your PC looks set up well.';
+      ? 'Not quite race ready: ' + (counts.fix ? plural(counts.fix, 'thing', 'things') + ' to fix' : '') + (counts.fix && counts.check ? ' and ' : '') + (counts.check ? plural(counts.check, 'thing', 'things') + ' worth a look' : '') + '.'
+      : 'Race ready. Nothing to fix, and your PC looks set up well.';
+    $('pcSummary').className = 'pcsum ' + (counts.fix ? 'bad' : counts.check ? 'warn' : 'good');
     $('pcSystem').textContent = findings.system ? 'Your PC: ' + findings.system : '';
     // Three groups: things to act on (cards), things to know (compact rows), and everything that is fine (one line each).
     var attn = findings.filter(function (x) { return x.level === 'fix' || x.level === 'check'; });

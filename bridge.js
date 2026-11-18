@@ -308,33 +308,49 @@
 
   function endPhase() { window.TunerHost.phase = null; window.TunerUI.update(); }
 
+  // "Three, one after another": the first countdown starts the chain, and each finished run starts the next after a short breather.
+  var runsPlan = 1, chain = null;
+  try { runsPlan = parseInt(localStorage.getItem('dialed.runs') || '1', 10) === 3 ? 3 : 1; } catch (e) { /* default */ }
+  $('runsSelect').value = String(runsPlan);
+  $('runsSelect').addEventListener('change', function () {
+    runsPlan = $('runsSelect').value === '3' ? 3 : 1;
+    try { localStorage.setItem('dialed.runs', String(runsPlan)); } catch (e) { /* not remembered */ }
+  });
+  function runNote() { return chain ? ' (run ' + chain.done + ' of ' + chain.total + ')' : ''; }
+
   function capturePhase(m) {
     if (m.phase === 'countdown') {
+      if (!chain && runsPlan > 1) chain = { total: runsPlan, done: 1 };            // the first countdown of a new chain
       setCapturing(true);
       window.TunerHost.phase = 'countdown';
       window.TunerUI.setState('wait', 'Starting in ' + m.secondsLeft + ' s', 'Get back in the car');
-      status('Get ready. Recording starts in ' + m.secondsLeft + ' s. Press the hotkey again to cancel.' +
+      status('Get ready' + runNote() + '. Recording starts in ' + m.secondsLeft + ' s. Press the hotkey again to cancel.' +
         (m.busy && m.busy.length ? ' Still running: ' + m.busy.join(', ') + '.' : ''), 'warn');
     }
     else if (m.phase === 'recording') {
       setCapturing(true);
       window.TunerHost.phase = 'recording';
       window.TunerUI.setState('rec', 'Recording', m.secondsLeft + ' s left. Keep driving.');
-      status('Recording: ' + m.secondsLeft + ' s left. Keep driving.', 'bad');
+      status('Recording' + runNote() + ': ' + m.secondsLeft + ' s left. Keep driving.', 'bad');
     }
     else if (m.phase === 'sim') { if (m.sim && sim().id !== m.sim) app.setSim(m.sim); } // the hotkey was pressed in a different game than the one selected: follow it
-    else if (m.phase === 'cancelled') { setCapturing(false); endPhase(); status('Capture cancelled.'); }
-    else if (m.phase === 'error') { setCapturing(false); endPhase(); status(m.message, 'bad'); }
+    else if (m.phase === 'cancelled') { chain = null; setCapturing(false); endPhase(); status('Capture cancelled.'); }
+    else if (m.phase === 'error') { chain = null; setCapturing(false); endPhase(); status(m.message, 'bad'); }
     else if (m.phase === 'done') {
       setCapturing(false); endPhase();
+      var more = false;
       try {
         var cap = core.parseCapture(m.text, m.name);
         cap.vramSize = m.vramTotalBytes > 0 ? m.vramTotalBytes : NaN;
         cap.vramUsedMax = m.vramUsedBytes > 0 ? m.vramUsedBytes : NaN;
         app.addParsedCapture(cap);
-        status('Captured ' + cap.ft.length + ' frames. Capture again for a better average, or press Analyse.' +
+        more = !!chain && chain.done < chain.total;
+        if (more) status('Run ' + chain.done + ' of ' + chain.total + ' saved (' + cap.ft.length + ' frames). The next run starts in a moment: keep driving.', 'good');
+        else status((chain ? 'All ' + chain.total + ' runs saved. ' : 'Captured ' + cap.ft.length + ' frames. Capture again for a better average, or ') + 'press Analyse.' +
           (m.busy && m.busy.length ? ' Note: ' + m.busy.join(', ') + ' was running, which may have skewed this capture.' : ''), m.busy && m.busy.length ? 'warn' : 'good');
-      } catch (err) { status(err.message, 'bad'); }
+      } catch (err) { chain = null; status(err.message, 'bad'); }
+      if (more) { chain.done++; setTimeout(function () { if (chain && !capturing) send({ type: 'startCapture' }); }, 3000); }
+      else chain = null;
     }
   }
 

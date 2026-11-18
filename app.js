@@ -366,7 +366,8 @@
         '<td class="chg ' + (c.dir === 'up' ? 'good' : c.dir === 'revert' ? 'revert' : 'warn') + '">' + esc(c.fromLabel) + ' &rarr; ' + esc(c.toLabel) + '</td>' +
         '<td>' + (c.dir === 'revert' ? '' : dots(c.relief)) + '</td><td>' + (c.dir === 'revert' ? '' : dots(c.visual)) + '</td>' +
         '<td>' + (c.confidence ? '<span class="conf conf-' + c.confidence + '">' + c.confidence + '</span><span class="tag">' + esc(c.confWhy) + '</span>' : '') + '</td>' +
-        '<td>' + esc(c.why) + (c.dir !== 'revert' && window.TunerLooks ? '<div class="look"><b>' + (c.dir === 'up' ? 'You gain:' : 'You will see:') + '</b> ' + esc(window.TunerLooks.describe(c)) + '</div>' : '') + '</td></tr>';
+        '<td>' + esc(c.why) + (c.dir !== 'revert' && window.TunerLooks ? '<div class="look"><b>' + (c.dir === 'up' ? 'You gain:' : 'You will see:') + '</b> ' + esc(window.TunerLooks.describe(c)) + '</div>' : '') +
+        (c.dir !== 'revert' && window.TunerLearn ? '<div class="learnrow"><a href="#" class="learn" data-learn="' + esc(window.TunerLearn.url(c, state.sim.id)) + '">Watch F1GamerDad explain this</a></div>' : '') + '</td></tr>';
     });
     $('changes').innerHTML = rows.length
       ? '<tr><th></th><th>Setting</th><th>Change</th><th title="How much load it takes off what is limiting you">Gain</th><th title="How much you will notice it on track">Look</th><th>Confidence</th><th>Why</th></tr>' + html

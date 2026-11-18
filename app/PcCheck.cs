@@ -72,6 +72,7 @@ static class PcCheck
             f["disks"] = disks;
         });
         Try("nvidia", () => f["nvidia"] = Nvidia());
+        Try("running programs", () => f["busy"] = Busy.Running());   // the same list the capture warns about: browsers, OBS, Discord and the like
         f["errors"] = errors;
         return f;
     }
