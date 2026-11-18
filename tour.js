@@ -24,7 +24,7 @@
         return '<div class="sc sc-pick"><div class="grid8">' + names.map(function (n, i) { return '<span style="--i:' + i + '"' + (i === 0 ? ' class="pick"' : i > 1 ? ' class="soon"' : '') + '>' + n + '</span>'; }).join('') + '</div></div>';
       } },
     { id: 'capture', title: 'Capture three runs',
-      text: 'Start your game and press {hotkey} while you drive. You get a spoken or beeped countdown, then Dialed records 60 seconds. Do it three times in the same session, with a full grid on your heaviest track if you can.',
+      text: 'Start your game and press {hotkey} while you drive. You get a spoken or beeped countdown, then Dialed records 60 seconds. Do it three times in the same session, with a full grid on your heaviest track if you can. Dialed can run all three for you, one after another.',
       tip: 'Close Chrome, OBS and Discord first: background programs are the most common cause of stutter.',
       scene: function (ctx) {
         var keys = (ctx.hotkey || 'Ctrl+Shift+F11').split('+').map(function (k) { return '<kbd>' + k + '</kbd>'; }).join('');
@@ -55,6 +55,13 @@
           '<div class="chip backup"><span>&#128193;</span><div>Dialed Backups<small>your old file, saved</small></div></div>' +
           '<div class="chip warn"><span>&#9888;</span><div>The sim will close<small>so the change sticks</small></div></div>' +
           '<div class="verdict"><small>1% low FPS</small><b>86 <em>&rarr;</em> 97</b><i>Better</i></div></div>';
+      } },
+    { id: 'more', title: 'And there is more to explore',
+      text: 'The PC check finds things outside the sim that cost frame rate, like memory not running at its rated speed. After you capture, Results draws your frame times and marks every stutter. You can save your settings as profiles, share a before/after image, and earn badges as you tune.',
+      tip: 'Tell Dialed how you race under "About your setup" (sync, streaming, settings to protect) and its advice will fit you better.',
+      scene: function () {
+        var names = ['PC check', 'Frame times', 'Profiles', 'Share image', 'Badges', '3 runs', 'Guides', 'Protect list'];
+        return '<div class="sc sc-pick"><div class="grid8">' + names.map(function (n, i) { return '<span style="--i:' + i + '"' + (i === 0 ? ' class="pick"' : '') + '>' + n + '</span>'; }).join('') + '</div></div>';
       } }
   ];
 

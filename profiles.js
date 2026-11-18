@@ -40,11 +40,15 @@
   function load() { try { var v = JSON.parse(localStorage.getItem(KEY) || '{}'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } }
   function save(all) { try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) { /* kept for this session only */ } }
   function app() { return root.TunerApp; }
+  var lastSig = '';
   function msg(t, cls) { $('profMsg').textContent = t; $('profMsg').className = 'status ' + (cls || ''); }
 
   function render() {
     var A = app(); if (!A || !$('profCard')) return;
     var st = A.state, sim = st.sim, mode = A.currentMode ? A.currentMode().id : 'driving', list = (load()[sim.id] || []).filter(function (p) { return p.mode === mode; });
+    var sig = [sim.id, mode, !!st.ini, JSON.stringify(list.map(function (p) { return p.id + p.name; }))].join('|');
+    if (sig === lastSig) return;       // nothing changed: leave the buttons alone, so a click is never lost to a redraw
+    lastSig = sig;
     $('profSave').disabled = !st.ini;
     $('profHint').textContent = st.ini ? '' : 'Load your game file first (Setup, above), then you can save it as a profile.';
     $('profList').innerHTML = list.length ? list.map(function (p) {

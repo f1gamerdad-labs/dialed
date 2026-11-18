@@ -20,3 +20,10 @@ Build: `dotnet build app/TunerApp.csproj -c Release` (needs the .NET 8 SDK; WebV
 Publish an update: `tools/publish-release.ps1 -Version 0.2.0 -Notes "What changed" -Repo owner/repo` (use `-DryRun` first).
 
 See `THIRD_PARTY_NOTICES.md` for included components.
+
+## What it does beyond the settings list
+
+- **PC check:** memory speed against its rating (XMP/EXPO), power plan, screen refresh rates, screens on the built-in graphics, graphics card link and Resizable BAR (NVIDIA), driver age, Windows gaming settings and storage. Rules only, nothing is changed.
+- **Frame times:** each capture drawn over time with the stutters marked and explained.
+- **Your setup:** screen sync, streaming, and settings Dialed must never change or never turn up.
+- **Saved profiles**, **three runs in a row**, a **share image** for a before/after result, **badges**, and an optional **Share my result** (anonymous, shown to you before sending, off until a form is configured in config.js).

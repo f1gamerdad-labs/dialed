@@ -255,7 +255,7 @@
           <p><b>Private.</b> Everything runs on your PC. Nothing is uploaded.</p>
           <p><b>Small steps.</b> Apply a few changes, capture again, and the tool tells you what each round did and what to put back.</p>
           <p>Frame capture uses Intel PresentMon, released under the MIT licence. Made by F1GamerDad.</p>
-          <p style="margin-top:14px"><button class="ghost" data-tour hidden>Watch the quick tour</button> <button class="ghost" id="shortcutBtn" hidden>Add Dialed to Start menu and desktop</button> <span class="status" id="shortcutMsg" role="status"></span> <button class="ghost" data-cele hidden>Turn off result animations</button> <button class="ghost" data-intro hidden>Watch the welcome video</button> <button class="ghost" data-suggest hidden>Send an idea or suggestion</button> <button class="ghost" data-report hidden>Report a problem</button> <button class="ghost" data-news hidden>Get update emails</button> <button class="ghost" data-tip hidden>Support Dialed</button></p>
+          <p style="margin-top:14px"><button class="ghost" data-tour hidden>Watch the quick tour</button> <button class="ghost" data-whatsnew hidden>What's new</button> <button class="ghost" id="shortcutBtn" hidden>Add Dialed to Start menu and desktop</button> <span class="status" id="shortcutMsg" role="status"></span> <button class="ghost" data-cele hidden>Turn off result animations</button> <button class="ghost" data-intro hidden>Watch the welcome video</button> <button class="ghost" data-suggest hidden>Send an idea or suggestion</button> <button class="ghost" data-report hidden>Report a problem</button> <button class="ghost" data-news hidden>Get update emails</button> <button class="ghost" data-tip hidden>Support Dialed</button></p>
         </div>
       </section>
     </div>
@@ -290,6 +290,15 @@
   </div>
 </div>
 <!-- Report a problem -->
+<div class="overlay" id="whatsnew" hidden role="dialog" aria-modal="true" aria-labelledby="wnTitle">
+  <div class="modal reportbox">
+    <div class="modal-head"><h2 id="wnTitle">What's new in Dialed</h2></div>
+    <div class="reportbody">
+      <ul class="wnlist" id="wnList"></ul>
+      <div class="modal-foot" style="padding:10px 0 0"><span></span><button id="wnOk">Got it</button></div>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="community" hidden role="dialog" aria-modal="true" aria-labelledby="commTitle">
   <div class="modal reportbox">
     <div class="modal-head"><h2 id="commTitle">Share my result</h2><button class="ghost" id="commClose">Close</button></div>
@@ -388,6 +397,7 @@
 <script src="ui.js"></script>
 <script src="intro.js"></script>
 <script src="warn.js"></script>
+<script src="whatsnew.js"></script>
 <script src="community.js"></script>
 <script src="badges.js"></script>
 <script src="troubleshoot.js"></script>

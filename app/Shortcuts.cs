@@ -2,11 +2,31 @@ using System.Diagnostics;
 
 namespace TunerApp;
 
+/// <summary>Saves a share image the page drew (a PNG, sent as base64) into Documents\Dialed\Share cards. Only a real PNG with a safe file name is ever written.</summary>
+static class ShareCards
+{
+    public static string Save(string rawName, string base64, string? dirOverride = null)
+    {
+        var safe = System.Text.RegularExpressions.Regex.Replace(Path.GetFileNameWithoutExtension(rawName ?? "Dialed.png"), @"[^A-Za-z0-9 _\-]", "-");
+        if (safe.Length == 0) safe = "Dialed";
+        if ((base64 ?? "").Length > 12_000_000) throw new InvalidOperationException("the image is too large");
+        var bytes = Convert.FromBase64String(base64 ?? "");
+        if (bytes.Length < 8 || bytes[0] != 0x89 || bytes[1] != (byte)'P' || bytes[2] != (byte)'N' || bytes[3] != (byte)'G') throw new InvalidOperationException("that is not a PNG image");
+        var dir = dirOverride ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Dialed", "Share cards");
+        Directory.CreateDirectory(dir);
+        var file = Path.Combine(dir, safe + ".png"); int n = 2;
+        while (File.Exists(file)) file = Path.Combine(dir, $"{safe} ({n++}).png");
+        File.WriteAllBytes(file, bytes);
+        return file;
+    }
+}
+
 /// <summary>Adds Dialed to the Start menu and the desktop, so people who unzipped it into a folder can open it like any other program.
 /// Uses Windows' own shortcut object (WScript.Shell), so no extra library is needed. Nothing is installed and nothing outside the two shortcuts is touched.</summary>
 static class Shortcuts
 {
-    public static (bool desktop, bool startMenu, string? error) Create()
+    /// <summary>desktopDir / startDir are only for the self-test, which writes into a throwaway folder instead of the real desktop.</summary>
+    public static (bool desktop, bool startMenu, string? error) Create(string? desktopDir = null, string? startDir = null)
     {
         try
         {
@@ -28,8 +48,8 @@ static class Shortcuts
                 }
                 catch (Exception ex) { Paths.Log_("shortcut: " + folder + ": " + ex.Message); return false; }
             }
-            var desk = Make(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory));
-            var start = Make(Environment.GetFolderPath(Environment.SpecialFolder.Programs));
+            var desk = Make(desktopDir ?? Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory));
+            var start = Make(startDir ?? Environment.GetFolderPath(Environment.SpecialFolder.Programs));
             Paths.Log_($"shortcuts: desktop {desk}, start menu {start}");
             return (desk, start, desk || start ? null : "Windows would not let the shortcuts be created");
         }

@@ -56,6 +56,32 @@ public sealed class MainForm : Form
             };
             return;
         }
+        if (args.Contains("--selftest-features") && Paths.DataOverride != null) // runs the PC check collector, shortcut creation and share-image saving into throwaway folders and reports what happened
+        {
+            Load += (_, _) =>
+            {
+                var res = new Dictionary<string, object?>();
+                try { res["pcCheck"] = PcCheck.Collect(); res["screenHz"] = PcCheck.PrimaryRefresh(); } catch (Exception ex) { res["pcCheckError"] = ex.ToString(); }
+                try
+                {
+                    var dd = Path.Combine(Paths.Data, "shortcut-desktop"); var sd = Path.Combine(Paths.Data, "shortcut-start");
+                    var (d, s, e) = Shortcuts.Create(dd, sd);
+                    res["shortcuts"] = new { desktop = d, startMenu = s, error = e, desktopFile = File.Exists(Path.Combine(dd, "Dialed.lnk")), startFile = File.Exists(Path.Combine(sd, "Dialed.lnk")) };
+                }
+                catch (Exception ex) { res["shortcutsError"] = ex.ToString(); }
+                try
+                {
+                    const string tinyPng = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+                    var p = ShareCards.Save("Self test: share", tinyPng, Path.Combine(Paths.Data, "share-cards"));
+                    string? bad = null; try { ShareCards.Save("x", Convert.ToBase64String(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }), Path.Combine(Paths.Data, "share-cards")); } catch (Exception ex) { bad = ex.Message; }
+                    res["shareImage"] = new { path = p, exists = File.Exists(p), bytes = new FileInfo(p).Length, notAPngRefusedWith = bad };
+                }
+                catch (Exception ex) { res["shareImageError"] = ex.ToString(); }
+                File.WriteAllText(Path.Combine(Paths.Data, "selftest-features.json"), JsonSerializer.Serialize(res, new JsonSerializerOptions { WriteIndented = true }));
+                Close();
+            };
+            return;
+        }
         if (args.Contains("--selftest-hang")) // a window whose thread never reads messages, to stand in for a frozen game
         {
             Text = "frozen test window"; ClientSize = new Size(300, 120);
@@ -544,19 +570,8 @@ public sealed class MainForm : Form
                 {
                     try
                     {
-                        var raw = r.GetProperty("name").GetString() ?? "Dialed.png";
-                        var safe = System.Text.RegularExpressions.Regex.Replace(Path.GetFileNameWithoutExtension(raw), @"[^A-Za-z0-9 _\-]", "-");
-                        if (safe.Length == 0) safe = "Dialed";
-                        var b64 = r.GetProperty("data").GetString() ?? "";
-                        if (b64.Length > 12_000_000) throw new InvalidOperationException("the image is too large");
-                        var bytes = Convert.FromBase64String(b64);
-                        if (bytes.Length < 8 || bytes[0] != 0x89 || bytes[1] != (byte)'P' || bytes[2] != (byte)'N' || bytes[3] != (byte)'G') throw new InvalidOperationException("that is not a PNG image");
-                        var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Dialed", "Share cards");
-                        Directory.CreateDirectory(dir);
-                        var file = Path.Combine(dir, safe + ".png"); int n = 2;
-                        while (File.Exists(file)) file = Path.Combine(dir, $"{safe} ({n++}).png");
-                        File.WriteAllBytes(file, bytes);
-                        Unelevated.OpenTarget(dir);
+                        var file = ShareCards.Save(r.GetProperty("name").GetString() ?? "Dialed.png", r.GetProperty("data").GetString() ?? "");
+                        Unelevated.OpenTarget(Path.GetDirectoryName(file)!);
                         Post(new { type = "imageSaved", ok = true, path = file });
                     }
                     catch (Exception ex) { Paths.Log_("share image: " + ex.Message); Post(new { type = "imageSaved", ok = false, message = ex.Message }); }

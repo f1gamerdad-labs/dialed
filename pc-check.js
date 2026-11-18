@@ -95,11 +95,17 @@
     }
 
     // ---- power plan ----
-    if (f.power && f.power.name) {
-      var pn = f.power.name;
-      if (/power saver/i.test(pn)) add('power', 'fix', 'Windows is on the Power saver plan', 'Power saver keeps your processor clocks low, which costs frame rate.', 'Settings, System, Power: set the power mode to Best performance (or use the High performance plan in Control Panel).');
-      else if (/balanced/i.test(pn)) add('power', 'check', 'Windows is on the Balanced power plan', 'Balanced is fine for most PCs, but on some it lets processor clocks drop between demands, which can show up as stutter.', 'If you want to try it: Settings, System, Power, set the power mode to Best performance, then compare a capture.');
-      else add('power', 'ok', 'Power plan is set for performance', 'Active plan: ' + pn + '.');
+    // Plans are recognised by their fixed Windows id first, so this works on every Windows language; the name is only a fallback for custom plans.
+    if (f.power && (f.power.name || f.power.guid)) {
+      var pn = f.power.name || f.power.guid, pg = String(f.power.guid || '').toLowerCase(), kind = null;
+      if (pg.indexOf('a1841308-3541-4fab-bc81-f71556f20b4a') === 0) kind = 'saver';
+      else if (pg.indexOf('381b4222-f694-41f0-9685-ff5bb260df2e') === 0) kind = 'balanced';
+      else if (pg.indexOf('8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c') === 0 || pg.indexOf('e9a42b02-d5df-448d-aa00-03f14749eb61') === 0) kind = 'performance';
+      else if (/power saver/i.test(pn)) kind = 'saver'; else if (/balanced/i.test(pn)) kind = 'balanced'; else if (/high performance|ultimate performance/i.test(pn)) kind = 'performance';
+      if (kind === 'saver') add('power', 'fix', 'Windows is on the Power saver plan', 'Power saver keeps your processor clocks low, which costs frame rate.', 'Settings, System, Power: set the power mode to Best performance (or use the High performance plan in Control Panel).');
+      else if (kind === 'balanced') add('power', 'check', 'Windows is on the Balanced power plan', 'Balanced is fine for most PCs, but on some it lets processor clocks drop between demands, which can show up as stutter.', 'If you want to try it: Settings, System, Power, set the power mode to Best performance, then compare a capture.');
+      else if (kind === 'performance') add('power', 'ok', 'Power plan is set for performance', 'Active plan: ' + pn + '.');
+      else add('power', 'info', 'Power plan: ' + pn, 'This is a custom plan, so Dialed cannot tell if it holds your processor speed back. If you are unsure, the Best performance plan is the safe choice for racing.');
     }
 
     // ---- displays ----

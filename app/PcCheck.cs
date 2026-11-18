@@ -129,7 +129,7 @@ static class PcCheck
     {
         var psi = new ProcessStartInfo(file, args) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
         using var p = Process.Start(psi); if (p == null) return null;
-        var outTask = p.StandardOutput.ReadToEndAsync();
+        var outTask = p.StandardOutput.ReadToEndAsync(); _ = p.StandardError.ReadToEndAsync();   // both pipes are drained, so a chatty tool can never block
         if (!p.WaitForExit(timeoutMs)) { try { p.Kill(true); } catch { } return null; }
         return p.ExitCode == 0 ? outTask.Result : null;
     }
