@@ -411,6 +411,16 @@ public sealed class MainForm : Form
                     _ = ReportAsync(msg, contact, withData, withSettings, pageState, summary);
                     break;
                 }
+                case "pcCheck":
+                {
+                    var pid = r.TryGetProperty("id", out var pidp) ? pidp.GetInt32() : 0;
+                    _ = Task.Run(() =>
+                    {
+                        try { Post(new { type = "pcCheck", id = pid, ok = true, facts = PcCheck.Collect() }); Paths.Log_("pc check: done"); }
+                        catch (Exception ex) { Paths.Log_("pc check failed: " + ex.Message); Post(new { type = "pcCheck", id = pid, ok = false, message = ex.Message }); }
+                    });
+                    break;
+                }
                 case "checkUpdate": _ = CheckUpdateAsync(silent: false); break;
                 case "applyUpdate": _ = ApplyUpdateAsync(); break;
                 case "revertUpdate":

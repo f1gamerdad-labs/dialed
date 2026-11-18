@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -19,6 +19,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2792.45" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
+    <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
   <!-- The web page the app shows. These are the same files the browser version uses. -->
@@ -32,6 +33,7 @@
     <Content Include="..\report.js" Link="web\report.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\news.js" Link="web\news.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\tour.js" Link="web\tour.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\pc-check.js" Link="web\pc-check.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\celebrate.js" Link="web\celebrate.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\sims.js" Link="web\sims.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\settings-table-lmu.js" Link="web\settings-table-lmu.js" CopyToOutputDirectory="PreserveNewest" />

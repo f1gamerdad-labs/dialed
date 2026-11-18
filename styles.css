@@ -346,3 +346,15 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 @keyframes cPump { 0%,100%{transform:translateY(0) rotate(0)} 25%{transform:translateY(-14px) rotate(-3deg) scale(1.04)} 50%{transform:translateY(0) rotate(0)} 75%{transform:translateY(-10px) rotate(3deg) scale(1.03)} }
 @media (prefers-reduced-motion: reduce) { .overlay.cele, .celebox, .celepic img { animation:none !important; } }
 .sc-pick .grid8 span.soon { opacity:.4; }
+
+/* ---- PC check screen (pc-check.js) ---- */
+.pcbtns { display:flex; gap:10px; flex-wrap:wrap; }
+#pcRun { all:unset; box-sizing:border-box; cursor:pointer; font-weight:900; color:#fff; padding:11px 22px; border-radius:12px; background:var(--grad); box-shadow:0 6px 20px rgba(255,46,147,.3); }
+#pcRun:disabled { opacity:.6; cursor:progress; } #pcRun:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+.pcf { display:grid; grid-template-columns:104px 1fr; gap:14px; padding:12px 0; border-top:1px solid var(--line); }
+.pcf:first-child { border-top:0; }
+.pcf p { margin:4px 0 0; color:var(--muted); font-size:13.5px; line-height:1.45; } .pcf p.pcfix { color:var(--text); }
+.pcf .pct { align-self:start; text-align:center; font-size:10.5px; font-weight:900; letter-spacing:.06em; text-transform:uppercase; padding:3px 6px; border-radius:99px; border:1px solid currentColor; }
+.pcf.fix .pct { color:#ff6b8a; } .pcf.check .pct { color:var(--yellow); } .pcf.info .pct { color:var(--muted); } .pcf.ok .pct { color:#4fdca0; }
+.pcf.ok { opacity:.8; }
+@media (max-width:560px) { .pcf { grid-template-columns:1fr; gap:6px; } .pcf .pct { justify-self:start; padding:3px 10px; } }

@@ -14,6 +14,7 @@
     <img class="logo" src="assets/f1gd-logo.png" alt="F1GamerDad">
     <button data-view="setup" class="on"><svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2.3"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2.3"/></svg>Setup</button>
     <button data-view="results"><svg viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="18" y1="20" x2="18" y2="9"/></svg>Results</button>
+    <button data-view="pc"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg>PC check</button>
     <button data-view="history"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</button>
     <button data-view="about"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="8" r=".6"/></svg>About</button>
     <div class="spacer"></div>
@@ -44,6 +45,10 @@
       <a data-go="lastRound" id="stepLast"><i></i><div><b>Last round</b></div></a>
       <a data-go="changesCard"><i></i><div><b>Recommended changes</b></div></a>
       <a data-go="notesPanel" id="stepNotes"><i></i><div><b>Also worth knowing</b></div></a>
+    </div>
+    <div data-for="pc" hidden>
+      <div class="sidehead">PC check</div>
+      <p class="note">Looks for things on your PC that cost frame rate, such as memory not running at its rated speed, the wrong power plan, or a monitor below its top refresh rate. Nothing is changed.</p>
     </div>
     <div data-for="history" hidden>
       <div class="sidehead">History</div>
@@ -153,6 +158,20 @@
       </section>
 
       <!-- HISTORY -->
+      <section id="view-pc" hidden>
+        <div class="title"><h2>PC check</h2></div>
+        <p class="lead">Some of the biggest frame rate problems are not in the sim at all. Run this check to see if anything on your PC is set up wrong.</p>
+        <div class="card">
+          <p class="eyebrow">Check this PC</p>
+          <p style="margin:0 0 12px">It reads settings Windows already keeps (memory speed, power plan, screen refresh rates, graphics card link) and tells you what to fix. It changes nothing and loads no drivers.</p>
+          <div class="pcbtns"><button id="pcRun">Run PC check</button> <button class="ghost" id="pcCopy" hidden>Copy as text</button></div>
+        </div>
+        <div class="card" id="pcResults" hidden>
+          <p class="eyebrow">Results</p>
+          <p id="pcSummary" style="margin:0 0 12px;font-weight:700"></p>
+          <div id="pcList"></div>
+        </div>
+      </section>
       <section id="view-history" hidden>
         <div class="title"><h2>History</h2></div>
         <p class="lead">Every round you applied, what changed, and how it turned out.</p>
@@ -303,6 +322,7 @@
 <script src="ui.js"></script>
 <script src="intro.js"></script>
 <script src="warn.js"></script>
+<script src="pc-check.js"></script>
 <script src="tour.js"></script>
 <script src="celebrate.js"></script>
 <script src="news.js"></script>

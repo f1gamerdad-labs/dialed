@@ -23,6 +23,15 @@
         send({ type: 'writeFiles', id: id, sim: simId, files: files, closeSim: !!closeSim });
       });
     },
+    // Reads facts about this PC for the PC check screen. Resolves { ok, facts } or { ok:false, message }.
+    pcCheck: function () {
+      return new Promise(function (resolve) {
+        var id = nextId++;
+        pending[id] = resolve;
+        send({ type: 'pcCheck', id: id });
+        setTimeout(function () { if (pending[id]) { delete pending[id]; resolve({ ok: false, message: 'it took too long to answer' }); } }, 30000);
+      });
+    },
     running: {},   // simId -> is that sim open right now?
     phase: null
   };
@@ -237,6 +246,9 @@
           '. Start the game once so it creates its settings, or drop the file(s) below.', 'warn');
         break;
       }
+      case 'pcCheck':
+        if (pending[m.id]) { pending[m.id](m); delete pending[m.id]; }
+        break;
       case 'iniWritten':
         if (pending[m.id]) { pending[m.id]({ ok: m.ok, message: m.message, backup: m.backup }); delete pending[m.id]; }
         if (m.ok) { loadSim(); listBackups(); }

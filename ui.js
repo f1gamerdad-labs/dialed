@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VIEWS = ['setup', 'results', 'history', 'about'];
+  var VIEWS = ['setup', 'results', 'pc', 'history', 'about'];
   var GOAL_NOTE = {
     smooth: 'Smoothness: hold your target frame rate almost all the time, even if that costs some looks.',
     balanced: 'Balanced: a steady frame rate, keeping what looks good.',
