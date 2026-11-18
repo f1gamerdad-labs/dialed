@@ -14,7 +14,7 @@
   }
   function currentSection() { return currentMode().section; }
   function sectionOf(round) { return round.section || (sims.SIMS[round.sim || 'iracing'] || state.sim).modes[0].section; }
-  function vrMessage() { return 'This tool is not for VR. For VR, use NextLevelXR, which is built for it. Choose ' + state.sim.files[0].name + ' instead.'; }
+  function vrMessage() { return 'This tool is not for VR. For VR, I\'d suggest using NextLevelXR, which is made for it. Choose ' + state.sim.files[0].name + ' instead.'; }
   function isVrFile(name) { return state.sim.isVrFile(name); }
 
   // ---------- history storage (swappable: the Windows app can supply its own) ----------
@@ -541,5 +541,5 @@
   window.TunerApp = { roundNo: roundNo, resetResults: resetResults, updateApply: updateApply, addCaptures: addCaptures, addParsedCapture: addParsedCapture, clearCaptures: clearCaptures,
     setIni: setIni, setFile: setFile, setFiles: setFiles, setFileText: setFileText, setSim: setSim, setLogos: setLogos, setSimStatus: setSimStatus,
     onSim: function (fn) { simListeners.push(fn); }, renderSimUI: renderSimUI,
-    run: run, apply: apply, state: state, Store: Store, showError: showError, isVrFile: isVrFile };
+    run: run, apply: apply, currentMode: currentMode, currentSection: currentSection, deliver: deliver, simRunning: simRunning, state: state, Store: Store, showError: showError, isVrFile: isVrFile };
 })();

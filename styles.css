@@ -392,3 +392,9 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 .tldot { stroke:#fff; stroke-width:1; } .tldot.gpu { fill:#ff4fa3; } .tldot.cpu { fill:#ffd23f; } .tldot.unknown { fill:#b6a6d9; }
 .tlnotes { margin:12px 0 4px; padding-left:20px; display:grid; gap:4px; line-height:1.45; }
 .sharebtns { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px; }
+
+/* ---- saved profiles (profiles.js) ---- */
+.profnew { display:flex; gap:10px; flex-wrap:wrap; } .profnew input { flex:1 1 220px; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:9px 12px; font:inherit; }
+.proflist { margin-top:12px; display:grid; gap:8px; } .profrow { display:flex; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:9px 12px; } .profrow > div { flex:1; min-width:0; } .profrow small { display:block; color:var(--muted); }
+
+.tssteps { margin:0; padding-left:22px; display:grid; gap:8px; line-height:1.5; max-width:78ch; } .tssteps li::marker { color:var(--pink); font-weight:900; }

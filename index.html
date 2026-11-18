@@ -129,6 +129,15 @@
           <p class="opt-note">Dialed uses these to give advice that fits how you race. Your choices stay on this PC.</p>
         </div>
 
+        <div class="card" id="profCard">
+          <p class="eyebrow">Saved profiles</p>
+          <p style="margin:0 0 10px">Save your current graphics settings under a name, such as "Daytona full field" or "Rain", and put them back with one click. Your old settings are backed up first.</p>
+          <div class="profnew"><input id="profName" type="text" maxlength="40" placeholder="Name this profile" autocomplete="off" aria-label="Profile name"><button id="profSave" disabled>Save current settings</button></div>
+          <p class="hint" id="profHint" style="margin:8px 0 0"></p>
+          <p class="status" id="profMsg" role="status" style="margin:8px 0 0"></p>
+          <div id="profList" class="proflist"></div>
+        </div>
+
         <div class="card" id="goalCard">
           <p class="eyebrow">What are you tuning, and what do you want most?</p>
           <div class="row">
@@ -190,6 +199,11 @@
           <p id="pcSummary" style="margin:0 0 4px;font-weight:700"></p>
           <p id="pcSystem" style="margin:0 0 12px;color:var(--muted);font-size:13px"></p>
           <div id="pcList"></div>
+        </div>
+        <div class="card" id="tsCard">
+          <p class="eyebrow">Something specific wrong?</p>
+          <div class="field"><label for="tsPick">What is happening?</label><select id="tsPick"></select></div>
+          <div id="tsBody" style="margin-top:12px"></div>
         </div>
       </section>
       <section id="view-history" hidden>
@@ -362,6 +376,8 @@
 <script src="ui.js"></script>
 <script src="intro.js"></script>
 <script src="warn.js"></script>
+<script src="troubleshoot.js"></script>
+<script src="profiles.js"></script>
 <script src="share-card.js"></script>
 <script src="timeline-view.js"></script>
 <script src="learn.js"></script>
