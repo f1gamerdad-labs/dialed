@@ -11,10 +11,6 @@ window.APP_CONFIG = {
   // The website's update-email sign-up (a Kit form) and the Ko-fi tip jar. Leave empty to hide the matching button or prompt.
   updatesUrl: 'https://f1gamerdad-labs.github.io/dialed/#updates',
   tipUrl: 'https://ko-fi.com/f1gamerdad',
-  // "Watch F1GamerDad explain this" links on each recommendation. Each one searches YouTube by default. To point a setting at one video, add it here,
-  // keyed by the setting's name in the sim's file (or "simId:key"), for example:  learn: { 'MaxCarsToDraw': 'https://www.youtube.com/watch?v=VIDEOID&t=95s' }
-  learn: {},
-
   // Optional: let players share an anonymous before/after result with you. Make a Google Form with ONE long-answer question, then paste its formResponse
   // address and that question's entry id here. While resultsUrl is empty the Share my result button stays hidden.
   resultsUrl: '',

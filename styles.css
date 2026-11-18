@@ -382,7 +382,6 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 @media (max-width:560px) { .prow { grid-template-columns:1fr; } .pchk.pnote { grid-column:1; } }
 .pcsum.good { color:#4fdca0; } .pcsum.warn { color:var(--yellow); } .pcsum.bad { color:#ff6b8a; }
 
-.learnrow { margin-top:6px; } a.learn { font-size:12px; font-weight:700; color:var(--pink); text-decoration:none; } a.learn:hover { text-decoration:underline; }
 
 /* ---- frame time chart (timeline-view.js) ---- */
 .tlsvg { width:100%; height:auto; display:block; }
