@@ -266,6 +266,8 @@
         $('hotkeyBox').value = m.hotkey.text;
         $('cueField').hidden = !m.voiceClips;               // the voice/beeps choice only makes sense when the recorded clips are installed
         $('cueSelect').value = m.cueVoice === false ? 'beeps' : 'voice';
+        $('adminBar').hidden = m.elevated !== false;          // only when the program says it is NOT elevated (an older program says nothing)
+        $('ioExport').hidden = !m.tray;                       // exporting needs the 0.4 program; importing works anywhere
         if (m.tray) { $('trayMode').checked = !!m.tray.mode; $('trayHide').checked = !!m.tray.hideOnCapture; $('trayNotify').checked = !!m.tray.notify; $('trayCard').hidden = false; }   // an older program has no tray, so the card stays hidden
         window.TunerHost.hotkeyText = m.hotkey.text;
         window.TunerHost.contentVersion = m.appVersion && m.appVersion.content;
@@ -305,6 +307,9 @@
           '. Start the game once so it creates its settings, or drop the file(s) below.', 'warn');
         break;
       }
+      case 'exportSaved':
+        if (window.TunerSettingsIO) window.TunerSettingsIO.saved(m);
+        break;
       case 'formPosted':
         if (window.TunerCommunity) window.TunerCommunity.posted(m);
         break;

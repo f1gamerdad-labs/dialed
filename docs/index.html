@@ -18,7 +18,7 @@
   --orange:#ff8a1f; --pink:#ff2d8a; --purple:#9b4dff; --yellow:#ffd400;
   --grad:linear-gradient(135deg,#ff8a1f 0%,#ff2d8a 50%,#9b4dff 100%);
   --bg:#120a22; --card:#1b1033; --card2:#241543; --line:#33225a; --rail:#0c0617;
-  --text:#f4efff; --muted:#a898cf; --dim:#7d6ba8; --good:#34d27b;
+  --text:#f4efff; --muted:#a898cf; --dim:#9382c4; --good:#34d27b;
 }
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; scroll-padding-top:72px; }
@@ -206,6 +206,7 @@ code { background:#0e0720; border:1px solid var(--line); border-radius:6px; padd
 <section id="help"><div class="wrap">
   <p class="eyebrow">Help</p><h2>Questions</h2>
   <details><summary>Windows says "Windows protected your PC".</summary><p>Dialed is not signed with a paid code-signing certificate yet, so Windows shows this for any new app. Click <b>More info</b>, then <b>Run anyway</b>. The full source is public on GitHub if you want to check what it does.</p></details>
+  <details><summary>My antivirus flagged Dialed.</summary><p>That can happen with new, unsigned programs, and more so with ones that measure frame rate and ask for administrator rights, which Dialed does. It is a false alarm, but you do not have to take my word for it. Every release lists a SHA-256 checksum for each file (in the release notes and in <code>SHA256SUMS.txt</code> on the <a href="https://github.com/f1gamerdad-labs/dialed/releases">releases page</a>). In PowerShell, <code>Get-FileHash .\Dialed-Setup.exe</code> prints yours, and the two should match exactly. The full source is public on GitHub, and frame capture is Intel's open-source PresentMon. If your antivirus keeps blocking it, tell me which one and which file, and I will send it to the vendor as a false positive.</p></details>
   <details><summary>Does it change my game files?</summary><p>Only when you press Apply, only the graphics settings it lists, and always after saving a backup. Backups live in a visible <code>Dialed Backups</code> folder next to the sim's own settings, and you can restore any of them in the app.</p></details>
   <details><summary>Why does it close my sim?</summary><p>Sims rewrite their settings file when they exit, which would overwrite the change. So Dialed warns you clearly, closes the sim, saves the file, and you start the sim again.</p></details>
   <details><summary>Which sim should I test with, and where?</summary><p>Pick the heaviest session your PC handles: a full grid, ideally in rain or at night, and capture the first lap. The Setup page lists suggested tests for each sim, and a Launch button starts the game through Steam with Dialed already open. Use the same session every time so rounds compare fairly.</p></details>

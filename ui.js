@@ -11,7 +11,7 @@
 
   function show(name) {
     VIEWS.forEach(function (v) { $('view-' + v).hidden = v !== name; });
-    document.querySelectorAll('.rail button[data-view]').forEach(function (b) { b.classList.toggle('on', b.dataset.view === name); });
+    document.querySelectorAll('.rail button[data-view]').forEach(function (b) { b.classList.toggle('on', b.dataset.view === name); if (b.dataset.view === name) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     document.querySelectorAll('.side [data-for]').forEach(function (el) { el.hidden = el.dataset.for !== name; });
     $('main').scrollTop = 0;
     update();

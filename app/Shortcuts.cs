@@ -12,11 +12,29 @@ static class ShareCards
         if ((base64 ?? "").Length > 12_000_000) throw new InvalidOperationException("the image is too large");
         var bytes = Convert.FromBase64String(base64 ?? "");
         if (bytes.Length < 8 || bytes[0] != 0x89 || bytes[1] != (byte)'P' || bytes[2] != (byte)'N' || bytes[3] != (byte)'G') throw new InvalidOperationException("that is not a PNG image");
-        var dir = dirOverride ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Dialed", "Share cards");
+        var dir = dirOverride ?? Path.Combine(Paths.DialedDocs, "Share cards");
         Directory.CreateDirectory(dir);
         var file = Path.Combine(dir, safe + ".png"); int n = 2;
         while (File.Exists(file)) file = Path.Combine(dir, $"{safe} ({n++}).png");
         File.WriteAllBytes(file, bytes);
+        return file;
+    }
+}
+
+/// <summary>Saves the settings and history file the page builds (Export), into Documents\Dialed\Exports. Only valid JSON of a sane size, with a safe file name.</summary>
+static class SettingsExports
+{
+    public static string Save(string rawName, string json, string? dirOverride = null)
+    {
+        var safe = System.Text.RegularExpressions.Regex.Replace(Path.GetFileNameWithoutExtension(rawName ?? "Dialed-settings"), @"[^A-Za-z0-9 _\-]", "-");
+        if (safe.Length == 0) safe = "Dialed-settings";
+        if ((json ?? "").Length < 2 || json!.Length > 4_000_000) throw new InvalidOperationException("the export is empty or too large");
+        using (System.Text.Json.JsonDocument.Parse(json)) { }   // throws if it is not JSON
+        var dir = dirOverride ?? Path.Combine(Paths.DialedDocs, "Exports");
+        Directory.CreateDirectory(dir);
+        var file = Path.Combine(dir, safe + ".json"); int n = 2;
+        while (File.Exists(file)) file = Path.Combine(dir, $"{safe} ({n++}).json");
+        File.WriteAllText(file, json, new System.Text.UTF8Encoding(false));
         return file;
     }
 }

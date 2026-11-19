@@ -12,14 +12,14 @@
   <!-- icon rail -->
   <nav class="rail" aria-label="Sections">
     <img class="logo" src="assets/f1gd-logo.png" alt="F1GamerDad">
-    <button data-view="setup" class="on"><svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2.3"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2.3"/></svg>Setup</button>
-    <button data-view="results"><svg viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="18" y1="20" x2="18" y2="9"/></svg>Results</button>
-    <button data-view="pc"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg>PC check</button>
-    <button data-view="history"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</button>
-    <button data-view="about"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="8" r=".6"/></svg>About</button>
+    <button data-view="setup" class="on"><svg aria-hidden="true" viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2.3"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2.3"/></svg>Setup</button>
+    <button data-view="results"><svg aria-hidden="true" viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="18" y1="20" x2="18" y2="9"/></svg>Results</button>
+    <button data-view="pc"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg>PC check</button>
+    <button data-view="history"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</button>
+    <button data-view="about"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="8" r=".6"/></svg>About</button>
     <div class="spacer"></div>
-    <button data-suggest hidden title="Send an idea or suggestion"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>Ideas</button>
-    <button data-report hidden title="Something not working? Send a report"><svg viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3z"/><line x1="12" y1="10" x2="12" y2="15"/><circle cx="12" cy="18" r=".7"/></svg>Report</button>
+    <button data-suggest hidden title="Send an idea or suggestion"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>Ideas</button>
+    <button data-report hidden title="Something not working? Send a report"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3z"/><line x1="12" y1="10" x2="12" y2="15"/><circle cx="12" cy="18" r=".7"/></svg>Report</button>
     <button class="verpill" id="verPill" hidden title="A new version of Dialed is ready. Click to see what is in it.">Update<br>available</button>
     <div class="ver">v0.1.0</div>
   </nav>
@@ -73,6 +73,9 @@
         <div class="updatebtns"><button id="updateNow">Update now</button><button class="ghost" id="updateLater">Later</button></div>
       </div>
 
+      <div class="update bad" id="adminBar" hidden role="alert">
+        <div class="updatetext"><b>Dialed is not running as administrator.</b> It cannot measure your frame rate like this.<br>Close Dialed, then right-click Dialed in the Start menu and choose <b>Run as administrator</b>. Windows normally asks for this by itself when Dialed opens.</div>
+      </div>
       <div class="update" id="retestBar" hidden role="status">
         <div class="updatetext"><b>Time for a fresh baseline?</b> <span id="retestWhy"></span><br><span id="retestAdvice"></span></div>
         <div class="updatebtns"><button id="retestFresh">Go to Setup</button><button class="ghost" id="retestOk">Got it</button></div>
@@ -108,7 +111,7 @@
             <div class="field" id="cueField" hidden><label for="cueSelect">Countdown sound</label><select id="cueSelect"><option value="voice">F1GamerDad's voice</option><option value="beeps">Plain beeps</option></select></div>
             <div class="field"><button id="capBtn">Start capture</button></div>
           </div>
-          <p class="status" id="capStatus"></p>
+          <p class="status" id="capStatus" role="status"></p>
           <div class="reminder"><b>Open this app before you start the sim.</b> Windows asks for permission when the app opens, and that prompt can freeze a full-screen game. Once the app is open, you never see it again, and the hotkey works from inside the game.</div>
     <p class="hint">Click Start capture, or press the hotkey while you are in <span id="capSimName">the sim</span>. You get a 10 second countdown (spoken or beeps, your choice), then 60 seconds are recorded, then a sound to say it is done. Drive (or watch a replay) with the same track, car and field each time.</p>
           <p style="margin:12px 0 0"><button class="ghost" id="openCaps">Open captures folder</button> <button class="ghost" id="openBackups">Open backups folder</button></p>
@@ -234,7 +237,7 @@
           <p class="hint" style="margin:0 0 10px">Before every change, the app saves your old file into a folder called <code>Dialed Backups</code> next to the sim's own settings, for every sim. Restore any of them here. Your current file is backed up first, so a restore can be undone too.</p>
           <div class="scroll"><table id="backups"></table></div>
           <p class="hint" id="backupsEmpty">No backups yet. One is made each time you apply changes.</p>
-          <p class="status" id="backupMsg"></p>
+          <p class="status" id="backupMsg" role="status"></p>
         </div>
         <div class="card" id="tidyCard" hidden>
           <p class="eyebrow">Tidy up your iRacing folder</p>
@@ -244,7 +247,7 @@
             <div class="scroll" style="margin-top:12px"><table id="tidyList"></table></div>
             <p style="margin:12px 0 0"><button class="ghost" id="tidyMove">Move selected files</button></p>
           </div>
-          <p class="status" id="tidyMsg"></p>
+          <p class="status" id="tidyMsg" role="status"></p>
         </div>
       
         <div class="card" id="badgeCard"><p class="eyebrow">Your badges <span id="badgeCount" class="sec-prog"></span></p><div class="badgegrid" id="badgeGrid"></div></div>
@@ -258,7 +261,7 @@
           <p id="versionLine" style="margin:0 0 10px"></p>
           <label class="checkrow"><input type="checkbox" id="autoUpdate"> Check for updates when the app opens</label>
           <p class="hint">Updates come from this project's GitHub releases only. Checking sends nothing about you or your PC, and an update is never installed without you pressing Update now.</p>
-          <p style="margin:12px 0 0"><button class="ghost" id="checkUpdate">Check for updates</button> <button class="ghost" id="revertUpdate" hidden>Go back to the previous version</button> <span class="status" id="updateStatus"></span></p>
+          <p style="margin:12px 0 0"><button class="ghost" id="checkUpdate">Check for updates</button> <button class="ghost" id="revertUpdate" hidden>Go back to the previous version</button> <span class="status" id="updateStatus" role="status"></span></p>
         </div>
         <div class="card" id="trayCard" hidden>
           <p class="eyebrow">Window and system tray</p>
@@ -266,6 +269,12 @@
           <label class="checkrow"><input type="checkbox" id="trayHide"> Move Dialed out of the way when a capture starts</label>
           <label class="checkrow"><input type="checkbox" id="trayNotify"> Show a Windows notification when a capture finishes while Dialed is hidden</label>
           <p class="hint">The tray is the row of small icons by the clock (it may be behind the arrow). Right-click the Dialed icon there to open it, start or stop a capture, or exit. The capture hotkey and the sounds work the same while it is hidden. With the first option off, closing the window closes Dialed.</p>
+        </div>
+        <div class="card" id="ioCard">
+          <p class="eyebrow">Move to a new PC, or keep a copy</p>
+          <p style="margin:0 0 10px"><button class="ghost" id="ioExport" hidden>Export my settings and history</button> <button class="ghost" id="ioImport">Import from a file</button> <span class="status" id="ioMsg" role="status"></span></p>
+          <input type="file" id="ioFile" accept=".json,application/json" hidden aria-label="Choose a Dialed export file">
+          <p class="hint" style="margin:0">Export saves your rounds, profiles and preferences into one file in <code>Documents\Dialed\Exports</code>. Copy it to the new PC and use Import there. Your captures and your games' own settings files are not included. Nothing is uploaded.</p>
         </div>
         <div class="card about">
           <p class="eyebrow">Dialed by F1GamerDad</p>
@@ -365,7 +374,7 @@
       <label class="checkrow"><input type="checkbox" id="reportData" checked> My recent captures and results (frame data only)</label>
       <label class="checkrow"><input type="checkbox" id="reportSettings" checked> My graphics settings file for the selected sim (graphics options only, no profile or account details)</label>
       <p class="hint">Your message and a short summary go straight to F1GamerDad. The full report is saved as a zip file in <code>Documents\Dialed\Reports</code> and the folder opens, so you can drop the zip into Discord or an email if asked. The zip is never uploaded by the app.</p>
-      <p class="status" id="reportStatus"></p>
+      <p class="status" id="reportStatus" role="status"></p>
       <div class="modal-foot" style="padding:6px 0 0"><span></span><button id="reportSend">Send report</button></div>
     </div>
   </div>
@@ -426,6 +435,7 @@
 <script src="share-card.js"></script>
 <script src="timeline-view.js"></script>
 <script src="reliability.js"></script>
+<script src="settings-io.js"></script>
 <script src="retest.js"></script>
 <script src="prefs.js"></script>
 <script src="pc-check.js"></script>

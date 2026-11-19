@@ -43,6 +43,7 @@
     <Content Include="..\share-card.js" Link="web\share-card.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\timeline-view.js" Link="web\timeline-view.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\reliability.js" Link="web\reliability.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\settings-io.js" Link="web\settings-io.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\retest.js" Link="web\retest.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\celebrate.js" Link="web\celebrate.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\sims.js" Link="web\sims.js" CopyToOutputDirectory="PreserveNewest" />

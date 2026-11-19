@@ -16,7 +16,37 @@ static class Paths
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "iRacingGraphicsTuner");
     // Captures are meant to be opened and shared, so they live somewhere visible: Documents\Dialed\Captures.
     // (Explorer cannot open new folders under AppData\Roaming on some PCs, and a hidden folder is hard to find anyway.)
-    public static string Captures => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Dialed", "Captures");
+    public static string Captures => Path.Combine(DialedDocs, "Captures");
+
+    static string? dialedDocs;
+    /// <summary>Documents\Dialed, where captures, reports, share images and exports go so the user can find them. Some PCs have no usable Documents folder
+    /// (redirected to a drive that is offline, a locked-down profile, no write access); then everything goes to a "documents" folder inside Dialed's own data
+    /// folder instead, and the log says so. Decided once per run.</summary>
+    public static string DialedDocs
+    {
+        get
+        {
+            if (dialedDocs != null) return dialedDocs;
+            var docs = TestDocuments ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (!string.IsNullOrWhiteSpace(docs))
+            {
+                try
+                {
+                    var p = Path.Combine(docs, "Dialed"); Directory.CreateDirectory(p);
+                    var probe = Path.Combine(p, ".write-test-" + Guid.NewGuid().ToString("N")); File.WriteAllText(probe, "x"); File.Delete(probe);
+                    return dialedDocs = p;
+                }
+                catch (Exception ex) { Log_("Documents folder not usable (" + ex.GetType().Name + "), using Dialed's own folder instead"); }
+            }
+            else Log_("no Documents folder reported by Windows, using Dialed's own folder instead");
+            var fb = Path.Combine(Data, "documents"); Directory.CreateDirectory(fb);
+            return dialedDocs = fb;
+        }
+    }
+    /// <summary>Self-tests only: pretend Windows reported this as the Documents folder.</summary>
+    public static string? TestDocuments { get; set; }
+    /// <summary>For tests: forget the decision.</summary>
+    public static void ForgetDialedDocs() => dialedDocs = null;
     static string OldCaptures => Path.Combine(Data, "captures");
 
     /// <summary>Earlier builds kept captures under AppData. Move them (never copy or delete) into Documents\Dialed\Captures.</summary>
@@ -174,7 +204,7 @@ static class Unelevated
     }
     [StructLayout(LayoutKind.Sequential)] struct PROCESS_INFORMATION { public IntPtr hProcess, hThread; public int dwProcessId, dwThreadId; }
 
-    static bool IsElevated()
+    public static bool IsElevated()
     {
         using var id = System.Security.Principal.WindowsIdentity.GetCurrent();
         return new System.Security.Principal.WindowsPrincipal(id).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);

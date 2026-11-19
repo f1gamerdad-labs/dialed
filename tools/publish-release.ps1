@@ -82,5 +82,10 @@ if ($Installer) {
   if (-not (Test-Path $Installer)) { throw "Cannot find $Installer" }
   $assets += $Installer
 }
+# Checksums: anyone (or an antivirus vendor reviewing a false alarm) can confirm a download is the exact file that was released.
+$sumLines = @(foreach ($a in $assets) { if ($a -ne $manifestPath) { "{0}  {1}" -f (Get-FileHash $a -Algorithm SHA256).Hash.ToLower(), (Split-Path $a -Leaf) } })
+$sumFile = Join-Path $out 'SHA256SUMS.txt'; [IO.File]::WriteAllText($sumFile, (($sumLines -join "`n") + "`n"), $utf8)
+$assets += $sumFile
+[IO.File]::AppendAllText($notesFile, "`nChecksums (SHA-256, also attached as SHA256SUMS.txt):`n`n" + (($sumLines | ForEach-Object { "    $_" }) -join "`n") + "`n", $utf8)
 gh release create "v$Version" @assets --repo $Repo --title "Dialed $Version" --notes-file $notesFile
 "`nPublished. Dialed will offer this update to everyone on an older version."

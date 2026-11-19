@@ -111,6 +111,22 @@ public sealed class MainForm : Form
                     };
                 }
                 catch (Exception ex) { res["error"] = ex.ToString(); }
+                try
+                {
+                    // exports: valid JSON is saved and shown, junk and oversize are refused
+                    var ex1 = SettingsExports.Save("Dialed-settings-2026-11-19", "{\"app\":\"dialed-settings\"}", Path.Combine(Paths.Data, "exports"));
+                    string? junk = null; try { SettingsExports.Save("x", "not json", Path.Combine(Paths.Data, "exports")); } catch (Exception e2) { junk = e2.GetType().Name; }
+                    var ex2 = SettingsExports.Save("../../evil name", "{}", Path.Combine(Paths.Data, "exports"));
+                    res["export"] = new { saved = File.Exists(ex1), junkRefusedWith = junk, safeName = Path.GetFileName(ex2), insideFolder = Path.GetDirectoryName(ex2)!.EndsWith("exports") };
+                    // Documents folder fallback: a "Documents" that cannot be created falls back to Dialed's own folder
+                    var blocker = Path.Combine(Paths.Data, "not-a-folder"); File.WriteAllText(blocker, "x");
+                    Paths.ForgetDialedDocs(); Paths.TestDocuments = Path.Combine(blocker, "Documents");   // a path underneath a file can never be created
+                    var fb = Paths.DialedDocs; var fbCaps = Paths.Captures;
+                    Paths.ForgetDialedDocs(); Paths.TestDocuments = null;
+                    res["documentsFallback"] = new { usedOwnFolder = fb.StartsWith(Paths.Data, StringComparison.OrdinalIgnoreCase), capturesInside = fbCaps.StartsWith(fb, StringComparison.OrdinalIgnoreCase), fb };
+                    res["elevatedReported"] = Unelevated.IsElevated();
+                }
+                catch (Exception ex3) { res["exportOrDocsError"] = ex3.ToString(); }
                 File.WriteAllText(Path.Combine(Paths.Data, "selftest-tray.json"), JsonSerializer.Serialize(res, new JsonSerializerOptions { WriteIndented = true }));
                 Close();   // tray mode is off again, so this one really closes
             };
@@ -537,6 +553,7 @@ public sealed class MainForm : Form
                         ini = IniService.List(), lastIni = settings.LastIni, seconds = settings.CaptureSeconds, countdown = settings.Countdown,
                         cueVoice = settings.CueVoice, voiceClips = SoundPack.ClipsExist(), screenHz = PcCheck.PrimaryRefresh(),
                         tray = new { mode = settings.TrayMode, hideOnCapture = settings.HideOnCapture, notify = settings.NotifyOnCapture },
+                        elevated = Unelevated.IsElevated(), docsDir = Paths.DialedDocs,
                         busy = Busy.Running(), sims = SimService.Describe(), running = SimService.RunningMap(), sim = currentSim.Id,
                     });
                     break;
@@ -700,6 +717,17 @@ public sealed class MainForm : Form
                         Post(new { type = "imageSaved", ok = true, path = file });
                     }
                     catch (Exception ex) { Paths.Log_("share image: " + ex.Message); Post(new { type = "imageSaved", ok = false, message = ex.Message }); }
+                    break;
+                }
+                case "saveExport": // Export my settings and history: a JSON file the page built, saved into Documents\Dialed\Exports and shown in Explorer
+                {
+                    try
+                    {
+                        var file = SettingsExports.Save(r.GetProperty("name").GetString() ?? "Dialed-settings", r.GetProperty("text").GetString() ?? "");
+                        Unelevated.OpenTarget(Path.GetDirectoryName(file)!);
+                        Post(new { type = "exportSaved", ok = true, path = file });
+                    }
+                    catch (Exception ex) { Paths.Log_("export: " + ex.Message); Post(new { type = "exportSaved", ok = false, message = ex.Message }); }
                     break;
                 }
                 case "openFolder":

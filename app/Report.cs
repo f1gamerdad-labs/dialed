@@ -18,7 +18,7 @@ static class ReportService
     const long CaptureBudget = 20L * 1024 * 1024; // keep the zip small enough to attach to an email or Discord message
     const int MaxCaptures = 15;
 
-    public static string ReportsDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Dialed", "Reports");
+    public static string ReportsDir => Path.Combine(Paths.DialedDocs, "Reports");
 
     public static string SystemText(SimDef sim, string? lastIni)
     {
@@ -26,7 +26,20 @@ static class ReportService
         sb.AppendLine($"Dialed host {UpdateService.HostVersion}, page {UpdateService.CurrentVersion()}");
         sb.AppendLine($"Windows {Environment.OSVersion.Version} ({(Environment.Is64BitOperatingSystem ? "64" : "32")}-bit), {Environment.ProcessorCount} logical CPUs");
         try { sb.AppendLine($"Memory {Math.Round(GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / 1073741824.0, 1)} GB"); } catch { }
-        sb.AppendLine("Graphics " + (GpuName() ?? "unknown"));
+        sb.AppendLine("Run as administrator: " + (Unelevated.IsElevated() ? "yes" : "NO (Dialed cannot measure frame rate without it)"));
+        var detailed = false;
+        try
+        {
+            // The same facts the PC check reads: Windows build, processor, graphics cards with driver version and date, memory, screens.
+            var j = JsonSerializer.SerializeToElement(PcCheck.Collect());
+            if (j.TryGetProperty("os", out var os)) sb.AppendLine($"Windows edition: {os.GetProperty("caption").GetString()} build {os.GetProperty("build").GetInt32()}");
+            if (j.TryGetProperty("cpu", out var cpu) && cpu.ValueKind == JsonValueKind.Object) sb.AppendLine($"Processor: {cpu.GetProperty("name").GetString()}");
+            if (j.TryGetProperty("gpus", out var gpus)) foreach (var g in gpus.EnumerateArray()) { sb.AppendLine($"Graphics: {g.GetProperty("name").GetString()}, driver {g.GetProperty("driver").GetString()} (dated {g.GetProperty("date").GetString()})"); detailed = true; }
+            if (j.TryGetProperty("displays", out var dis)) foreach (var d in dis.EnumerateArray()) sb.AppendLine($"Screen: {d.GetProperty("width").GetInt32()}x{d.GetProperty("height").GetInt32()} at {d.GetProperty("hz").GetInt32()} Hz on {d.GetProperty("adapter").GetString()}");
+            if (j.TryGetProperty("ram", out var ram)) sb.AppendLine("Memory modules: " + string.Join(", ", ram.EnumerateArray().Select(m => $"{m.GetProperty("capGB").GetInt32()} GB at {m.GetProperty("configured").GetInt32()} MT/s")));
+        }
+        catch (Exception ex) { sb.AppendLine("(detailed hardware read failed: " + ex.GetType().Name + ")"); }
+        if (!detailed) sb.AppendLine("Graphics " + (GpuName() ?? "unknown"));
         sb.AppendLine($"Sim {sim.Name} ({sim.Id}); last renderer file {lastIni ?? "n/a"}");
         sb.AppendLine($"Sim running now: {SimService.IsRunning(sim)}");
         return sb.ToString();

@@ -10,7 +10,7 @@
   --grad: linear-gradient(135deg, #ff8a1f 0%, #ff2d8a 50%, #9b4dff 100%);
   --grad-edge: linear-gradient(180deg, #ff2d8a, #9b4dff);
   --bg:#120a22; --bg2:#1b1033; --rail:#0c0617; --card:#1b1033; --card2:#241543; --line:#33225a;
-  --text:#f4efff; --muted:#a898cf; --dim:#7d6ba8;
+  --text:#f4efff; --muted:#a898cf; --dim:#9382c4;
   --good:#34d27b; --warn:#ffd400; --bad:#ff4d6d;
   --radius:16px;
 }
