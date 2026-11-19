@@ -47,6 +47,7 @@
   $('iniPanel').hidden = true; // the app finds the files itself; the drop box comes back only if it cannot
 
   function showBusy(list) {
+    window.TunerBusy = list || [];   // the capture reliability check reads this
     $('busyNow').textContent = list && list.length
       ? 'Still running right now: ' + list.join(', ') + '.'
       : 'Nothing obvious is running, but check the system tray too.';
@@ -98,6 +99,7 @@
 
   function renderBackups(items) {
     backupItems = items;
+    syncOriginal();
     $('backupsEmpty').hidden = items.length > 0;
     $('backups').innerHTML = items.length ? '<tr><th>Saved</th><th>Sim</th><th>File</th><th>From</th><th class="n">Size</th><th></th></tr>' + items.map(function (b, i) {
       var r = roundFor(b);
@@ -124,6 +126,43 @@
         okLabel: 'Close ' + s.short + ' and restore', cancelLabel: 'No, keep ' + s.short + ' open'
       }).then(function (ok) { if (ok) go(); });
     } else if (confirm('Restore ' + b.target + ' from ' + when(b.at) + '?\n\nYour current file is backed up first.')) go();
+  });
+
+  // ---- "Restore my original settings": the oldest backup of each file, for the sim on screen. Dialed saves a backup before its first ever change,
+  // so the oldest one is how the file was before Dialed touched it. Several files (some sims) are restored one after another.
+  var originalQueue = [], originalRunning = false;
+  function originalsFor(id) {
+    var by = {};
+    backupItems.forEach(function (b) {
+      if (b.sim !== id || /before restore/.test(b.file)) return;
+      if (!by[b.target] || new Date(b.at) < new Date(by[b.target].at)) by[b.target] = b;
+    });
+    return Object.keys(by).map(function (k) { return by[k]; });
+  }
+  function syncOriginal() {
+    var list = originalsFor(sim().id), card = $('restoreCard');
+    card.hidden = !list.length;
+    if (!list.length) return;
+    var first = list.reduce(function (a, b) { return new Date(b.at) < new Date(a.at) ? b : a; });
+    $('restoreOrigHint').textContent = 'Puts ' + (list.length > 1 ? 'your ' + list.length + ' settings files' : sim().short + '\'s graphics file') + ' back exactly as ' + (list.length > 1 ? 'they were' : 'it was') +
+      ' before Dialed first changed anything (saved ' + when(first.at) + '). Your current settings are backed up first, so this can be undone too.';
+  }
+  function nextOriginal() {
+    var b = originalQueue.shift(); if (!b) return;
+    send({ type: 'restoreBackup', sim: b.sim, file: b.file, closeSim: !!window.TunerHost.running[b.sim] });
+  }
+  $('restoreOrig').addEventListener('click', function () {
+    var s = sim(), list = originalsFor(s.id); if (!list.length) return;
+    var close = !!window.TunerHost.running[s.id];
+    function go() { originalRunning = true; originalQueue = list.slice(); $('restoreOrigMsg').textContent = close ? 'Closing ' + s.name + '...' : 'Restoring...'; $('restoreOrigMsg').className = 'status'; nextOriginal(); }
+    if (close && window.TunerWarn) {
+      window.TunerWarn.confirm({
+        title: s.name + ' will close',
+        lead: 'Restoring your original settings closes ' + s.name + ' right now. If you are in a session, you will leave it.',
+        steps: [s.name + ' is asked to close, the same as choosing Exit.', 'Your current settings are backed up first.', 'Your settings from before Dialed are put back.', 'Start ' + s.name + ' again to use them.'],
+        okLabel: 'Close ' + s.short + ' and restore', cancelLabel: 'No, keep ' + s.short + ' open'
+      }).then(function (ok) { if (ok) go(); });
+    } else if (confirm('Put your original ' + s.name + ' settings back?\n\nYour current settings are backed up first, so you can undo this.')) go();
   });
 
   $('tidyScan').addEventListener('click', function () { $('tidyMsg').textContent = ''; send({ type: 'scanTidy' }); });
@@ -300,6 +339,11 @@
         break;
       case 'restored':
         backupMsg(m.ok ? 'Restored. The tool is now reading your restored file.' : m.message, m.ok ? 'good' : 'bad');
+        if (originalQueue.length && m.ok) nextOriginal();
+        else if (originalRunning) {
+          $('restoreOrigMsg').textContent = m.ok ? 'Done. Your original settings are back. Start the sim again to use them.' : (m.message || 'Could not restore.');
+          $('restoreOrigMsg').className = 'status ' + (m.ok ? 'good' : 'bad'); originalQueue = []; originalRunning = false;
+        }
         loadSim(); listBackups();
         break;
       case 'tidy':

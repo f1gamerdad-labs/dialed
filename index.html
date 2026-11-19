@@ -72,6 +72,11 @@
         <div class="updatebtns"><button id="updateNow">Update now</button><button class="ghost" id="updateLater">Later</button></div>
       </div>
 
+      <div class="update" id="retestBar" hidden role="status">
+        <div class="updatetext"><b>Time for a fresh baseline?</b> <span id="retestWhy"></span><br><span id="retestAdvice"></span></div>
+        <div class="updatebtns"><button id="retestFresh">Go to Setup</button><button class="ghost" id="retestOk">Got it</button></div>
+      </div>
+
       <!-- SETUP -->
       <section id="view-setup">
         <div class="title"><h2>Setup</h2></div>
@@ -84,6 +89,12 @@
           <p class="hint" style="margin:0 0 8px">Test where your PC works hardest, and use exactly the same session for every capture so the rounds compare fairly. The busiest moment is usually the first lap with a full field.</p>
           <ul class="scen" id="scenList"></ul>
           <p id="launchRow" hidden style="margin:12px 0 0"><button class="ghost" id="launchSim">Launch the game</button> <span class="hint">Starts it through Steam with Dialed already open, so the Windows permission prompt cannot freeze the game. Then set up the session above yourself: games do not let other programs pick the track and cars.</span></p>
+        </div>
+
+        <div class="card" id="restoreCard" hidden>
+          <p class="eyebrow">Your original settings</p>
+          <p style="margin:0 0 10px"><button class="ghost" id="restoreOrig">Restore my original settings</button> <span class="status" id="restoreOrigMsg" role="status"></span></p>
+          <p class="hint" style="margin:0" id="restoreOrigHint"></p>
         </div>
 
         <div class="card" id="appPanel" hidden>
@@ -163,6 +174,7 @@
 
         <div id="results" hidden>
           <div class="card" id="sumCard"><p class="eyebrow" id="resultsTitle">What your PC is doing</p><div class="tiles" id="tiles"></div></div>
+          <div class="card" id="reliabCard" hidden><p class="eyebrow">Can you trust these captures?</p><p id="reliabHead" style="margin:0 0 6px;font-weight:900"></p><ul class="notes" id="reliabList"></ul></div>
           <div class="card" id="tableCard"><p class="eyebrow">Your captures</p><div class="scroll"><table id="capTable"></table></div></div>
           <div class="card" id="timelineCard"><p class="eyebrow">Your frame times</p>
             <div class="row"><div class="field"><label for="tlPick">Capture</label><select id="tlPick"></select></div></div>
@@ -405,6 +417,8 @@
 <script src="profiles.js"></script>
 <script src="share-card.js"></script>
 <script src="timeline-view.js"></script>
+<script src="reliability.js"></script>
+<script src="retest.js"></script>
 <script src="prefs.js"></script>
 <script src="pc-check.js"></script>
 <script src="tour.js"></script>

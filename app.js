@@ -332,6 +332,7 @@
       tile('Stutters', m.spikesPerMin.toFixed(1) + ' / min', { ok: 'good', some: 'warn', bad: 'bad' }[d.stutter],
         m.spikes ? 'Mostly from the ' + (m.spikeSide === 'gpu' ? 'graphics card' : 'processor') + ' side' : 'None found');
 
+    if (window.TunerReliability) window.TunerReliability.render(state.caps, { busy: window.TunerBusy || [] });   // can these numbers be trusted?
     if (window.TunerTimeline) window.TunerTimeline.render(state.caps, d.vram === 'pressure');   // the frame-time chart under the capture table
     $('capTable').innerHTML = '<tr><th>Capture</th><th class="n">Length</th><th class="n">Avg FPS</th><th class="n">1% low</th><th class="n">0.1% low</th><th class="n">GPU busy</th><th class="n">Stutters / min</th></tr>' +
       state.caps.map(function (c) {
