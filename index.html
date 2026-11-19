@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dialed by F1GamerDad</title>
+<script>(function(){try{var d=document.documentElement,g=function(k){return localStorage.getItem(k)},t=g("dialed.theme");if(t==="system")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";d.dataset.theme=t==="light"?"light":"dark";if(g("dialed.cb")==="1")d.dataset.cb="on";if(g("dialed.contrast")==="high")d.dataset.contrast="high"}catch(e){}})();</script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -18,6 +19,7 @@
     <button data-view="history"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</button>
     <button data-view="about"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="8" r=".6"/></svg>About</button>
     <div class="spacer"></div>
+    <button id="themeBtn" title="Switch to the light theme" aria-label="Switch to the light theme"><svg aria-hidden="true" viewBox="0 0 24 24" id="themeIconSun"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg><svg aria-hidden="true" viewBox="0 0 24 24" id="themeIconMoon" style="display:none"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg><span id="themeBtnText">Light</span></button>
     <button data-suggest hidden title="Send an idea or suggestion"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>Ideas</button>
     <button data-report hidden title="Something not working? Send a report"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3z"/><line x1="12" y1="10" x2="12" y2="15"/><circle cx="12" cy="18" r=".7"/></svg>Report</button>
     <button class="verpill" id="verPill" hidden title="A new version of Dialed is ready. Click to see what is in it.">Update<br>available</button>
@@ -184,7 +186,7 @@
             <div class="row"><div class="field"><label for="tlPick">Capture</label><select id="tlPick"></select></div></div>
             <div id="tlChart" aria-label="Frame time over the capture"></div>
             <ul class="tlnotes" id="tlNotes"></ul>
-            <p class="opt-note">Each bar is the slowest frame in a slice of the capture. Lower is smoother. Dots are stutters: pink started on the graphics card side, yellow on the processor side.</p></div>
+            <p class="opt-note">Each bar is the slowest frame in a slice of the capture. Lower is smoother. Dots are stutters: round dots started on the graphics card side, diamonds on the processor side.</p></div>
           <section class="card" id="lastRound" hidden></section>
           <div class="card" id="changesCard">
             <p class="eyebrow">Recommended changes</p>
@@ -263,7 +265,13 @@
           <p class="hint">Updates come from this project's GitHub releases only. Checking sends nothing about you or your PC, and an update is never installed without you pressing Update now.</p>
           <p style="margin:12px 0 0"><button class="ghost" id="checkUpdate">Check for updates</button> <button class="ghost" id="revertUpdate" hidden>Go back to the previous version</button> <span class="status" id="updateStatus" role="status"></span></p>
         </div>
-        <div class="card" id="trayCard" hidden>
+        <div class="card" id="appearCard">
+          <p class="eyebrow">Appearance and accessibility</p>
+          <div class="row"><div class="field"><label for="themeSel">Theme</label><select id="themeSel"><option value="dark">Dark</option><option value="light">Light</option><option value="system">Match Windows</option></select></div></div>
+          <label class="checkrow"><input type="checkbox" id="cbMode"> Colour-blind friendly colours</label>
+          <label class="checkrow"><input type="checkbox" id="hiContrast"> High contrast buttons</label>
+          <p class="hint">Colour-blind friendly colours use blue and magenta instead of green and pink for good and bad, and yellow for caution. They were checked against the three common types of colour blindness. The wording never relies on colour alone: results say Better or Worse, and changes show a + or -. High contrast buttons make every button one solid deep purple instead of the orange to pink gradient, so the white text is easier to read.</p>
+        </div>        <div class="card" id="trayCard" hidden>
           <p class="eyebrow">Window and system tray</p>
           <label class="checkrow"><input type="checkbox" id="trayMode"> Keep Dialed running in the system tray when I close or minimise the window</label>
           <label class="checkrow"><input type="checkbox" id="trayHide"> Move Dialed out of the way when a capture starts</label>
@@ -435,6 +443,7 @@
 <script src="share-card.js"></script>
 <script src="timeline-view.js"></script>
 <script src="reliability.js"></script>
+<script src="theme.js"></script>
 <script src="settings-io.js"></script>
 <script src="retest.js"></script>
 <script src="prefs.js"></script>

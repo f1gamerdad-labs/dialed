@@ -15,8 +15,14 @@
     var step = tl.seconds > 45 ? 15 : 10; for (var s = 0; s <= tl.seconds; s += step) g += '<text x="' + x(s).toFixed(1) + '" y="' + (H - 8) + '" class="tltxt" text-anchor="middle">' + s + ' s</text>';
     var bars = tl.points.map(function (p) { var hh = Math.max(1, T + ph - y(p.max)); return '<rect x="' + (x(p.t) - barW / 2).toFixed(1) + '" y="' + y(p.max).toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + hh.toFixed(1) + '" class="tlbar' + (p.max > tl.spikeAtMs ? ' hot' : '') + '"/>'; }).join('');
     var line = '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(tl.spikeAtMs).toFixed(1) + '" y2="' + y(tl.spikeAtMs).toFixed(1) + '" class="tlspike"/><text x="' + (W - R) + '" y="' + (y(tl.spikeAtMs) - 4).toFixed(1) + '" class="tltxt" text-anchor="end">stutter line</text>';
-    var dots = tl.spikes.slice(0, 200).map(function (s2) { return '<circle cx="' + x(s2.t).toFixed(1) + '" cy="' + y(s2.ms).toFixed(1) + '" r="4" class="tldot ' + s2.side + '"/>'; }).join('');
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" class="tlsvg"><text x="4" y="12" class="tltxt">milliseconds per frame</text>' + g + bars + line + dots + '</svg>';
+    // Dots differ by shape as well as colour (for colour-blind viewers): graphics card = circle, processor = diamond, unknown = square.
+    var dots = tl.spikes.slice(0, 200).map(function (s2) {
+      var cx = x(s2.t).toFixed(1), cy = y(s2.ms).toFixed(1), c = 'tldot ' + s2.side;
+      if (s2.side === 'cpu') return '<polygon points="' + cx + ',' + (cy - 5.5) + ' ' + (+cx + 5.5) + ',' + cy + ' ' + cx + ',' + (+cy + 5.5) + ' ' + (cx - 5.5) + ',' + cy + '" class="' + c + '"/>';
+      if (s2.side === 'gpu') return '<circle cx="' + cx + '" cy="' + cy + '" r="4.5" class="' + c + '"/>';
+      return '<rect x="' + (cx - 4) + '" y="' + (cy - 4) + '" width="8" height="8" class="' + c + '"/>';
+    }).join('');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Frame time over the capture. Tall bars and the dots above the stutter line are stutters: circles started on the graphics card side, diamonds on the processor side." class="tlsvg"><text x="4" y="12" class="tltxt">milliseconds per frame</text>' + g + bars + line + dots + '</svg>';
   }
 
   function show(i) {

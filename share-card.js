@@ -27,6 +27,8 @@
 
   // ---- drawing ----
   var W = 1200, H = 630, TONE = { good: '#4fdca0', bad: '#ff6b8a', flat: '#b6a6d9' };
+  // Colour-blind friendly colours (About): blue for good, magenta for bad, so the picture reads the same for everyone.
+  function tone() { try { if (typeof document !== 'undefined' && document.documentElement.dataset.cb === 'on') return { good: '#56b4e9', bad: '#e0489a', flat: '#b6a6d9' }; } catch (e) { /* default */ } return TONE; }
   function load(src) { return new Promise(function (res) { var i = new Image(); i.onload = function () { res(i); }; i.onerror = function () { res(null); }; i.src = src; }); }
   function round(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
   function fit(ctx, text, maxW) { while (ctx.measureText(text).width > maxW && text.length > 4) text = text.slice(0, -2); return text; }
@@ -51,7 +53,7 @@
       round(ctx, x, y, w, hh, 16); ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 1.5; ctx.stroke();
       ctx.font = '900 14px Lato, Arial, sans-serif'; ctx.fillStyle = '#b6a6d9'; ctx.fillText(t.label.toUpperCase(), x + 16, y + 30);
       ctx.font = '400 38px "Russo One", Arial Black, sans-serif'; ctx.fillStyle = '#ffffff'; ctx.fillText(t.from + ' > ' + t.to, x + 16, y + 82);
-      ctx.font = '900 26px Lato, Arial, sans-serif'; ctx.fillStyle = TONE[t.tone]; ctx.fillText(t.delta, x + 16, y + 122);
+      ctx.font = '900 26px Lato, Arial, sans-serif'; ctx.fillStyle = tone()[t.tone]; ctx.fillText(t.delta, x + 16, y + 122);
     });
 
     ctx.font = '900 15px Lato, Arial, sans-serif'; ctx.fillStyle = '#b6a6d9'; ctx.fillText('WHAT I CHANGED', 56, 520);

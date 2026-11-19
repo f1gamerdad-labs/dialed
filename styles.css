@@ -12,6 +12,7 @@
   --bg:#120a22; --bg2:#1b1033; --rail:#0c0617; --card:#1b1033; --card2:#241543; --line:#33225a;
   --text:#f4efff; --muted:#a898cf; --dim:#9382c4;
   --good:#34d27b; --warn:#ffd400; --bad:#ff4d6d;
+  --good2:#4fdca0; --bad2:#ff6b8a; --focus:#fff; color-scheme:dark;
   --radius:16px;
 }
 * { box-sizing:border-box; }
@@ -33,7 +34,7 @@ code { color:var(--dim); font-size:12px; }
 .rail .spacer { flex:1; }
 .rail .ver { color:var(--dim); font-size:10px; padding-bottom:4px; }
 .rail .verpill { all:unset; box-sizing:border-box; cursor:pointer; margin:0 6px 6px; padding:5px 4px; border-radius:8px; text-align:center; font:700 10px/1.25 "Lato",sans-serif; color:#fff; background:linear-gradient(135deg,#ff8a1f,#ff2d8a 60%,#9b4dff); }
-.rail .verpill:hover { filter:brightness(1.12); } .rail .verpill:focus-visible { outline:2px solid #fff; outline-offset:2px; } .rail .verpill[hidden] { display:none; }
+.rail .verpill:hover { filter:brightness(1.12); } .rail .verpill:focus-visible { outline:2px solid var(--focus); outline-offset:2px; } .rail .verpill[hidden] { display:none; }
 body.capturing #updateBar { display:none !important; }   /* never move the page or distract while a capture is running; the pill in the sidebar stays */
 
 .side { background:linear-gradient(180deg, #170d2b, #120a22); border-right:1px solid var(--line); padding:18px 14px; overflow-y:auto; display:flex; flex-direction:column; }
@@ -45,7 +46,7 @@ body.capturing #updateBar { display:none !important; }   /* never move the page 
 .simbtn img { max-width:100%; height:26px; object-fit:contain; display:block; filter:grayscale(.55) opacity(.75); transition:filter .15s; }
 .simbtn .nm { line-height:1.15; overflow-wrap:anywhere; }
 .simbtn:hover { border-color:var(--pink); } .simbtn:hover img { filter:none; }
-.simbtn:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+.simbtn:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 .simbtn.on { border-color:transparent; background:linear-gradient(var(--card2), var(--card2)) padding-box, var(--grad) border-box; border:2px solid transparent; color:#fff; box-shadow:0 6px 18px rgba(255,45,138,.3); }
 .simbtn.on img { filter:none; }
 .simbtn.missing { opacity:.55; }
@@ -114,7 +115,7 @@ input[type=number] { width:110px; } #hotkeyBox { width:200px; cursor:pointer; fo
 .seg label { position:relative; cursor:pointer; padding:0 18px; min-height:38px; display:flex; align-items:center; justify-content:center; border-radius:9px; font-weight:700; font-size:14px; line-height:1; color:var(--muted); margin:0; }
 .seg label input { position:absolute; opacity:0; inset:0; cursor:pointer; }
 .seg label:has(input:checked) { background:var(--grad); color:#fff; box-shadow:0 4px 12px rgba(255,45,138,.3); }
-.seg label:has(input:focus-visible) { outline:2px solid #fff; }
+.seg label:has(input:focus-visible) { outline:2px solid var(--focus); }
 .seg small { display:none; }
 .opt-note { color:var(--muted); font-size:13px; margin:8px 0 0; min-height:1.3em; }
 .drop { display:block; border:2px dashed var(--line); border-radius:12px; padding:18px; text-align:center; color:var(--muted); cursor:pointer; }
@@ -130,7 +131,7 @@ input[type=number] { width:110px; } #hotkeyBox { width:200px; cursor:pointer; fo
 .update .updatetext { flex:1 1 360px; } .update b { font-family:"Russo One"; font-weight:400; font-size:16px; color:#e9ffee; } .update.bad b { color:#ffd7de; }
 .update ul { margin:6px 0 0; padding-left:18px; font-size:13.5px; color:var(--text); } .update ul:empty { display:none; }
 .updatebtns { display:flex; gap:10px; } #updateNow { all:unset; box-sizing:border-box; cursor:pointer; background:var(--grad); color:#fff; font-family:"Russo One"; font-size:14px; padding:10px 18px; border-radius:10px; }
-#updateNow:disabled { opacity:.5; cursor:wait; } #updateNow:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+#updateNow:disabled { opacity:.5; cursor:wait; } #updateNow:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 .checkrow { display:flex; align-items:center; gap:10px; cursor:pointer; } .checkrow input { width:18px; height:18px; accent-color:var(--pink); }
 .scopeline { margin:0 0 10px; font-weight:700; color:#e3d6ff; font-size:14px; }
 .tag.scope { color:#c9b5ff; font-weight:700; }
@@ -172,7 +173,7 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 .player iframe, .player video { width:100%; height:100%; border:0; display:block; background:#000; }
 .modal-foot { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:14px 22px 18px 28px; }
 #introStart { all:unset; box-sizing:border-box; cursor:pointer; background:var(--grad); color:#fff; font-family:"Russo One"; font-size:15px; padding:11px 22px; border-radius:12px; white-space:nowrap; box-shadow:0 6px 18px rgba(255,45,138,.35); }
-#introStart:focus-visible { outline:2px solid #fff; }
+#introStart:focus-visible { outline:2px solid var(--focus); }
 
 /* ---------- "round saved" splash ---------- */
 .look { margin-top:6px; font-size:13px; color:var(--muted); } .look b { color:var(--text); font-weight:700; }
@@ -205,7 +206,7 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 .donesteps { margin:0 0 20px; padding-left:22px; text-align:left; color:var(--muted); font-size:14.5px; }
 .donesteps li { margin-bottom:4px; }
 #doneGo { all:unset; box-sizing:border-box; cursor:pointer; background:var(--grad); color:#fff; font-family:"Russo One"; font-size:16px; padding:13px 28px; border-radius:12px; box-shadow:0 6px 18px rgba(255,45,138,.35); }
-#doneGo:hover { filter:brightness(1.1); } #doneGo:focus-visible { outline:2px solid #fff; outline-offset:3px; }
+#doneGo:hover { filter:brightness(1.1); } #doneGo:focus-visible { outline:2px solid var(--focus); outline-offset:3px; }
 @media (prefers-reduced-motion: reduce) {
   .done.play .donebox, .done.play .tick .ring, .done.play .tick .check, .done.play .donesub, .done.play .donebox h2, .done.play .donelead, .done.play .donelist, .done.play .donehead, .done.play .donesteps, .done.play #doneGo { animation:none; }
   .tick .ring, .tick .check { stroke-dashoffset:0; }
@@ -324,7 +325,7 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 /* primary buttons that are styled by name (tour, problem report, update-email offer) */
 #tourNext, #reportSend, #newsYes, #shareCopy { all:unset; box-sizing:border-box; cursor:pointer; background:var(--grad); color:#fff; font-family:"Russo One"; font-size:15px; padding:11px 24px; border-radius:12px; white-space:nowrap; box-shadow:0 6px 18px rgba(255,45,138,.35); }
 #tourNext:hover, #reportSend:hover, #newsYes:hover { filter:brightness(1.1); }
-#tourNext:focus-visible, #reportSend:focus-visible, #newsYes:focus-visible { outline:2px solid #fff; outline-offset:3px; }
+#tourNext:focus-visible, #reportSend:focus-visible, #newsYes:focus-visible { outline:2px solid var(--focus); outline-offset:3px; }
 #reportSend:disabled { opacity:.55; cursor:default; filter:none; }
 #tourBack { margin-right:6px; }
 /* ---- result pop-ups (celebrate.js) ---- */
@@ -342,7 +343,7 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 .celebox p { margin:0 0 14px; color:#e2d6ff; line-height:1.5; }
 .celeact { display:flex; flex-direction:column; gap:8px; align-items:center; }
 #celeOk { all:unset; box-sizing:border-box; cursor:pointer; font-weight:900; font-size:16px; color:#fff; padding:12px 34px; border-radius:12px; background:var(--grad); box-shadow:0 6px 22px rgba(255,46,147,.4); }
-#celeOk:focus-visible { outline:3px solid #fff; outline-offset:2px; }
+#celeOk:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
 #celeOff { all:unset; cursor:pointer; margin-top:6px; font-size:11px; color:var(--muted); opacity:.6; text-decoration:underline; text-underline-offset:2px; } #celeOff:hover, #celeOff:focus-visible { opacity:1; }
 @keyframes cFade { from{opacity:0} to{opacity:1} }
 @keyframes cPop { 0%{transform:scale(.6) translateY(30px);opacity:0} 100%{transform:none;opacity:1} }
@@ -353,22 +354,22 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 /* ---- PC check screen (pc-check.js) ---- */
 .pcbtns { display:flex; gap:10px; flex-wrap:wrap; }
 #pcRun { all:unset; box-sizing:border-box; cursor:pointer; font-weight:900; color:#fff; padding:11px 22px; border-radius:12px; background:var(--grad); box-shadow:0 6px 20px rgba(255,46,147,.3); }
-#pcRun:disabled { opacity:.6; cursor:progress; } #pcRun:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+#pcRun:disabled { opacity:.6; cursor:progress; } #pcRun:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 .pcgroup { margin-top:20px; } .pcgroup:first-child { margin-top:6px; }
 .pcgroup h3 { font-family:"Russo One"; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:0 0 10px; }
 .pcard { border:1px solid var(--line); border-left:4px solid var(--yellow); background:var(--card2); border-radius:12px; padding:14px 16px; margin-bottom:10px; }
-.pcard.pc-fix { border-left-color:#ff6b8a; }
+.pcard.pc-fix { border-left-color:var(--bad2); }
 .pchead { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
 .pchead b { font-size:15px; }
 .pcbadge { font-size:10.5px; font-weight:900; letter-spacing:.06em; text-transform:uppercase; padding:2px 9px; border-radius:99px; border:1px solid currentColor; color:var(--yellow); white-space:nowrap; }
-.pc-fix .pcbadge { color:#ff6b8a; }
+.pc-fix .pcbadge { color:var(--bad2); }
 .pcard p { margin:8px 0 0; color:var(--muted); font-size:13.5px; line-height:1.5; max-width:78ch; }
 .pcard p.pcwhat { color:var(--text); } .pcwhat b { display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
 .pclist { list-style:none; margin:0; padding:0; }
 .pclist li { display:grid; grid-template-columns:22px 1fr; column-gap:10px; padding:9px 2px; border-top:1px solid var(--line); line-height:1.45; }
 .pclist li:first-child { border-top:0; }
 .pclist li::before { content:"i"; grid-row:1 / span 2; align-self:start; width:18px; height:18px; border-radius:50%; border:1.5px solid var(--muted); color:var(--muted); font:italic 900 11px/15px Lato,sans-serif; text-align:center; margin-top:1px; }
-.pclist.pctick li::before { content:"\2713"; font-style:normal; border-color:#4fdca0; color:#4fdca0; line-height:15px; }
+.pclist.pctick li::before { content:"\2713"; font-style:normal; border-color:var(--good2); color:var(--good2); line-height:15px; }
 .pclist li b { font-size:14px; } .pclist li span { grid-column:2; color:var(--muted); font-size:13px; max-width:78ch; }
 .pclist.pctick li b { font-weight:700; }
 @media (max-width:560px) { .pchead { gap:6px; } }
@@ -383,7 +384,7 @@ tr.group td { background:rgba(155,77,255,.12); color:#d8c8ff; font-family:"Russo
 .pchk.pnote { cursor:default; font-style:italic; grid-column:3; }
 .pchk input { accent-color:var(--pink); width:16px; height:16px; }
 @media (max-width:560px) { .prow { grid-template-columns:1fr; } .pchk.pnote { grid-column:1; } }
-.pcsum.good { color:#4fdca0; } .pcsum.warn { color:var(--yellow); } .pcsum.bad { color:#ff6b8a; }
+.pcsum.good { color:var(--good2); } .pcsum.warn { color:var(--yellow); } .pcsum.bad { color:var(--bad2); }
 
 
 /* ---- frame time chart (timeline-view.js) ---- */
@@ -421,7 +422,7 @@ button.btn, #run, #apply, #capBtn, #updateNow, #introStart, #doneGo, #tourNext, 
 }
 button.btn:hover, #run:hover, #apply:hover, #capBtn:hover, #updateNow:hover, #introStart:hover, #doneGo:hover, #tourNext:hover, #reportSend:hover, #newsYes:hover, #shareCopy:hover, #celeOk:hover, #pcRun:hover, #profSave:hover, #wnOk:hover, #commSend:hover { filter:brightness(1.1); }
 #run:disabled, #apply:disabled, #profSave:disabled, #commSend:disabled, #pcRun:disabled, #reportSend:disabled { opacity:.4; cursor:not-allowed; filter:none; box-shadow:none; }
-#run:focus-visible, #apply:focus-visible, #capBtn:focus-visible, #updateNow:focus-visible, #introStart:focus-visible, #doneGo:focus-visible, #tourNext:focus-visible, #reportSend:focus-visible, #newsYes:focus-visible, #shareCopy:focus-visible, #celeOk:focus-visible, #pcRun:focus-visible, #profSave:focus-visible, #wnOk:focus-visible, #commSend:focus-visible, button.ghost:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+#run:focus-visible, #apply:focus-visible, #capBtn:focus-visible, #updateNow:focus-visible, #introStart:focus-visible, #doneGo:focus-visible, #tourNext:focus-visible, #reportSend:focus-visible, #newsYes:focus-visible, #shareCopy:focus-visible, #celeOk:focus-visible, #pcRun:focus-visible, #profSave:focus-visible, #wnOk:focus-visible, #commSend:focus-visible, button.ghost:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 #doneGo { min-height:48px; padding:0 30px; font-size:16px; }
 button.ghost { display:inline-flex; align-items:center; justify-content:center; min-height:40px; line-height:1; white-space:nowrap; }
 /* buttons that sit next to a primary button share its height */
@@ -435,7 +436,7 @@ input[type=checkbox]:hover { border-color:var(--pink); }
 input[type=checkbox]:checked { background:var(--grad); border-color:transparent; }
 input[type=checkbox]:checked::after { content:""; position:absolute; left:5px; top:1.5px; width:4px; height:9px; border:solid #fff; border-width:0 2.2px 2.2px 0; transform:rotate(45deg); }
 input[type=checkbox]:disabled { opacity:.45; cursor:not-allowed; }
-input[type=checkbox]:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+input[type=checkbox]:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 
 #prefsCard .field { margin:0; }
 .prefhz { height:46px; display:flex; align-items:center; padding:0; }
@@ -444,3 +445,52 @@ input[type=checkbox]:focus-visible { outline:2px solid #fff; outline-offset:2px;
 #protectFilter { margin:6px 0 14px; }
 /* dialogs never grow taller than the window: their body scrolls instead */
 .overlay .modal { max-height:calc(100vh - 32px); display:flex; flex-direction:column; } .overlay .modal .reportbody { overflow-y:auto; min-height:0; }
+
+/* ====== Themes and colour options. Set on <html> by theme.js: data-theme="light", data-cb="on" (colour-blind friendly), data-contrast="high". ====== */
+/* Light theme: the same layout with light surfaces. Illustrations and warnings (tour scenes, celebration, hazard warning, badge toast) stay dark on purpose. */
+:root[data-theme="light"] {
+  --bg:#f5f2fa; --bg2:#ffffff; --rail:#ebe5f6; --card:#ffffff; --card2:#f4effc; --line:#d9cdef;
+  --text:#1b1233; --muted:#4e4377; --dim:#5f5390;
+  --good:#157a45; --warn:#8f5f00; --bad:#c4163f; --good2:#157a45; --bad2:#c4163f; --yellow:#8f5f00; --orange:#b34700; --pink:#c4156f; --purple:#6d28d9;
+  --focus:#1b1233; color-scheme:light;
+}
+:root[data-theme="light"] body { background-image:radial-gradient(900px 500px at 85% -10%, rgba(155,77,255,.10), transparent 60%), radial-gradient(700px 500px at 10% 110%, rgba(255,45,138,.07), transparent 60%); }
+:root[data-theme="light"] .side { background:var(--bg2); }
+:root[data-theme="light"] input[type=number], :root[data-theme="light"] select, :root[data-theme="light"] #hotkeyBox, :root[data-theme="light"] .seg { background:var(--bg); }
+:root[data-theme="light"] .tile, :root[data-theme="light"] .donelist { background:var(--card2); }
+:root[data-theme="light"] button.ghost { background:rgba(27,18,51,.03); }
+:root[data-theme="light"] .rail button.on { color:var(--text); }
+:root[data-theme="light"] .rail button:hover, :root[data-theme="light"] .side a:hover { background:rgba(109,40,217,.10); }
+:root[data-theme="light"] .info b, :root[data-theme="light"] .scopeline, :root[data-theme="light"] tr.group td, :root[data-theme="light"] .tag.scope { color:var(--text); }
+:root[data-theme="light"] .update b, :root[data-theme="light"] .update.bad b { color:var(--text); }
+:root[data-theme="light"] .tldot { stroke:var(--card); }
+:root[data-theme="light"] .tlbar { fill:#7a35e0; } :root[data-theme="light"] .tlbar.hot { fill:#c4156f; } :root[data-theme="light"] .tldot.gpu { fill:#c4156f; } :root[data-theme="light"] .tldot.cpu { fill:#b07a00; }
+:root[data-theme="light"] .overlay { background:rgba(27,18,51,.55); }
+:root[data-theme="light"] .reminder { background:rgba(180,125,0,.10); border-color:rgba(143,95,0,.45); }
+:root[data-theme="light"] .badge.on { border-color:rgba(143,95,0,.6); background:rgba(180,125,0,.10); }
+:root[data-theme="light"] input[type=checkbox]:not(:checked) { background:rgba(27,18,51,.04); }
+/* parts that are dark pictures or deliberate warnings keep their dark colours in either theme */
+:root[data-theme="light"] .simbtn, :root[data-theme="light"] .tourscene, :root[data-theme="light"] .celebox, :root[data-theme="light"] .warnbox, :root[data-theme="light"] .badgetoast, :root[data-theme="light"] .player {
+  --text:#f4efff; --muted:#a898cf; --dim:#9382c4; --line:#33225a; --good:#34d27b; --warn:#ffd400; --bad:#ff4d6d; --yellow:#ffd400; --orange:#ff8a1f; --pink:#ff2d8a; --purple:#9b4dff; --focus:#fff; --card:#1b1033; --card2:#241543; --bg:#120a22; color:var(--text);
+}
+
+/* Colour-blind friendly colours. The usual green/pink for good/bad look the same to people with red-green colour blindness (deuteranopia, the most common type),
+   so good becomes blue and bad becomes magenta, with yellow for caution. Checked with a colour-vision simulation: every pair stays clearly apart for all three types.
+   Wording and symbols still carry the meaning too (Better, Worse, +5, -3, tick marks), colour is never the only signal. */
+:root[data-cb="on"] { --good:#56b4e9; --warn:#f0e442; --bad:#e0489a; --good2:#56b4e9; --bad2:#e0489a; --yellow:#f0e442; }
+:root[data-cb="on"] .tldot.gpu, :root[data-cb="on"] .tlbar.hot { fill:#56b4e9; } :root[data-cb="on"] .tldot.cpu { fill:#f0e442; }
+:root[data-theme="light"][data-cb="on"] { --good:#0a6cb0; --warn:#8f5f00; --bad:#b8156f; --good2:#0a6cb0; --bad2:#b8156f; --yellow:#8f5f00; }
+:root[data-theme="light"][data-cb="on"] .tldot.gpu, :root[data-theme="light"][data-cb="on"] .tlbar.hot { fill:#0a6cb0; } :root[data-theme="light"][data-cb="on"] .tldot.cpu { fill:#b07a00; }
+:root[data-cb="on"] .tick .ring { stroke:var(--good); } :root[data-cb="on"] .tick { filter:drop-shadow(0 0 18px rgba(86,180,233,.45)); }
+/* the dark pictures follow the colour-blind palette too */
+:root[data-cb="on"] .tourscene, :root[data-cb="on"] .celebox, :root[data-cb="on"] .badgetoast { --good:#56b4e9; --warn:#f0e442; --bad:#e0489a; --yellow:#f0e442; }
+
+/* High contrast buttons: the brand gradient puts white text on orange (2.4 to 1), which is hard to read for some people. This makes buttons one solid deep purple (9 to 1). */
+:root[data-contrast="high"] { --grad:#5b21b6; }
+:root[data-contrast="high"] .rail .verpill { background:#5b21b6; }
+
+/* chart dots also differ by shape, not just colour: graphics card = circle, processor = diamond (see timeline-view.js) */
+.tldot.cpu { stroke-linejoin:miter; }
+/* the sim logos are white artwork made for a dark background, so the sim buttons stay dark in the light theme too */
+:root[data-theme="light"] .simbtn { background:#1b1033; }
+:root[data-theme="light"] .simbtn.on { background:linear-gradient(#241543, #241543) padding-box, var(--grad) border-box; }
