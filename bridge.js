@@ -10,7 +10,7 @@
 
   function send(o) { wv.postMessage(o); }
   function status(text, cls) { var s = $('capStatus'); s.textContent = text; s.className = 'status ' + (cls || ''); }
-  function setCapturing(on) { capturing = on; $('capBtn').textContent = on ? 'Cancel capture' : 'Start capture'; }
+  function setCapturing(on) { capturing = on; document.body.classList.toggle('capturing', !!on); $('capBtn').textContent = on ? 'Cancel capture' : 'Start capture'; }
   function sim() { return app.state.sim; }
 
   window.TunerHost = {
@@ -183,7 +183,13 @@
   }
 
   // ---------- updates ----------
-  var upd = { version: null, shownFor: null };
+  var upd = { version: null, shownFor: null, notes: [] };
+  // After "Later" the banner goes away, but a small pill in the sidebar stays until the update is installed, so it cannot be forgotten.
+  $('verPill').addEventListener('click', function () {
+    if (!upd.version) return;
+    bar('ok', 'Version ' + upd.version + ' is ready', 'Changes the page and settings tables. Your history and captures are kept.', upd.notes, true);
+    $('main').scrollTop = 0;
+  });
   function updStatus(text, cls) { $('updateStatus').textContent = text; $('updateStatus').className = 'status ' + (cls || ''); }
   function bar(kind, title, sub, notes, showButtons) {
     $('updateBar').className = 'update ' + kind; $('updateTitle').textContent = title; $('updateSub').textContent = sub || '';
@@ -214,13 +220,14 @@
   $('autoUpdate').addEventListener('change', function () { send({ type: 'setUpdateCheck', enabled: $('autoUpdate').checked }); });
   function onUpdate(m) {
     if (m.state === 'available') {
-      upd.version = m.version;
+      upd.version = m.version; upd.notes = m.notes || []; $('verPill').hidden = false;
       var later = ''; try { later = sessionStorage.getItem('dialed.updateLater') || ''; } catch (e) { /* no storage */ }
       updStatus('Version ' + m.version + ' is available.', 'good');
       if (!(m.silent && later === m.version)) bar('ok', 'Version ' + m.version + ' is ready', 'Changes the page and settings tables. Your history and captures are kept.', m.notes, true);
     } else if (m.state === 'none') {
       if (!m.silent) updStatus('You are on the latest version (' + m.version + ').', 'good');
     } else if (m.state === 'downloading') {
+      $('verPill').hidden = true;
       bar('ok', 'Updating to version ' + m.version + '...', 'Downloading and checking it. The page reloads when it is done.', [], false);
     } else if (m.state === 'error') {
       updStatus(m.message, 'bad'); $('updateNow').disabled = false;
