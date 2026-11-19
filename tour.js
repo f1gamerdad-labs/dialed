@@ -58,7 +58,7 @@
       } },
     { id: 'more', title: 'And there is more to explore',
       text: 'The PC check finds things outside the sim that cost frame rate, like memory not running at its rated speed. After you capture, Results draws your frame times and marks every stutter. You can save your settings as profiles, share a before/after image, and earn badges as you tune.',
-      tip: 'Tell Dialed how you race under "About your setup" (sync, streaming, settings to protect) and its advice will fit you better.',
+      tip: 'Tell Dialed how you race under "About your setup" (sync, streaming, settings to protect) and its advice will fit you better. Prefer a light theme, or colour-blind friendly colours? Both are in About.',
       scene: function () {
         var names = ['PC check', 'Frame times', 'Profiles', 'Share image', 'Badges', '3 runs', 'Guides', 'Protect list'];
         return '<div class="sc sc-pick"><div class="grid8">' + names.map(function (n, i) { return '<span style="--i:' + i + '"' + (i === 0 ? ' class="pick"' : '') + '>' + n + '</span>'; }).join('') + '</div></div>';

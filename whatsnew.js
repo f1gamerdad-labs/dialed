@@ -4,19 +4,17 @@
   'use strict';
   var KEY = 'dialed.whatsNewSeen';
   // The release these notes describe. Change it (and ITEMS) only when there is something new to tell people; small fixes in between do not reopen the window.
-  var RELEASE = '0.3.11';
+  var RELEASE = '0.4.0';
   var TITLE = 'What\'s new in Dialed';
   var ITEMS = [
-    ['Share my result', 'After a round you can now send an anonymous before/after result. You see exactly what it contains first, and nothing is sent unless you press Send.'],
-    ['A proper installer', 'New downloads come as Dialed-Setup.exe, which adds Dialed to your Start menu and to Installed apps.'],
-    ['PC check', 'Finds things outside the sim that cost frame rate: memory not at its rated speed, the wrong power plan, a screen below its top refresh rate, and more. It tells you what to fix.'],
-    ['Frame times', 'Results now draws your capture over time and marks every stutter, with a plain-language reading of what is causing it.'],
-    ['About your setup', 'Tell Dialed how your screen syncs, whether you stream, and which settings it must never touch.'],
-    ['Saved profiles', 'Save your settings as "Daytona" or "Rain" and put them back with one click.'],
-    ['Three runs in a row', 'Capture three runs back to back with one press.'],
-    ['Share image and badges', 'Make a before/after image of your result, and earn badges as you tune.']
+    ['Light theme and colour options', 'Switch between dark and light, or match Windows. About also has colour-blind friendly colours and high contrast buttons.'],
+    ['System tray', 'Optional: keep Dialed running in the tray, tuck it away when a capture starts, and get a notification when it finishes. Closing the window still closes Dialed unless you choose otherwise.'],
+    ['Restore my original settings', 'One button on the Setup page puts your game settings back exactly as they were before Dialed first changed anything.'],
+    ['Can you trust these captures?', 'Results now warns about short or noisy captures, a rough first 15 seconds, busy programs and runs that slow down, which can mean heat.'],
+    ['Fresh baseline reminder', 'If your graphics driver or hardware changes, Dialed suggests a new baseline so old results do not mislead you.'],
+    ['Move to a new PC', 'Export your history, profiles and preferences to a file and import them on another PC, from About.'],
+    ['Smoother everyday use', 'Only one Dialed runs at a time, the window remembers where you left it, and an Update available tag stays in the sidebar until you update.']
   ];
-
   // pure: should the window open?
   function shouldShow(seenVersion, current, tourSeen) {
     if (!current) return false;

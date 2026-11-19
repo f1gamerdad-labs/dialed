@@ -42,6 +42,11 @@
   if ($('themeSel')) $('themeSel').addEventListener('change', function () { set(K_THEME, $('themeSel').value); apply(); });
   if ($('cbMode')) $('cbMode').addEventListener('change', function () { set(K_CB, $('cbMode').checked ? '1' : '0'); apply(); });
   if ($('hiContrast')) $('hiContrast').addEventListener('change', function () { set(K_HC, $('hiContrast').checked ? 'high' : 'normal'); apply(); });
+  if ($('appearLink')) $('appearLink').addEventListener('click', function (e) {
+    e.preventDefault();
+    var b = document.querySelector('button[data-view=about]'); if (b) b.click();
+    setTimeout(function () { var c = $('appearCard'); if (c) { c.scrollIntoView(); var s = $('themeSel'); if (s) s.focus(); } }, 50);
+  });
   if (mq && mq.addEventListener) mq.addEventListener('change', function () { if (setting() === 'system') apply(); });
   apply();
   root.TunerTheme = { apply: apply };
