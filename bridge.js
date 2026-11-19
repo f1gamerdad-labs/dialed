@@ -253,6 +253,9 @@
 
   $('shortcutBtn').hidden = false;                                                        // only the Windows app can make shortcuts
   $('shortcutBtn').addEventListener('click', function () { $('shortcutMsg').textContent = 'Adding...'; send({ type: 'createShortcuts' }); });
+  ['trayMode', 'trayHide', 'trayNotify'].forEach(function (id) {
+    $(id).addEventListener('change', function () { send({ type: 'setTray', mode: $('trayMode').checked, hideOnCapture: $('trayHide').checked, notify: $('trayNotify').checked }); });
+  });
   $('cueSelect').addEventListener('change', function () { send({ type: 'setCueVoice', voice: $('cueSelect').value === 'voice' }); });
 
   // ---------- messages from the app ----------
@@ -263,6 +266,7 @@
         $('hotkeyBox').value = m.hotkey.text;
         $('cueField').hidden = !m.voiceClips;               // the voice/beeps choice only makes sense when the recorded clips are installed
         $('cueSelect').value = m.cueVoice === false ? 'beeps' : 'voice';
+        if (m.tray) { $('trayMode').checked = !!m.tray.mode; $('trayHide').checked = !!m.tray.hideOnCapture; $('trayNotify').checked = !!m.tray.notify; $('trayCard').hidden = false; }   // an older program has no tray, so the card stays hidden
         window.TunerHost.hotkeyText = m.hotkey.text;
         window.TunerHost.contentVersion = m.appVersion && m.appVersion.content;
         window.TunerHost.screenHz = m.screenHz || 0;          // the refresh rate of the main screen, used as the default target

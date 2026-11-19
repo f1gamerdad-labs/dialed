@@ -260,6 +260,13 @@
           <p class="hint">Updates come from this project's GitHub releases only. Checking sends nothing about you or your PC, and an update is never installed without you pressing Update now.</p>
           <p style="margin:12px 0 0"><button class="ghost" id="checkUpdate">Check for updates</button> <button class="ghost" id="revertUpdate" hidden>Go back to the previous version</button> <span class="status" id="updateStatus"></span></p>
         </div>
+        <div class="card" id="trayCard" hidden>
+          <p class="eyebrow">Window and system tray</p>
+          <label class="checkrow"><input type="checkbox" id="trayMode"> Keep Dialed running in the system tray when I close or minimise the window</label>
+          <label class="checkrow"><input type="checkbox" id="trayHide"> Move Dialed out of the way when a capture starts</label>
+          <label class="checkrow"><input type="checkbox" id="trayNotify"> Show a Windows notification when a capture finishes while Dialed is hidden</label>
+          <p class="hint">The tray is the row of small icons by the clock (it may be behind the arrow). Right-click the Dialed icon there to open it, start or stop a capture, or exit. The capture hotkey and the sounds work the same while it is hidden. With the first option off, closing the window closes Dialed.</p>
+        </div>
         <div class="card about">
           <p class="eyebrow">Dialed by F1GamerDad</p>
           <p style="font-family:'Russo One'; font-size:22px; color:var(--text); margin:0 0 10px">Sim graphics, dialed.</p>

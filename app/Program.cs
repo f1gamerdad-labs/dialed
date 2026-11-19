@@ -12,7 +12,21 @@ static class Program
         TaskScheduler.UnobservedTaskException += (_, e) => { Paths.Log_("UNHANDLED (task): " + e.Exception); e.SetObserved(); };
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
+        // One Dialed at a time: two copies would fight over the capture hotkey and the settings file. Opening it again (a shortcut, the Start menu) brings
+        // the running one forward instead, which also matters when it is hidden in the tray. Self-tests use their own throwaway data and skip this.
+        Mutex? single = null;
+        if (!args.Any(a => a.StartsWith("--selftest", StringComparison.Ordinal)))
+        {
+            single = new Mutex(true, TrayRules.MutexName, out var first);
+            if (!first)
+            {
+                try { using var ev = EventWaitHandle.OpenExisting(TrayRules.ShowEventName); ev.Set(); } catch { /* the other copy is still starting; nothing to wake */ }
+                return;
+            }
+            MainForm.ShowSignal = new EventWaitHandle(false, EventResetMode.AutoReset, TrayRules.ShowEventName);
+        }
         Application.Run(new MainForm(args));
+        GC.KeepAlive(single);
     }
 
     static bool told;

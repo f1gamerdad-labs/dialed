@@ -82,6 +82,40 @@ public sealed class MainForm : Form
             };
             return;
         }
+        if (args.Contains("--selftest-tray") && Paths.DataOverride != null) // closes to the tray, brings the window back, then closes for real, and reports each step
+        {
+            Text = "tray test"; ClientSize = new Size(500, 300);
+            Shown += async (_, _) =>
+            {
+                var res = new Dictionary<string, object?>();
+                try
+                {
+                    settings.TrayMode = true;
+                    Close(); await Task.Delay(400);
+                    res["closeKeepsRunning"] = !Visible && tray?.Visible == true;
+                    ShowFromTray(); await Task.Delay(300);
+                    res["comesBack"] = Visible;
+                    res["trayIconStaysWhenTrayModeOn"] = tray?.Visible == true;
+                    settings.TrayMode = false; HideToTray(true); await Task.Delay(300);
+                    res["hiddenForCapture"] = !Visible && tray?.Visible == true;
+                    ShowFromTray(); await Task.Delay(300);
+                    res["iconGoneWhenNotNeeded"] = Visible && tray?.Visible == false;
+                    res["rules"] = new
+                    {
+                        userClose = TrayRules.HideInsteadOfClose(CloseReason.UserClosing, true, false), shutdown = TrayRules.HideInsteadOfClose(CloseReason.WindowsShutDown, true, false),
+                        exiting = TrayRules.HideInsteadOfClose(CloseReason.UserClosing, true, true), off = TrayRules.HideInsteadOfClose(CloseReason.UserClosing, false, false),
+                        onScreen = TrayRules.FitsOnAScreen(new Rectangle(100, 100, 1280, 900), new[] { new Rectangle(0, 0, 1920, 1080) }),
+                        unplugged = TrayRules.FitsOnAScreen(new Rectangle(3000, 100, 1280, 900), new[] { new Rectangle(0, 0, 1920, 1080) }),
+                        sliver = TrayRules.FitsOnAScreen(new Rectangle(1900, 1000, 1280, 900), new[] { new Rectangle(0, 0, 1920, 1080) }),
+                        tiny = TrayRules.FitsOnAScreen(new Rectangle(10, 10, 100, 100), new[] { new Rectangle(0, 0, 1920, 1080) })
+                    };
+                }
+                catch (Exception ex) { res["error"] = ex.ToString(); }
+                File.WriteAllText(Path.Combine(Paths.Data, "selftest-tray.json"), JsonSerializer.Serialize(res, new JsonSerializerOptions { WriteIndented = true }));
+                Close();   // tray mode is off again, so this one really closes
+            };
+            return;
+        }
         if (args.Contains("--selftest-hang")) // a window whose thread never reads messages, to stand in for a frozen game
         {
             Text = "frozen test window"; ClientSize = new Size(300, 120);
@@ -157,8 +191,85 @@ public sealed class MainForm : Form
         try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { /* default icon */ }
         ClientSize = new Size(1280, 900);
         StartPosition = FormStartPosition.CenterScreen;
+        RestoreWindow();
         Controls.Add(web);
         Load += async (_, _) => await InitAsync();
+        // A second launch (shortcut, Start menu) signals this copy, which comes forward, even from the tray.
+        Load += (_, _) =>
+        {
+            if (settings.TrayMode) Tray().Visible = true;
+            if (ShowSignal != null) ThreadPool.RegisterWaitForSingleObject(ShowSignal, (_, _) => { try { BeginInvoke(ShowFromTray); } catch { /* closing */ } }, null, Timeout.Infinite, false);
+        };
+        Resize += (_, _) => { if (WindowState == FormWindowState.Minimized && settings.TrayMode) BeginInvoke(() => { WindowState = FormWindowState.Normal; HideToTray(false); }); };
+    }
+
+    // ---------- window position, tray icon ----------
+    public static EventWaitHandle? ShowSignal;
+    NotifyIcon? tray;
+    bool exiting, trayTipShown;
+
+    void RestoreWindow()
+    {
+        if (settings.WinW <= 0 || settings.WinH <= 0 || settings.WinX == int.MinValue) return;
+        var r = new Rectangle(settings.WinX, settings.WinY, settings.WinW, settings.WinH);
+        if (!TrayRules.FitsOnAScreen(r, Screen.AllScreens.Select(s => s.WorkingArea))) return;   // that screen is gone: start centred as usual
+        StartPosition = FormStartPosition.Manual; Bounds = r;
+        if (settings.WinMax) WindowState = FormWindowState.Maximized;
+    }
+
+    void RememberWindow()
+    {
+        try
+        {
+            var b = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+            if (b.Width < 400 || b.Height < 300) return;
+            settings.WinX = b.X; settings.WinY = b.Y; settings.WinW = b.Width; settings.WinH = b.Height; settings.WinMax = WindowState == FormWindowState.Maximized; settings.Save();
+        }
+        catch (Exception ex) { Paths.Log_("could not remember the window position: " + ex.Message); }
+    }
+
+    NotifyIcon Tray()
+    {
+        if (tray != null) return tray;
+        var menu = new ContextMenuStrip();
+        menu.Items.Add("Show Dialed", null, (_, _) => ShowFromTray());
+        menu.Items.Add("Start or stop a capture", null, (_, _) => _ = ToggleCaptureAsync());
+        menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add("Exit Dialed", null, (_, _) => { exiting = true; Close(); });
+        tray = new NotifyIcon { Text = "Dialed", ContextMenuStrip = menu, Icon = Icon ?? SystemIcons.Application, Visible = false };
+        tray.DoubleClick += (_, _) => ShowFromTray();
+        tray.BalloonTipClicked += (_, _) => ShowFromTray();
+        return tray;
+    }
+
+    void TrayText(string text) { if (tray != null) tray.Text = text.Length > 63 ? text.Substring(0, 63) : text; }
+
+    void HideToTray(bool forCapture)
+    {
+        var t = Tray(); t.Visible = true; TrayText(capture != null ? "Dialed: capturing" : "Dialed");
+        Hide();
+        if (!forCapture && !trayTipShown) { trayTipShown = true; t.ShowBalloonTip(4000, "Dialed is still running", "Right-click the Dialed icon here to open it or exit.", ToolTipIcon.Info); }
+    }
+
+    void ShowFromTray()
+    {
+        if (!Visible) Show();
+        if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
+        Activate();
+        if (tray != null && !settings.TrayMode) tray.Visible = false;   // the icon is only needed while the window is hidden, unless keeping it in the tray was chosen
+    }
+
+    void Notify(string title, string text)
+    {
+        if (!settings.NotifyOnCapture || Visible) return;
+        var t = Tray(); t.Visible = true; t.ShowBalloonTip(5000, title, text, ToolTipIcon.Info);
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        RememberWindow();
+        if (TrayRules.HideInsteadOfClose(e.CloseReason, settings.TrayMode, exiting)) { e.Cancel = true; HideToTray(false); return; }
+        base.OnFormClosing(e);
     }
 
     async Task InitAsync()
@@ -167,7 +278,8 @@ public sealed class MainForm : Form
         {
             // The welcome video should start by itself, with sound, because the user has just opened the app on purpose.
             var env = await CoreWebView2Environment.CreateAsync(null, Paths.WebView,
-                new CoreWebView2EnvironmentOptions { AdditionalBrowserArguments = "--autoplay-policy=no-user-gesture-required" });
+                // The other switches keep the page's timers running at full speed while the window is hidden in the tray (the three-capture chain depends on them).
+                new CoreWebView2EnvironmentOptions { AdditionalBrowserArguments = "--autoplay-policy=no-user-gesture-required --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows" });
             await web.EnsureCoreWebView2Async(env);
             var core = web.CoreWebView2;
             core.SetVirtualHostNameToFolderMapping("tuner.local", UpdateService.ActiveWeb(), // the downloaded page if there is a newer one, else the bundled one
@@ -217,6 +329,7 @@ public sealed class MainForm : Form
     {
         UnregisterHotKey(Handle, HOTKEY_ID);
         capture?.Cancel();
+        if (tray != null) { tray.Visible = false; tray.Dispose(); tray = null; }   // otherwise a ghost icon stays in the tray until the mouse passes over it
         base.OnFormClosed(e);
     }
 
@@ -242,20 +355,24 @@ public sealed class MainForm : Form
             Post(new { type = "capture", phase = "sim", sim = sim.Id }); // the page switches its picker to match
         }
         Paths.Log_($"capture start: {sim.Name}, {settings.CaptureSeconds}s");
+        TrayText("Dialed: capturing");
+        if (settings.HideOnCapture && Visible) HideToTray(true);   // out of the way of the game; the sounds still say what is happening
         if (!SoundPack.Has("announce")) CaptureService.BeepSeq((784, 110), (1047, 150)); // "got it", so the press is audible even when the app is hidden behind a full-screen game (the spoken "Capture about to start" does this job when it exists)
         try
         {
             var r = await CaptureService.RunAsync(sim, settings.CaptureSeconds, settings.Countdown, Post, capture.Token);
             Post(new { type = "capture", phase = "done", sim = sim.Id, name = r.Name, text = r.Text, vramUsedBytes = r.VramUsedBytes, vramTotalBytes = r.VramTotalBytes, busy = r.Busy });
+            Notify("Capture complete", "Click to open Dialed.");
         }
-        catch (OperationCanceledException) { Post(new { type = "capture", phase = "cancelled" }); }
+        catch (OperationCanceledException) { Post(new { type = "capture", phase = "cancelled" }); Notify("Capture cancelled", "Nothing was saved."); }
         catch (Exception ex)
         {
             Paths.Log_("capture error: " + ex.Message);
             if (!SoundPack.Play("error")) CaptureService.BeepSeq((300, 200), (300, 200)); // two low beeps: it did not start
             Post(new { type = "capture", phase = "error", message = ex.Message });
+            Notify("Capture did not start", ex.Message);
         }
-        finally { capture.Dispose(); capture = null; }
+        finally { capture.Dispose(); capture = null; TrayText("Dialed"); }
     }
 
     // ---------- page bridge ----------
@@ -419,6 +536,7 @@ public sealed class MainForm : Form
                         hotkey = HotkeyInfo(), hotkeyError = hotkeyStatus, iniDir = Paths.IRacingDocs,
                         ini = IniService.List(), lastIni = settings.LastIni, seconds = settings.CaptureSeconds, countdown = settings.Countdown,
                         cueVoice = settings.CueVoice, voiceClips = SoundPack.ClipsExist(), screenHz = PcCheck.PrimaryRefresh(),
+                        tray = new { mode = settings.TrayMode, hideOnCapture = settings.HideOnCapture, notify = settings.NotifyOnCapture },
                         busy = Busy.Running(), sims = SimService.Describe(), running = SimService.RunningMap(), sim = currentSim.Id,
                     });
                     break;
@@ -457,6 +575,13 @@ public sealed class MainForm : Form
                     break;
                 case "setUpdateCheck":
                     settings.AutoUpdateCheck = r.GetProperty("enabled").GetBoolean(); settings.Save();
+                    break;
+                case "setTray":
+                    settings.TrayMode = r.GetProperty("mode").GetBoolean(); settings.HideOnCapture = r.GetProperty("hideOnCapture").GetBoolean(); settings.NotifyOnCapture = r.GetProperty("notify").GetBoolean();
+                    settings.Save();
+                    if (tray != null && Visible) tray.Visible = settings.TrayMode;
+                    else if (settings.TrayMode) Tray().Visible = true;
+                    Paths.Log_($"tray: keep in tray {settings.TrayMode}, hide on capture {settings.HideOnCapture}, notify {settings.NotifyOnCapture}");
                     break;
                 case "setCueVoice":
                     settings.CueVoice = r.GetProperty("voice").GetBoolean(); settings.Save();

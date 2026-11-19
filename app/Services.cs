@@ -121,6 +121,18 @@ sealed class Settings
     public bool CueVoice { get; set; } = true;
     /// <summary>Optional "owner/repo" override, for testing a fork.</summary>
     public string? UpdateRepo { get; set; }
+    /// <summary>Keep Dialed running in the system tray when the window is closed or minimised, instead of exiting. Off by default: closing means closing.</summary>
+    public bool TrayMode { get; set; }
+    /// <summary>Tuck the window into the tray when a capture starts, so it is not on top of the game.</summary>
+    public bool HideOnCapture { get; set; }
+    /// <summary>A small Windows notification when a capture finishes, fails or is cancelled while the window is hidden.</summary>
+    public bool NotifyOnCapture { get; set; } = true;
+    /// <summary>Where the window was last time (restored only if it still lands on a connected screen).</summary>
+    public int WinX { get; set; } = int.MinValue;
+    public int WinY { get; set; } = int.MinValue;
+    public int WinW { get; set; }
+    public int WinH { get; set; }
+    public bool WinMax { get; set; }
 
     static string FilePath => Path.Combine(Paths.Data, "settings.json");
 
