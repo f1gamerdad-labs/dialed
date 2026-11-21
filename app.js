@@ -237,8 +237,12 @@
   };
   var STATUS_TEXT = { applied: 'In your settings', notApplied: 'Not applied', other: 'Set to something else' };
 
-  function renderLastRound(prev, a, m) {
+  function renderLastRound(prev, a, m, stale) {
     var p = $('lastRound');
+    if (prev && stale) {
+      p.innerHTML = '<h2>Last round (round ' + (prev.no || prev.id) + '): not measured yet</h2><p style="margin:0">Some of these captures were recorded before that round\'s changes were applied, so they cannot show what the changes did. Capture again with the new settings, remove the older captures, and press Analyse.</p>';
+      p.hidden = false; return;
+    }
     if (!prev || !a) { p.hidden = true; p.innerHTML = ''; return; }
     var b = prev.baseline, h = '<h2>Last round (round ' + (prev.no || prev.id) + '): how it went</h2>';
     if (a.delta) {
@@ -295,7 +299,9 @@
     var d = core.diagnose(m, state.ini, { goal: goal, target: parseFloat($('target').value), capInfo: sim.capInfo || undefined, screenHz: prefs.screenHz });
     var hist = Store.load(), pi = pendingIndex(hist, sim.id, section), prev = pi >= 0 ? hist[pi] : null;
     if (prev) { prev.section = sectionOf(prev); prev.no = roundNo(hist, prev); }
-    var a = prev ? core.assessRound(prev, m, d, state.ini, sim.table, names) : null;
+    // Captures recorded before the changes were applied cannot show what the changes did (for example old files added back after applying).
+    var staleRound = !!(prev && window.TunerReliability && window.TunerReliability.predates && window.TunerReliability.predates(names, prev.at));
+    var a = prev && !staleRound ? core.assessRound(prev, m, d, state.ini, sim.table, names) : null;
     // The round being reported on counts as evidence straight away (it is only saved as finished when the next round is applied),
     // so a change that just showed no effect is not pushed again, and one that helped is trusted more.
     var ctxHistory = historyFor(sim.id, section);
@@ -342,7 +348,7 @@
       }).join('');
 
     $('scopeLine').textContent = sim.scopeLine(mode);
-    renderLastRound(prev, a, m);
+    renderLastRound(prev, a, m, staleRound);
     renderRows();
     // sim-specific advice that is not about frame rate, for example "this game is in exclusive full screen, so it vanishes when you click another monitor"
     var tip = sim.displayTip ? sim.displayTip(state.ini) : null;

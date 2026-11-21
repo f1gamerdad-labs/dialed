@@ -118,7 +118,8 @@
     modes: [{ id: 'driving', label: 'Driving', section: 'GraphicConfigData', hint: 'Capture while driving on track. AMS2 uses the same graphics settings for replays.' }],
     isVrFile: function (n) { return /vr|oculus/i.test(n); },
     note: '<b>Driving and replays use the same settings in AMS2.</b> There is one graphics file, so every change applies to both. ' +
-      'Reiza does not publish what each number in the file means, so every suggestion here is shown as low confidence: change a few at a time and capture again.',
+      'AMS2 only reads that file when it starts, so restart the game after you apply changes. ' +
+      'A few options (grass, particle density, pit crew and the Visual FX page) are stored somewhere else, so Dialed leaves them alone.',
     scopeLine: function () { return 'AMS2 has one set of graphics settings, so every change below applies to both driving and replays.'; },
     scopeOf: function () { return 'Changes driving and replays'; },
     capInfo: ams2CapInfo,
@@ -316,7 +317,7 @@
 
   // First release: only these sims are switched on. The others are built and tested but shown as "Coming soon" until they ship as fast follows.
   // To release one, add its id here (the picker, capture following and the website all read comingSoon).
-  var LIVE = ['iracing', 'lmu'];
+  var LIVE = ['iracing', 'lmu', 'ams2'];
   ORDER.forEach(function (id) {
     if (LIVE.indexOf(id) < 0) { SIMS[id].comingSoon = true; SIMS[id].reason = 'It is built and being tested, and arrives in a fast follow update.'; }
   });

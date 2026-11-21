@@ -31,6 +31,9 @@
     caps.forEach(function (c, i) {
       var sec = seconds(c);
       if (sec < 40) add('warn', label(i) + 'is only ' + Math.round(sec) + ' seconds. Aim for 60, so a few unlucky moments do not decide the result.');
+      // repeated near-second freezes: the game lost focus (clicked or switched out), paused or was minimised, so the run is not driving
+      var freezes = c.ft.filter(function (f) { return f >= 400; }).length;
+      if (freezes >= 2) add('warn', label(i) + 'froze ' + freezes + ' times for almost half a second or more. That usually means the game lost focus (you clicked or switched out of it) or paused. Remove this capture, or capture again without leaving the game.');
       // a rough start: most of the stutters in the first 15 seconds
       var med = median(c.ft), at = Math.max(med * 2, med + 4), t = 0, early = 0, all = 0;
       c.ft.forEach(function (f) { if (f > at) { all++; if (t <= 15000) early++; } t += f; });
@@ -64,7 +67,19 @@
       headline: warns ? (warns === 1 ? 'One thing could make these numbers misleading' : warns + ' things could make these numbers misleading') : 'These captures look reliable' };
   }
 
-  var api = { assess: assess, thirds: thirds };
+  // The time a capture file was started, read from its name (capture-<sim>-YYYYMMDD-HHMMSS.csv). NaN when the name has no time.
+  function capturedAt(name) {
+    var m = /(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})/.exec(String(name || ''));
+    return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime() : NaN;
+  }
+  // True when any capture was started before the round's changes were applied, so it cannot show what those changes did.
+  function predates(names, appliedAtISO) {
+    var at = new Date(appliedAtISO).getTime();
+    if (!isFinite(at)) return false;
+    return (names || []).some(function (n) { var t = capturedAt(n); return isFinite(t) && t < at; });
+  }
+
+  var api = { assess: assess, thirds: thirds, capturedAt: capturedAt, predates: predates };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
   if (typeof document === 'undefined') return;
 
@@ -79,5 +94,5 @@
     $('reliabList').innerHTML = r.items.map(function (x) { return '<li' + (x.level === 'warn' ? ' class="warnli"' : '') + '>' + esc(x.text) + '</li>'; }).join('');
     box.hidden = false;
   }
-  root.TunerReliability = { render: render, assess: assess };
+  root.TunerReliability = { render: render, assess: assess, capturedAt: capturedAt, predates: predates };
 })(typeof self !== 'undefined' ? self : this);

@@ -81,6 +81,8 @@ static class Paths
     public static string? LmuOverride { get; set; }
     /// <summary>Self-test overrides for the other sims (--sim-ams2=PATH etc.): a throwaway folder standing in for the sim's data folder.</summary>
     public static Dictionary<string, string> SimOverrides { get; } = new();
+    /// <summary>Tester switch (--enable-sims=ams2,acc): sims switched on for this run only, using their real settings folders.</summary>
+    public static HashSet<string> EnabledSims { get; } = new(StringComparer.OrdinalIgnoreCase);
     public static string IRacingDocs => DocsOverride ?? Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "iRacing");
     public static string PresentMon => Path.Combine(AppContext.BaseDirectory, "tools", "PresentMon.exe");
@@ -141,6 +143,8 @@ sealed class Hotkey
 sealed class Settings
 {
     public Hotkey Hotkey { get; set; } = new();
+    /// <summary>Also listen for the capture hotkey in a way that works inside games that block normal hotkeys. Watches that one combination only.</summary>
+    public bool WideHotkey { get; set; } = true;
     public int CaptureSeconds { get; set; } = 60;
     public int Countdown { get; set; } = 10;
     public string? LastIni { get; set; }
@@ -261,7 +265,8 @@ sealed record SimDef(string Id, string Name, string Process, string? SteamAppId,
     string? DocsRel = null, string? Reason = null, string? LocalRel = null, string? SavedRel = null) // LocalRel: settings live under %LOCALAPPDATA%\LocalRel; SavedRel: under the user's Saved Games\SavedRel
 {
     // First release ships iRacing and Le Mans Ultimate; the rest wait as "Coming soon" (the self-tests point sims at fixture folders, so they stay switched on there).
-    public bool ComingSoon => Reason != null || (Id != "iracing" && Id != "lmu" && Paths.SimOverrides.Count == 0);
+    // --enable-sims=ams2 is a tester switch: it unlocks the named sims on this PC only (never set by the installer or shortcuts).
+    public bool ComingSoon => Reason != null || (Id != "iracing" && Id != "lmu" && Id != "ams2" && Paths.SimOverrides.Count == 0 && !Paths.EnabledSims.Contains(Id));
     public string[] ProcessNames => Process.Split('|', StringSplitOptions.RemoveEmptyEntries);
 }
 

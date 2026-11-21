@@ -4,7 +4,7 @@ Capture a few laps with PresentMon, and Dialed reads your simulator's graphics s
 change first for a smoother frame rate. It is rules-based (no AI at run time), remembers what you changed each round,
 and can revert changes that did not help. Not for VR.
 
-Supported in the first release: iRacing and Le Mans Ultimate. Automobilista 2, Assetto Corsa Competizione, Assetto Corsa EVO, BeamNG.drive, Project Motor Racing and RaceRoom are built and shown as "Coming soon"; they arrive as fast follow updates once tested on track.
+Supported: iRacing, Le Mans Ultimate and Automobilista 2. Assetto Corsa Competizione, Assetto Corsa EVO, BeamNG.drive, Project Motor Racing and RaceRoom are built and shown as "Coming soon"; they arrive as fast follow updates once tested on track.
 
 ## Using it
 1. Open Dialed **before** you start the sim (it asks for administrator rights; a prompt during a full-screen game can freeze it).

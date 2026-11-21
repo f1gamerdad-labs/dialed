@@ -280,6 +280,8 @@
         if (m.hotkeyError) status(m.hotkeyError, 'bad');
         // which sims are installed, their logos, and which are open
         var logos = {}, found = {};
+        // tester switch (--enable-sims=...): the program says which "coming soon" sims to switch on for this run
+        (m.enabledSims || []).forEach(function (id) { var t = window.TunerSims.SIMS[id]; if (t) { t.comingSoon = false; delete t.reason; } });
         m.sims.forEach(function (s) { simInfo[s.id] = s; if (s.logo) logos[s.id] = s.logo; found[s.id] = { found: s.found, installed: s.installed }; });
         app.setLogos(logos); app.setSimStatus(found);
         setRunning(m.running);

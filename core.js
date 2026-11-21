@@ -215,7 +215,8 @@
   }
   function label(s, v) {
     var i = s.levels.indexOf(v);
-    return s.labels && i >= 0 ? s.labels[i] + ' (' + v + ')' : String(v);
+    if (s.labels && i >= 0) return s.plainLabels ? s.labels[i] : s.labels[i] + ' (' + v + ')';   // plainLabels: the number is no use to the reader (e.g. "48 cars")
+    return String(v);
   }
   function active(s, opt) { // setting only matters when its parent setting is on
     if (!s.requires) return true;

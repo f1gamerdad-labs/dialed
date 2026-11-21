@@ -4,16 +4,16 @@
   'use strict';
   var KEY = 'dialed.whatsNewSeen';
   // The release these notes describe. Change it (and ITEMS) only when there is something new to tell people; small fixes in between do not reopen the window.
-  var RELEASE = '0.4.0';
+  var RELEASE = '0.5.0';
   var TITLE = 'What\'s new in Dialed';
+  // The big banner at the top: set to null for a release with no new sim. `sim` picks the logo (read from the player's own Steam folder, so it is skipped if missing).
+  var HERO = { sim: 'ams2', title: 'Automobilista 2 is now in Dialed', sub: 'Capture a race, see what is holding your PC back, and change the right graphics settings, with a backup before every change. Free, always.' };
   var ITEMS = [
+    ['Automobilista 2', 'AMS2 is now supported. Dialed reads and changes its graphics file, with a backup before every change. Restart AMS2 after applying, because the game only reads the file when it starts.'],
+    ['The capture hotkey works inside AMS2', 'AMS2 hides normal hotkeys from other programs, so Dialed now also listens for your capture combination in a way that works in-game. It looks at that one combination only.'],
+    ['Better capture checks', 'Results now spots a capture where the game lost focus (you clicked out), and will not judge a round with captures recorded before the changes were applied.'],
     ['Light theme and colour options', 'Switch between dark and light, or match Windows. About also has colour-blind friendly colours and high contrast buttons.'],
-    ['System tray', 'Optional: keep Dialed running in the tray, tuck it away when a capture starts, and get a notification when it finishes. Closing the window still closes Dialed unless you choose otherwise.'],
-    ['Restore my original settings', 'One button on the Setup page puts your game settings back exactly as they were before Dialed first changed anything.'],
-    ['Can you trust these captures?', 'Results now warns about short or noisy captures, a rough first 15 seconds, busy programs and runs that slow down, which can mean heat.'],
-    ['Fresh baseline reminder', 'If your graphics driver or hardware changes, Dialed suggests a new baseline so old results do not mislead you.'],
-    ['Move to a new PC', 'Export your history, profiles and preferences to a file and import them on another PC, from About.'],
-    ['Smoother everyday use', 'Only one Dialed runs at a time, the window remembers where you left it, and an Update available tag stays in the sidebar until you update.']
+    ['System tray', 'Optional: keep Dialed running in the tray, tuck it away when a capture starts, and get a notification when it finishes.']
   ];
   // pure: should the window open?
   function shouldShow(seenVersion, current, tourSeen) {
@@ -32,6 +32,15 @@
   var version = null, newUser = get('dialed.tourSeen') !== '1';   // decided at load: someone who is about to see the tour must never get this window straight after it
   function open() {
     $('wnTitle').textContent = TITLE + (version ? ' (version ' + version + ')' : '');
+    var hero = $('wnHero');
+    if (hero) {
+      hero.hidden = !HERO;
+      if (HERO) {
+        $('wnHeroT').textContent = HERO.title; $('wnHeroS').textContent = HERO.sub;
+        var logo = root.TunerLogos && root.TunerLogos[HERO.sim], img = $('wnHeroLogo');
+        if (logo) { img.src = logo; img.hidden = false; } else img.hidden = true;
+      }
+    }
     $('wnList').innerHTML = ITEMS.map(function (i) { return '<li><b>' + esc(i[0]) + '</b><span>' + esc(i[1]) + '</span></li>'; }).join('');
     $('whatsnew').hidden = false; $('wnOk').focus({ preventScroll: true }); $('wnList').parentNode.scrollTop = 0;
   }

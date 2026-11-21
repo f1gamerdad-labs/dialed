@@ -30,6 +30,7 @@ public sealed class MainForm : Form
         Paths.LmuOverride = Arg("--lmu");
         foreach (var s in SimService.All) if (Arg("--sim-" + s.Id) is { } so) Paths.SimOverrides[s.Id] = so;
         Paths.DataOverride = Arg("--data");
+        if (Arg("--enable-sims") is { } en) foreach (var id in en.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)) Paths.EnabledSims.Add(id);
         Paths.Ensure();
         settings = Settings.Load();
         SoundPack.UseVoice = settings.CueVoice;
@@ -315,6 +316,12 @@ public sealed class MainForm : Form
             _ = Task.Run(async () => { await Task.Delay(8000); if (settings.AutoUpdateCheck) await CheckUpdateAsync(silent: true); });
             hotkeyStatus = TryRegisterHotkey(settings.Hotkey);
             Paths.Log_($"hotkey {settings.Hotkey.Text}: " + (hotkeyStatus == "" ? "registered" : "NOT registered (" + hotkeyStatus + ")"));
+            if (settings.WideHotkey && !selfTest)
+            {
+                keyWatch = new KeyWatch(() => BeginInvoke(() => HotkeyPressed("in-game listener")));
+                keyWatch.Set(settings.Hotkey);
+                Paths.Log_("hotkey in-game listener: " + (keyWatch.Start() ? "on" : "could not start"));
+            }
             core.Navigate("https://tuner.local/index.html");
         }
         catch (Exception ex)
@@ -337,13 +344,26 @@ public sealed class MainForm : Form
 
     protected override void WndProc(ref Message m)
     {
-        if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HOTKEY_ID) { Paths.Log_("hotkey pressed: " + settings.Hotkey.Text); _ = ToggleCaptureAsync(); return; }
+        if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HOTKEY_ID) { HotkeyPressed("hotkey"); return; }
         base.WndProc(ref m);
+    }
+
+    KeyWatch? keyWatch;
+    DateTime lastHotkey = DateTime.MinValue;
+    /// <summary>Both ways of hearing the hotkey end up here; if they hear the same press, only the first one counts.</summary>
+    void HotkeyPressed(string via)
+    {
+        var now = DateTime.UtcNow;
+        if ((now - lastHotkey).TotalMilliseconds < 700) return;
+        lastHotkey = now;
+        Paths.Log_($"hotkey pressed ({via}): " + settings.Hotkey.Text);
+        _ = ToggleCaptureAsync();
     }
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         UnregisterHotKey(Handle, HOTKEY_ID);
+        keyWatch?.Dispose();
         capture?.Cancel();
         if (tray != null) { tray.Visible = false; tray.Dispose(); tray = null; }   // otherwise a ghost icon stays in the tray until the mouse passes over it
         base.OnFormClosed(e);
@@ -555,6 +575,7 @@ public sealed class MainForm : Form
                         tray = new { mode = settings.TrayMode, hideOnCapture = settings.HideOnCapture, notify = settings.NotifyOnCapture },
                         elevated = Unelevated.IsElevated(), docsDir = Paths.DialedDocs,
                         busy = Busy.Running(), sims = SimService.Describe(), running = SimService.RunningMap(), sim = currentSim.Id,
+                        enabledSims = Paths.EnabledSims.ToArray(),
                     });
                     break;
                 case "log": // errors from the page itself, so they end up in the same log
@@ -672,7 +693,7 @@ public sealed class MainForm : Form
                     };
                     var err = TryRegisterHotkey(h);
                     Paths.Log_($"hotkey {h.Text}: " + (err == "" ? "registered" : "NOT registered (" + err + ")"));
-                    if (err == "") { settings.Hotkey = h; settings.Save(); }
+                    if (err == "") { settings.Hotkey = h; settings.Save(); keyWatch?.Set(h); }
                     else TryRegisterHotkey(settings.Hotkey); // put the old one back
                     Post(new { type = "hotkey", ok = err == "", error = err, hotkey = HotkeyInfo() });
                     break;
