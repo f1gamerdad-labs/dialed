@@ -193,7 +193,13 @@
     $('main').scrollTop = 0;
   });
   function updStatus(text, cls) { $('updateStatus').textContent = text; $('updateStatus').className = 'status ' + (cls || ''); }
+  var RELEASES_URL = 'https://github.com/f1gamerdad-labs/dialed/releases/latest';
+  function openReleases() { send({ type: 'openUrl', url: RELEASES_URL }); }
+  function needsNewProgram(msg) { return /newer version of the program/i.test(msg || ''); }
+  $('updateDownload').addEventListener('click', openReleases);
+  $('downloadLatest').addEventListener('click', openReleases);
   function bar(kind, title, sub, notes, showButtons) {
+    $('updateDownload').hidden = true;
     $('updateBar').className = 'update ' + kind; $('updateTitle').textContent = title; $('updateSub').textContent = sub || '';
     $('updateNotes').innerHTML = (notes || []).map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('');
     $('updateNow').hidden = !showButtons; $('updateLater').hidden = !showButtons; $('updateNow').disabled = false;
@@ -233,8 +239,13 @@
       bar('ok', 'Updating to version ' + m.version + '...', 'Downloading and checking it. The page reloads when it is done.', [], false);
     } else if (m.state === 'error') {
       updStatus(m.message, 'bad'); $('updateNow').disabled = false;
+      $('downloadLatest').hidden = !needsNewProgram(m.message);
       try { localStorage.removeItem('dialed.justUpdated'); } catch (e) { /* no storage */ } // a failed update must not look like a finished one on the next start
-      if (!$('updateBar').hidden) bar('bad', 'The update was not installed', m.message, [], false);
+      if (!$('updateBar').hidden) {
+        var np = needsNewProgram(m.message);
+        bar('bad', 'The update was not installed', np ? 'This update changes the program itself, so it needs a fresh download. Your settings, history and backups are kept.' : m.message, [], false);
+        $('updateDownload').hidden = !np;
+      }
     }
   }
 
