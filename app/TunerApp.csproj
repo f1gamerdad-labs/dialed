@@ -50,6 +50,7 @@
     <Content Include="..\sims.js" Link="web\sims.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\settings-table-lmu.js" Link="web\settings-table-lmu.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\settings-table-ams2.js" Link="web\settings-table-ams2.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\settings-table-ac.js" Link="web\settings-table-ac.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\settings-table-acc.js" Link="web\settings-table-acc.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\settings-table-beamng.js" Link="web\settings-table-beamng.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\looks.js" Link="web\looks.js" CopyToOutputDirectory="PreserveNewest" />

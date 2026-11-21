@@ -50,9 +50,10 @@
 
   // ---------- game files: one or several per sim ----------
   function haveAllFiles() { return state.sim.files.every(function (f) { return state.files[f.id]; }); }
+  function allFiles(sim) { sim = sim || state.sim; return sim.files.concat(sim.extraFiles || []); }   // the files the person must give, plus optional extras (Custom Shaders Patch)
   function rebuildIni() {
     var texts = {};
-    state.sim.files.forEach(function (f) { if (state.files[f.id]) texts[f.id] = state.files[f.id].text; });
+    allFiles().forEach(function (f) { if (state.files[f.id]) texts[f.id] = state.files[f.id].text; });
     state.ini = haveAllFiles() ? sims.parseAll(state.sim, texts) : null;
     var loaded = state.sim.files.filter(function (f) { return state.files[f.id]; });
     state.iniName = loaded.map(function (f) { return state.files[f.id].name; }).join(', ') || null;
@@ -61,11 +62,11 @@
 
   // Reads and checks one file's text. Returns true when it was accepted.
   function setFileText(fileId, name, text) {
-    var f = state.sim.files.filter(function (x) { return x.id === fileId; })[0];
+    var f = allFiles().filter(function (x) { return x.id === fileId; })[0];
     if (!f) { showError('"' + name + '" is not one of the files this tool reads for ' + state.sim.name + '.'); return false; }
     try {
       var parsed = f.parse(text);
-      if (!parsed[f.sections[0]]) throw new Error('missing section');
+      if (!f.optional && !parsed[f.sections[0]]) throw new Error('missing section');   // optional extras (an empty override file) can be empty
     } catch (e) {
       showError('"' + name + '" does not look like the right ' + state.sim.name + ' file. ' + f.hint);
       return false;
@@ -290,6 +291,9 @@
     var sim = state.sim;
     if (!state.ini) { showError('Add every file this sim needs first: ' + sim.files.map(function (f) { return f.name; }).join(' and ') + '.'); return; }
     if (sim.files.some(function (f) { return state.files[f.id] && sim.isVrFile(state.files[f.id].name); })) { showError(vrMessage()); return; }
+    // Captures are named after the sim they came from. Analysing them under another sim would produce advice for the wrong game, and Apply would change the wrong files.
+    var R = window.TunerReliability, other = R && R.captureSim ? state.caps.map(function (c) { return R.captureSim(c.name); }).filter(function (id) { return id && id !== sim.id; })[0] : null;
+    if (other) { var from = sims.SIMS[other]; showError('These captures were recorded in ' + (from ? from.name : other) + ', but ' + sim.name + ' is selected. Pick ' + (from ? from.name : other) + ' in the sim list first (or clear the captures and record new ones).'); return; }
     var section = currentSection(), mode = currentMode();
     if (!state.ini[section]) { showError('These files have no "' + section + '" settings. Pick the files ' + sim.name + ' is using.'); return; }
     var goal = document.querySelector('input[name=goal]:checked').value;
@@ -412,7 +416,7 @@
     return Array.prototype.map.call($('changes').querySelectorAll('input[type=checkbox]:checked'), function (el) { return state.rows[+el.dataset.i]; });
   }
   // In the Windows app the sim has to be closed before its settings can be changed.
-  function simRunning() { return !!(window.TunerHost && window.TunerHost.running && window.TunerHost.running[state.sim.id]); }
+  function simRunning() { var h = window.TunerHost; return !!(h && ((h.holding && h.holding[state.sim.id]) || (h.running && h.running[state.sim.id]))); }   // the game, or its launcher that keeps its own copy of the settings, is open
   function updateApply() {
     var n = selected().length;
     $('apply').disabled = n === 0;
@@ -437,13 +441,14 @@
   function apply() {
     var sel = selected();
     if (!sel.length) return;
-    var closeSim = simRunning(), n = sel.length, plural = n > 1 ? 's' : '', name = state.sim.name;
+    var closeSim = simRunning(), n = sel.length, plural = n > 1 ? 's' : '', name = state.sim.name, launcher = state.sim.launcher;
     if (closeSim && window.TunerWarn) {
       window.TunerWarn.confirm({
         title: name + ' will close',
-        lead: 'Applying ' + n + ' change' + plural + ' closes ' + name + ' right now. If you are in a session, you will leave it.',
-        steps: [name + ' is asked to close, the same as choosing Exit.', 'Your current settings files are backed up first.',
-          'The ' + n + ' change' + plural + ' are saved.', 'Start ' + name + ' again, then capture again to see what changed.'],
+        lead: 'Applying ' + n + ' change' + plural + ' closes ' + name + (launcher ? ' (and ' + launcher + ', if it is open)' : '') + ' right now. If you are in a session, you will leave it.',
+        steps: [name + ' is asked to close, the same as choosing Exit.'].concat(
+          launcher ? [launcher + ' keeps its own copy of the settings and would write the old ones back over the change, so it is closed too.'] : [],
+          ['Your current settings files are backed up first.', 'The ' + n + ' change' + plural + ' are saved.', 'Start ' + name + ' again, then capture again to see what changed.']),
         okLabel: 'Close ' + state.sim.short + ' and apply ' + n + ' change' + plural,
         cancelLabel: 'No, keep ' + state.sim.short + ' open'
       }).then(function (ok) { if (ok) commitApply(sel, true); });
@@ -457,7 +462,7 @@
     $('apply').disabled = true;
     if (closeSim) $('applyMsg').textContent = 'Closing ' + sim.name + '...';
     var texts = {};
-    sim.files.forEach(function (f) { if (state.files[f.id]) texts[f.id] = state.files[f.id].text; });
+    allFiles(sim).forEach(function (f) { if (state.files[f.id]) texts[f.id] = state.files[f.id].text; });
     var changed = sims.applyChanges(sim, texts, sel);
     var payload = Object.keys(changed).map(function (id) { return { fileId: id, name: state.files[id].name, text: changed[id] }; });
     deliver(payload, closeSim).then(function (out) {
@@ -561,3 +566,4 @@
     onSim: function (fn) { simListeners.push(fn); }, renderSimUI: renderSimUI,
     run: run, apply: apply, currentMode: currentMode, currentSection: currentSection, deliver: deliver, simRunning: simRunning, state: state, Store: Store, showError: showError, isVrFile: isVrFile };
 })();
+

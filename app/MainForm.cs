@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
@@ -471,7 +471,7 @@ public sealed class MainForm : Form
         {
             var sim = SimService.ById(simId);
             if (sim == null) { Fail("Unknown sim."); return; }
-            if (closeSim && SimService.IsRunning(sim))
+            if (closeSim && SimService.Holds(sim))
             {
                 capture?.Cancel(); // never leave a capture running against a closing sim
                 Post(new { type = "iniProgress", text = $"Closing {sim.Name}..." });
@@ -519,7 +519,7 @@ public sealed class MainForm : Form
         {
             var sim = SimService.ById(simId);
             if (sim == null) { Post(new { type = "restored", ok = false, message = "Unknown sim." }); return; }
-            if (closeSim && SimService.IsRunning(sim))
+            if (closeSim && SimService.Holds(sim))
             {
                 capture?.Cancel();
                 Post(new { type = "backupProgress", text = $"Closing {sim.Name}..." });
@@ -574,7 +574,7 @@ public sealed class MainForm : Form
                         cueVoice = settings.CueVoice, voiceClips = SoundPack.ClipsExist(), screenHz = PcCheck.PrimaryRefresh(),
                         tray = new { mode = settings.TrayMode, hideOnCapture = settings.HideOnCapture, notify = settings.NotifyOnCapture },
                         elevated = Unelevated.IsElevated(), docsDir = Paths.DialedDocs,
-                        busy = Busy.Running(), sims = SimService.Describe(), running = SimService.RunningMap(), sim = currentSim.Id,
+                        busy = Busy.Running(), sims = SimService.Describe(), running = SimService.RunningMap(), holding = SimService.HoldingMap(), sim = currentSim.Id,
                         enabledSims = Paths.EnabledSims.ToArray(),
                     });
                     break;
@@ -666,7 +666,7 @@ public sealed class MainForm : Form
                     break;
                 }
                 case "busyCheck":
-                    Post(new { type = "busy", busy = Busy.Running(), running = SimService.RunningMap() });
+                    Post(new { type = "busy", busy = Busy.Running(), running = SimService.RunningMap(), holding = SimService.HoldingMap() });
                     break;
                 case "readIni": // iRacing: the user picks which renderer file
                 {
@@ -906,6 +906,45 @@ public sealed class MainForm : Form
                     var crr = BackupService.Restore("acc", Path.GetFileName(cw.backup!));
                     Check("ACC: restore puts the original bytes back", crr.ok && File.ReadAllBytes(json).SequenceEqual(corig), crr.message);
                     Check("ACC: restore refuses a path trick", !BackupService.Restore("acc", @"..\Config\menuSettings.json").ok);
+                }
+                if (Paths.SimOverrides.TryGetValue("ac", out var acroot2)) // --sim-ac=<throwaway folder holding cfg\video.ini and the VR ini files>
+                {
+                    var ac = SimService.Ac; var vini = Path.Combine(acroot2, @"cfg\video.ini");
+                    var ad = SimService.Describe().First(x => (string)x.GetType().GetProperty("id")!.GetValue(x)! == "ac");
+                    Check("AC: found and switched on", (bool)ad.GetType().GetProperty("found")!.GetValue(ad)! && !(bool)ad.GetType().GetProperty("comingSoon")!.GetValue(ad)!);
+                    var ab = SimService.BackupsDir(ac)!;
+                    Check("AC: backups folder sits in the AC documents folder, not in cfg", ab == Path.Combine(acroot2, Paths.BackupsFolderName), ab);
+                    Check("AC: both exe names are watched", ac.ProcessNames.SequenceEqual(new[] { "acs", "acs_x86" }));
+                    Check("AC: Content Manager is a companion (closed with the game, and blocks writes while open)", ac.CompanionNames.SequenceEqual(new[] { "Content Manager" }) && SimService.Ams2.CompanionNames.Length == 0);
+                    var aorig = File.ReadAllBytes(vini);
+                    Check("AC: reads the file unchanged", SimService.ReadAll(ac).Length == ac.Files.Length && File.ReadAllBytes(vini).SequenceEqual(aorig));
+                    // --- Custom Shaders Patch: defaults in the game folder, overrides in Documents (created when the first change is saved) ---
+                    var cspUser = ac.Files.First(x => x.Id == "csp_lighting_fx"); var cspDef = ac.Files.First(x => x.Id == "cspdef_lighting_fx");
+                    var cspUserPath = Path.Combine(acroot2, @"cfg\extension\lighting_fx.ini");
+                    var cspRead = SimService.ReadAll(ac).Select(x => (dynamic)x).ToArray();
+                    var cdr = cspRead.First(x => x.fileId == "cspdef_lighting_fx"); var cur = cspRead.First(x => x.fileId == "csp_lighting_fx");
+                    Check("AC CSP: the default file in the game folder is read", !(bool)cdr.missing && ((string)cdr.text).Contains("CARS_WITH_LIGHTS=10") && (bool)cdr.isDefault && (bool)cdr.optional);
+                    Check("AC CSP: a user file that does not exist yet is optional, not an error", (bool)cur.missing && (bool)cur.optional && !(bool)cur.isDefault);
+                    Check("AC CSP: the sim still counts as found without CSP override files", (bool)ad.GetType().GetProperty("found")!.GetValue(ad)!);
+                    Check("AC CSP: Describe knows CSP is installed", (bool)ad.GetType().GetProperty("csp")!.GetValue(ad)!);
+                    Check("AC CSP: a default file is never written", !SimService.Write(ac, cspDef, "x").ok && File.ReadAllText(SimService.FilePath(ac, cspDef)!).Contains("CARS_WITH_LIGHTS=10"));
+                    var cw1 = SimService.Write(ac, cspUser, "[PERFORMANCE]\r\nCARS_WITH_LIGHTS=20\r\n");
+                    Check("AC CSP: the first change creates the user file", cw1.ok && File.ReadAllText(cspUserPath) == "[PERFORMANCE]\r\nCARS_WITH_LIGHTS=20\r\n", cw1.message);
+                    Check("AC CSP: the backup of a file that did not exist is empty", cw1.backup != null && new FileInfo(cw1.backup).Length == 0);
+                    var cw2 = SimService.Write(ac, cspUser, "[PERFORMANCE]\r\nCARS_WITH_LIGHTS=15\r\n");
+                    Check("AC CSP: a second change backs up the first", cw2.ok && cw2.backup != null && File.ReadAllText(cw2.backup) == "[PERFORMANCE]\r\nCARS_WITH_LIGHTS=20\r\n");
+                    var cpl = BackupService.List().Where(i => (string)i.GetType().GetProperty("sim")!.GetValue(i)! == "ac" && ((string)i.GetType().GetProperty("target")!.GetValue(i)!) == "lighting_fx.ini").ToArray();
+                    Check("AC CSP: both CSP backups are listed against lighting_fx.ini", cpl.Length == 2, $"found {cpl.Length}");
+                    var crr1 = BackupService.Restore("ac", Path.GetFileName(cw1.backup!));
+                    Check("AC CSP: restoring the empty backup puts the file back to nothing changed", crr1.ok && new FileInfo(cspUserPath).Length == 0, crr1.message);
+                    Check("AC CSP: the rest of the folder is untouched (video.ini still the original)", File.ReadAllBytes(vini).SequenceEqual(aorig));
+                    var aw = SimService.Write(ac, ac.Files[0], "[VIDEO]\r\nAASAMPLES=2\r\n");
+                    Check("AC: write succeeds with a byte-exact backup", aw.ok && File.ReadAllText(vini) == "[VIDEO]\r\nAASAMPLES=2\r\n" && aw.backup != null && File.ReadAllBytes(aw.backup).SequenceEqual(aorig), aw.message);
+                    Check("AC: lists its backup (.ini)", BackupService.List().Count(i => (string)i.GetType().GetProperty("sim")!.GetValue(i)! == "ac" && (string)i.GetType().GetProperty("target")!.GetValue(i)! == "video.ini") == 1);
+                    var arr = BackupService.Restore("ac", Path.GetFileName(aw.backup!));
+                    Check("AC: restore puts the original bytes back", arr.ok && File.ReadAllBytes(vini).SequenceEqual(aorig), arr.message);
+                    Check("AC: restore refuses a path trick", !BackupService.Restore("ac", @"..\cfg\video.ini").ok);
+                    Check("AC: the app never touches a VR file", !SimService.TargetValid(ac, "openvr.ini") && !SimService.TargetValid(ac, "oculus.ini"));
                 }
                 if (Paths.SimOverrides.TryGetValue("beamng", out var broot)) // --sim-beamng=<throwaway folder holding BeamNG.drive\current\settings\settings.json>
                 {

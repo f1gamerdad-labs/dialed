@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -258,15 +258,19 @@ static class Backup
 // ---------------------------------------------------------------------------------------------------------------------
 // The sims this app knows. To add one: add a SimDef here and a profile in the page (sims.js).
 // ---------------------------------------------------------------------------------------------------------------------
-sealed record SimFile(string Id, string Name, string Rel);
+/// <summary>Optional: the file may not exist yet (it is created when a change is saved, after an empty backup so a restore puts it back to "nothing").
+/// InstallRel: a read-only file inside the game's own folder (never written), used for defaults the user file overrides.</summary>
+sealed record SimFile(string Id, string Name, string Rel, bool Optional = false, string? InstallRel = null);
 /// <summary>Process may list several names separated by "|". DocsRel: the sim keeps its settings under Documents\DocsRel instead of its Steam folder.
 /// Reason: when set, the sim is a "Coming soon" tile (listed, but never read or written).</summary>
 sealed record SimDef(string Id, string Name, string Process, string? SteamAppId, string? SteamFolder, string? BackupsRel, SimFile[] Files,
-    string? DocsRel = null, string? Reason = null, string? LocalRel = null, string? SavedRel = null) // LocalRel: settings live under %LOCALAPPDATA%\LocalRel; SavedRel: under the user's Saved Games\SavedRel
+    string? DocsRel = null, string? Reason = null, string? LocalRel = null, string? SavedRel = null, string? Companion = null) // LocalRel: settings live under %LOCALAPPDATA%\LocalRel; SavedRel: under the user's Saved Games\SavedRel
+    // Companion: programs ("|" separated) that keep their own copy of the sim's settings and write it back over any change made while they are open (Content Manager for Assetto Corsa)
 {
+    public string[] CompanionNames => Companion == null ? Array.Empty<string>() : Companion.Split('|', StringSplitOptions.RemoveEmptyEntries);
     // First release ships iRacing and Le Mans Ultimate; the rest wait as "Coming soon" (the self-tests point sims at fixture folders, so they stay switched on there).
     // --enable-sims=ams2 is a tester switch: it unlocks the named sims on this PC only (never set by the installer or shortcuts).
-    public bool ComingSoon => Reason != null || (Id != "iracing" && Id != "lmu" && Id != "ams2" && Paths.SimOverrides.Count == 0 && !Paths.EnabledSims.Contains(Id));
+    public bool ComingSoon => Reason != null || (Id != "iracing" && Id != "lmu" && Id != "ams2" && Id != "ac" && Paths.SimOverrides.Count == 0 && !Paths.EnabledSims.Contains(Id));
     public string[] ProcessNames => Process.Split('|', StringSplitOptions.RemoveEmptyEntries);
 }
 
@@ -283,6 +287,25 @@ static class SimService
     // Automobilista 2: one XML file in Documents. AMS2.exe is the normal build, AMS2AVX.exe the older-CPU build.
     public static readonly SimDef Ams2 = new("ams2", "Automobilista 2", "AMS2|AMS2AVX", "1066890", "Automobilista 2",
         Paths.BackupsFolderName, new[] { new SimFile("main", "graphicsconfigdx11.xml", "graphicsconfigdx11.xml") }, DocsRel: "Automobilista 2");
+    // Assetto Corsa (the original): Documents\Assetto Corsa\cfg\video.ini, a plain INI. acs.exe is the 64-bit game, acs_x86.exe the 32-bit one.
+    // Content Manager starts the same acs.exe and writes the same file. Backups sit in Documents\Assetto Corsa\Dialed Backups.
+    // Custom Shaders Patch (CSP) keeps its defaults in the game folder (extension\config) and only the values a player has changed in
+    // Documents\Assetto Corsa\cfg\extension. Each CSP page Dialed adjusts is a pair: the user file (optional, may not exist) and the read-only defaults.
+    static readonly string[] CspPages = { "graphics_adjustments", "lighting_fx", "extra_fx", "smart_shadows", "particles_fx", "reflections_fx", "rain_fx", "grass_fx", "skidmarks_fx", "smart_mirror", "general" };
+    static SimFile[] AcFiles()
+    {
+        var l = new List<SimFile> { new("main", "video.ini", @"cfg\video.ini") };
+        foreach (var n in CspPages)
+        {
+            l.Add(new("csp_" + n, n + ".ini", @"cfg\extension\" + n + ".ini", Optional: true));
+            l.Add(new("cspdef_" + n, n + ".ini (CSP defaults)", "", Optional: true, InstallRel: @"extension\config\" + n + ".ini"));
+        }
+        return l.ToArray();
+    }
+    // Content Manager keeps its own copy of AC's settings in memory and writes it back to video.ini when the game closes (and on its own saves),
+    // which silently undoes any change made while it is open, so it is a companion: closed with the game, and no change is written while it is open.
+    public static readonly SimDef Ac = new("ac", "Assetto Corsa", "acs|acs_x86", "244210", "assettocorsa",
+        Paths.BackupsFolderName, AcFiles(), DocsRel: "Assetto Corsa", Companion: "Content Manager");
     // Sims that are listed but not switched on yet. The reason is shown on the tile.
     static SimDef Soon(string id, string name, string process, string appId, string folder, string reason) =>
         new(id, name, process, appId, folder, null, Array.Empty<SimFile>(), null, reason);
@@ -302,7 +325,7 @@ static class SimService
     // outside BeamNG's own user folder (BeamNG.drive\current), which the game scans for mods and content.
     public static readonly SimDef BeamNg = new("beamng", "BeamNG.drive", "BeamNG.drive.x64", "284160", "BeamNG.drive",
         Paths.BackupsFolderName, new[] { new SimFile("main", "settings.json", @"BeamNG.drive\current\settings\settings.json") }, LocalRel: "BeamNG");
-    public static readonly SimDef[] All = { IRacing, Lmu, Ams2, Acc, AcEvo, RaceRoom, Pmr, BeamNg };
+    public static readonly SimDef[] All = { IRacing, Lmu, Ams2, Ac, Acc, AcEvo, RaceRoom, Pmr, BeamNg };
     public static SimDef? ById(string? id) => All.FirstOrDefault(s => s.Id == id);
 
     // Game files are not guaranteed UTF-8; Latin-1 round-trips every byte unchanged.
@@ -356,6 +379,12 @@ static class SimService
             var d = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), sim.DocsRel);
             return Directory.Exists(d) ? d : null;
         }
+        return SteamGameDir(sim);
+    }
+
+    /// <summary>The game's own folder inside a Steam library (steamapps\common\...), or null.</summary>
+    public static string? SteamGameDir(SimDef sim)
+    {
         if (sim.SteamFolder == null) return null;
         foreach (var lib in SteamLibraries())
         {
@@ -363,6 +392,13 @@ static class SimService
             if (Directory.Exists(p)) return p;
         }
         return null;
+    }
+
+    /// <summary>Where read-only game-folder files live. The self-test points a sim at a throwaway folder whose "game" subfolder stands in for it.</summary>
+    static string? InstallDir(SimDef sim)
+    {
+        if (Paths.SimOverrides.TryGetValue(sim.Id, out var ov)) { var g = Path.Combine(ov, "game"); return Directory.Exists(g) ? g : null; }
+        return SteamGameDir(sim);
     }
 
     /// <summary>The app was renamed, so its backup folders are renamed too (same place, same files, new name). Nothing is copied or deleted.</summary>
@@ -386,7 +422,11 @@ static class SimService
         }
     }
 
-    public static string? FilePath(SimDef sim, SimFile f) { var r = Root(sim); return r == null ? null : Path.Combine(r, f.Rel); }
+    public static string? FilePath(SimDef sim, SimFile f)
+    {
+        if (f.InstallRel != null) { var g = InstallDir(sim); return g == null ? null : Path.Combine(g, f.InstallRel); }
+        var r = Root(sim); return r == null ? null : Path.Combine(r, f.Rel);
+    }
 
     public static string? BackupsDir(SimDef sim)
     {
@@ -411,10 +451,17 @@ static class SimService
     public static bool IgnoreRunning { get; set; }
     public static bool IsRunning(SimDef sim) => !IgnoreRunning && sim.ProcessNames.Any(n => Process.GetProcessesByName(n).Length > 0);
     public static Dictionary<string, bool> RunningMap() => All.ToDictionary(s => s.Id, IsRunning);
+    /// <summary>The game or one of its companions is open, so changing its settings file would be undone: the game rewrites it on exit, a companion writes its own copy back.</summary>
+    public static bool Holds(SimDef sim) => IsRunning(sim) || (!IgnoreRunning && sim.CompanionNames.Any(n => Process.GetProcessesByName(n).Length > 0));
+    public static Dictionary<string, bool> HoldingMap() => All.ToDictionary(s => s.Id, Holds);
+    static string CloseFirst(SimDef sim) => IsRunning(sim)
+        ? $"Close {sim.Name} first. It rewrites its settings when it exits and would undo the change."
+        : $"Close {string.Join(" and ", sim.CompanionNames)} first. It keeps its own copy of {sim.Name}'s settings and would write them back over the change.";
 
     /// <summary>Asks the sim to close like a normal exit and waits for it. It never force-kills the sim.</summary>
     public static Task<(bool ok, string message)> CloseAsync(SimDef sim, int timeoutMs = 30000) =>
-        CloseProcessesAsync(sim.ProcessNames, sim.Name, () => IsRunning(sim), timeoutMs);
+        CloseProcessesAsync(sim.ProcessNames.Concat(sim.CompanionNames).ToArray(),
+            sim.CompanionNames.Length == 0 ? sim.Name : sim.Name + " and " + string.Join(" and ", sim.CompanionNames), () => Holds(sim), timeoutMs);
 
     /// <summary>
     /// Asks the game to close the way a person would (closing its window), and gives it time to save. If its window has stopped
@@ -444,7 +491,16 @@ static class SimService
             }
             await Task.Delay(500);
         }
-        return (false, $"{display} did not close within 30 seconds. Close it yourself (in Task Manager if it will not respond), then apply again. It may be asking whether you want to leave the session.");
+        // name only what is still open, and log what it was showing, so a program that ignores the request can be understood later
+        var left = names.SelectMany(n => Process.GetProcessesByName(n)).ToArray();
+        foreach (var p in left)
+        {
+            string title = "", responding = "?";
+            try { title = p.MainWindowTitle; responding = p.Responding.ToString(); } catch { /* gone already */ }
+            Paths.Log_($"close: {p.ProcessName} (pid {p.Id}) did not close within {timeoutMs / 1000} s; window \"{title}\", responding: {responding}");
+        }
+        var who = left.Length == 0 ? display : string.Join(" and ", left.Select(p => p.ProcessName).Distinct());
+        return (false, $"{who} did not close within {timeoutMs / 1000} seconds, so nothing was changed. Close it yourself (in Task Manager if it will not respond), then apply again. It may be asking you a question, such as whether to leave a session or save something.");
     }
 
     // ---------- logos: read from the user's own Steam folder, never bundled ----------
@@ -474,12 +530,13 @@ static class SimService
     public static object[] Describe() => All.Select(s =>
     {
         var root = Root(s);
-        var files = s.Files.Select(f => new { id = f.Id, name = f.Name, exists = root != null && File.Exists(Path.Combine(root, f.Rel)) }).ToArray();
+        var files = s.Files.Select(f => { var p = FilePath(s, f); return new { id = f.Id, name = f.Name, optional = f.Optional, exists = p != null && File.Exists(p) }; }).ToArray();
         return (object)new
         {
             id = s.Id, name = s.Name, running = IsRunning(s), logo = Logo(s), files,
             comingSoon = s.ComingSoon, reason = s.Reason, installed = s.Id == "iracing" ? root != null : SteamInstalled(s),
-            found = !s.ComingSoon && (s.Id == "iracing" ? root != null : root != null && files.All(x => x.exists)),
+            found = !s.ComingSoon && (s.Id == "iracing" ? root != null : root != null && files.Where(x => !x.optional).All(x => x.exists)),
+            csp = s.Files.Any(f => f.InstallRel != null) && files.Any(x => x.optional && x.exists && x.name.EndsWith("(CSP defaults)")),   // Custom Shaders Patch is installed (its default files are there)
         };
     }).ToArray();
 
@@ -495,9 +552,10 @@ static class SimService
     public static object[] ReadAll(SimDef sim) => sim.Files.Select(f =>
     {
         var path = FilePath(sim, f);
+        bool isDefault = f.InstallRel != null;
         return (object)(path != null && File.Exists(path)
-            ? new { fileId = f.Id, name = f.Name, missing = false, text = File.ReadAllText(path, Enc) }
-            : new { fileId = f.Id, name = f.Name, missing = true, text = "" });
+            ? new { fileId = f.Id, name = f.Name, missing = false, optional = f.Optional, isDefault, text = File.ReadAllText(path, Enc) }
+            : new { fileId = f.Id, name = f.Name, missing = true, optional = f.Optional, isDefault, text = "" });
     }).ToArray();
 
     /// <summary>Backs up one file, then replaces it. The sim rewrites its settings on exit, so it must be closed.</summary>
@@ -505,12 +563,16 @@ static class SimService
     {
         try
         {
+            if (f.InstallRel != null) return (false, $"{f.Name} belongs to the game and is never changed.", null);
             var path = FilePath(sim, f);
-            if (path == null || !File.Exists(path)) return (false, $"{f.Name} was not found in your {sim.Name} folder.", null);
-            if (IsRunning(sim)) return (false, $"Close {sim.Name} first. It rewrites its settings when it exits and would undo the change.", null);
+            var existed = path != null && File.Exists(path);
+            if (path == null || (!existed && !f.Optional)) return (false, $"{f.Name} was not found in your {sim.Name} folder.", null);
+            if (Holds(sim)) return (false, CloseFirst(sim), null);
             var dir = BackupsDir(sim)!; Directory.CreateDirectory(dir);
             var backup = Backup.NewPath(dir, Path.GetFileNameWithoutExtension(f.Name), Path.GetExtension(f.Name));
-            File.Copy(path, backup, overwrite: false);
+            // A file that does not exist yet gets an EMPTY backup, so restoring it puts the setting back to "nothing changed" (an empty override file means defaults).
+            if (existed) File.Copy(path, backup, overwrite: false); else File.WriteAllBytes(backup, Array.Empty<byte>());
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             var tmp = path + ".tuner-tmp";
             File.WriteAllText(tmp, text, Enc);
             File.Move(tmp, path, overwrite: true);
@@ -633,7 +695,8 @@ static class BackupService
         if (dir == null || file != Path.GetFileName(file) || !TryParse(sim, file, out var target, out _)) return (false, "That is not one of this app's backups.");
         var src = Path.Combine(dir, file);
         if (!File.Exists(src)) return (false, "That backup is no longer in the folder.");
-        if (SimService.IsRunning(sim)) return (false, $"Close {sim.Name} first. It rewrites its settings when it exits and would undo the restore.");
+        if (SimService.Holds(sim)) return (false, SimService.IsRunning(sim) ? $"Close {sim.Name} first. It rewrites its settings when it exits and would undo the restore."
+            : $"Close {string.Join(" and ", sim.CompanionNames)} first. It keeps its own copy of {sim.Name}'s settings and would write them back over the restore.");
         var dest = SimService.LivePath(sim, target);
         if (dest == null) return (false, "Could not find the file this backup belongs to.");
         if (File.Exists(dest))

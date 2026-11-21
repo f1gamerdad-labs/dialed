@@ -4,16 +4,16 @@
   'use strict';
   var KEY = 'dialed.whatsNewSeen';
   // The release these notes describe. Change it (and ITEMS) only when there is something new to tell people; small fixes in between do not reopen the window.
-  var RELEASE = '0.5.0';
+  var RELEASE = '0.6.0';
   var TITLE = 'What\'s new in Dialed';
   // The big banner at the top: set to null for a release with no new sim. `sim` picks the logo (read from the player's own Steam folder, so it is skipped if missing).
-  var HERO = { sim: 'ams2', title: 'Automobilista 2 is now in Dialed', sub: 'Capture a race, see what is holding your PC back, and change the right graphics settings, with a backup before every change. Free, always.' };
+  var HERO = { sim: 'ac', title: 'Assetto Corsa is now in Dialed', sub: 'The original, with Content Manager and Custom Shaders Patch support. Capture a race, see what is holding your PC back, and change the right graphics settings, with a backup before every change. Free, always.' };
   var ITEMS = [
-    ['Automobilista 2', 'AMS2 is now supported. Dialed reads and changes its graphics file, with a backup before every change. Restart AMS2 after applying, because the game only reads the file when it starts.'],
-    ['The capture hotkey works inside AMS2', 'AMS2 hides normal hotkeys from other programs, so Dialed now also listens for your capture combination in a way that works in-game. It looks at that one combination only.'],
-    ['Better capture checks', 'Results now spots a capture where the game lost focus (you clicked out), and will not judge a round with captures recorded before the changes were applied.'],
-    ['Light theme and colour options', 'Switch between dark and light, or match Windows. About also has colour-blind friendly colours and high contrast buttons.'],
-    ['System tray', 'Optional: keep Dialed running in the tray, tuck it away when a capture starts, and get a notification when it finishes.']
+    ['Assetto Corsa', 'The original Assetto Corsa is now supported. Dialed changes its video settings (anti-aliasing, shadows, reflections, mirrors, post-processing and more), with a backup before every change. Restart the game after applying, because it only reads its settings when it starts.'],
+    ['Custom Shaders Patch', 'If you use CSP, Dialed also adjusts its performance settings: pixel density, level-of-detail distances, lighting, shadows, Extra FX, particles, mirrors, rain, grass and more. It only touches features you have switched on, and only writes into CSP\'s own small override files.'],
+    ['Works with Content Manager', 'Content Manager keeps its own copy of AC\'s settings and would write the old ones back, so Dialed closes it with the game when you apply, and says so first.'],
+    ['Fairer verdicts', 'A round is only called better or worse when the change is bigger than the difference between your own captures, and Dialed stops you analysing captures under the wrong sim.'],
+    ['Automobilista 2 and the in-game hotkey', 'Automobilista 2 is supported, and the capture hotkey now works inside games that hide normal hotkeys from other programs.']
   ];
   // pure: should the window open?
   function shouldShow(seenVersion, current, tourSeen) {

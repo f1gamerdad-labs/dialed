@@ -7,6 +7,7 @@
   var tIR = isNode ? require('./settings-table.js') : root.SETTINGS_TABLE;
   var tLMU = isNode ? require('./settings-table-lmu.js') : root.SETTINGS_TABLE_LMU;
   var tAMS2 = isNode ? require('./settings-table-ams2.js') : root.SETTINGS_TABLE_AMS2;
+  var tAC = isNode ? require('./settings-table-ac.js') : root.SETTINGS_TABLE_AC;
   var tACC = isNode ? require('./settings-table-acc.js') : root.SETTINGS_TABLE_ACC;
   var tBEAMNG = isNode ? require('./settings-table-beamng.js') : root.SETTINGS_TABLE_BEAMNG;
   var tPMR = isNode ? require('./settings-table-pmr.js') : root.SETTINGS_TABLE_PMR;
@@ -131,6 +132,96 @@
     ],
     captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
     requiredFiles: ['main']
+  };
+
+  // ---------- Assetto Corsa (the original) ----------
+  function acCapInfo(ini) {
+    var v = ini['VIDEO'] || {};
+    var refresh = parseFloat(v.REFRESH), cap = NaN, ms = parseFloat(v.FPS_CAP_MS);
+    if (ms > 0) cap = 1000 / ms;                                      // the in-file frame limit is a number of milliseconds per frame
+    if (parseFloat(v.VSYNC) > 0 && refresh > 0) cap = isFinite(cap) ? Math.min(cap, refresh) : refresh;
+    return { cap: cap, refresh: refresh };
+  }
+  // Custom Shaders Patch (CSP): a page of its settings is two files. The defaults sit in the game folder (read-only); a player's changes are
+  // the only things in a small override file in Documents (which may not exist yet). Their sections are named "<page>:<SECTION>" so that
+  // [BASIC] in one page is never confused with [BASIC] in another, or with the base game's own sections.
+  var CSP_PAGES = ['graphics_adjustments', 'lighting_fx', 'extra_fx', 'smart_shadows', 'particles_fx', 'reflections_fx', 'rain_fx', 'grass_fx', 'skidmarks_fx', 'smart_mirror', 'general'];
+  function cspSections(page) {
+    var out = [];
+    tAC.settings.forEach(function (s) { if (s.section.indexOf(page + ':') === 0 && out.indexOf(s.section) < 0) out.push(s.section); });
+    return out;
+  }
+  var cspFiles = [];
+  CSP_PAGES.forEach(function (page) {
+    cspFiles.push({
+      id: 'csp_' + page, name: page + '.ini', label: 'CSP ' + page, rel: 'cfg\\extension\\' + page + '.ini', optional: true,
+      hint: 'In Documents\\Assetto Corsa\\cfg\\extension. It only exists once a Custom Shaders Patch setting has been changed.',
+      sections: cspSections(page), match: function () { return false; },
+      parse: function (t) { return core.parseIni(t); },
+      patch: function (t, changes, section) { return core.patchIniUpsert(t, changes, section); }
+    });
+    cspFiles.push({
+      id: 'cspdef_' + page, name: page + '.ini (CSP defaults)', label: 'CSP defaults for ' + page, optional: true, readOnly: true,
+      hint: 'In the game folder under extension\\config. Read only.',
+      sections: [], match: function () { return false; },
+      parse: function (t) { return core.parseIni(t); },
+      patch: function (t) { return t; }
+    });
+  });
+  // What a setting is right now: the game's own default with the player's override laid over it. Without the defaults file, CSP is not
+  // installed (or is not a build this table knows), so none of its settings exist and none are suggested.
+  function acMergeParse(texts) {
+    var ini = {}, main = ac.files[0];
+    if (texts[main.id] !== undefined) { var p = main.parse(texts[main.id]); Object.keys(p).forEach(function (sec) { ini[sec] = p[sec]; }); }
+    CSP_PAGES.forEach(function (page) {
+      var def = texts['cspdef_' + page];
+      if (def === undefined) return;
+      var d = core.parseIni(def), u = core.parseIni(texts['csp_' + page] || '');
+      Object.keys(d).forEach(function (sec) {
+        var o = {};
+        Object.keys(d[sec]).forEach(function (k) { o[k] = d[sec][k]; });
+        if (u[sec]) Object.keys(u[sec]).forEach(function (k) { o[k] = u[sec][k]; });
+        ini[page + ':' + sec] = o;
+      });
+      Object.keys(u).forEach(function (sec) {
+        if (d[sec]) return;
+        var o = {}; Object.keys(u[sec]).forEach(function (k) { o[k] = u[sec][k]; }); ini[page + ':' + sec] = o;
+      });
+    });
+    return ini;
+  }
+  var ac = {
+    id: 'ac', name: 'Assetto Corsa', short: 'AC',
+    process: 'acs.exe',
+    launcher: 'Content Manager',   // keeps its own copy of the settings and writes it back, so it is closed with the game when changes are applied
+    steamAppId: '244210',
+    table: tAC,
+    files: [{
+      id: 'main', name: 'video.ini', label: 'AC video settings', rel: 'cfg\\video.ini',
+      hint: 'In Documents\\Assetto Corsa\\cfg.',
+      sections: ['VIDEO', 'EFFECTS', 'POST_PROCESS', 'CUBEMAP', 'MIRROR', 'ASSETTOCORSA'],
+      match: function (n) { return /^video\.ini$/i.test(n); },
+      parse: function (t) { return core.parseIni(t); },
+      patch: function (t, changes, section) { return core.patchIni(t, changes, section); }
+    }],
+    modes: [{ id: 'driving', label: 'Driving', section: 'VIDEO', hint: 'Capture while driving on track. AC uses the same graphics settings for replays.' }],
+    isVrFile: function (n) { return /oculus|openvr|vr\.ini/i.test(n); },
+    note: '<b>Driving and replays use the same settings in AC.</b> There is one video file, so every change applies to both. ' +
+      'It works the same whether you start AC from Steam or through Content Manager. AC reads this file when it starts, so restart the game after you apply changes. ' +
+      '<b>If you use Custom Shaders Patch</b>, Dialed also adjusts its performance settings (lighting, shadows, Extra FX, particles, mirrors, rain, grass and more). It only ever writes the values it changes into CSP\'s own small override files in Documents\\Assetto Corsa\\cfg\\extension, never into the CSP install, and it only touches features you have switched on. ' +
+      'Weather mods such as Pure, and the CSP settings that are not about performance, are left alone.',
+    scopeLine: function () { return 'AC has one set of video settings, so every change below applies to both driving and replays.'; },
+    scopeOf: function () { return 'Changes driving and replays'; },
+    capInfo: acCapInfo,
+    scenarios: [
+      '<b>Nürburgring Nordschleife</b> with a full AI grid: long, tree-lined and very busy.',
+      '<b>Monza race start</b> with a full grid: the whole field bunched into the first chicane.',
+      '<b>Spa-Francorchamps race start</b> with a full grid, ideally in the rain if you use a weather mod.',
+      'Use an <b>AI race</b>, not practice: an empty track hides most of the load.'
+    ],
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    requiredFiles: ['main'],
+    extraFiles: cspFiles, mergeParse: acMergeParse
   };
 
   // ---------- sims that are listed but not switched on yet ----------
@@ -312,12 +403,12 @@
     requiredFiles: ['main']
   };
 
-  var SIMS = { iracing: iracing, lmu: lmu, ams2: ams2, acc: acc, acevo: acevo, raceroom: raceroom, pmr: pmr, beamng: beamng };
-  var ORDER = ['iracing', 'lmu', 'ams2', 'acc', 'acevo', 'raceroom', 'pmr', 'beamng'];
+  var SIMS = { iracing: iracing, lmu: lmu, ams2: ams2, ac: ac, acc: acc, acevo: acevo, raceroom: raceroom, pmr: pmr, beamng: beamng };
+  var ORDER = ['iracing', 'lmu', 'ams2', 'ac', 'acc', 'acevo', 'raceroom', 'pmr', 'beamng'];
 
   // First release: only these sims are switched on. The others are built and tested but shown as "Coming soon" until they ship as fast follows.
   // To release one, add its id here (the picker, capture following and the website all read comingSoon).
-  var LIVE = ['iracing', 'lmu', 'ams2'];
+  var LIVE = ['iracing', 'lmu', 'ams2', 'ac'];
   ORDER.forEach(function (id) {
     if (LIVE.indexOf(id) < 0) { SIMS[id].comingSoon = true; SIMS[id].reason = 'It is built and being tested, and arrives in a fast follow update.'; }
   });
@@ -325,6 +416,7 @@
   // ---------- helpers shared by the page and the tests ----------
   // texts: { fileId: text }  ->  one settings object with every file's sections merged.
   function parseAll(sim, texts) {
+    if (sim.mergeParse) return sim.mergeParse(texts);   // a sim whose settings come from layered files (defaults and overrides)
     var ini = {};
     sim.files.forEach(function (f) {
       if (texts[f.id] === undefined) return;
@@ -337,8 +429,9 @@
   // Applies recommended changes to whichever files they belong to. Returns { fileId: newText } for files that changed.
   function applyChanges(sim, texts, changes) {
     var out = {};
-    sim.files.forEach(function (f) {
+    sim.files.concat(sim.extraFiles || []).forEach(function (f) {
       var text = texts[f.id], touched = false;
+      if (text === undefined && f.optional && !f.readOnly) text = '';   // an override file that does not exist yet starts empty
       if (text === undefined) return;
       f.sections.forEach(function (sec) {
         var mine = changes.filter(function (c) { return c.section === sec; });

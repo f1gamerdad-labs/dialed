@@ -79,7 +79,13 @@
     return (names || []).some(function (n) { var t = capturedAt(n); return isFinite(t) && t < at; });
   }
 
-  var api = { assess: assess, thirds: thirds, capturedAt: capturedAt, predates: predates };
+  // The sim a capture file belongs to, read from its name (capture-<sim>-YYYYMMDD-HHMMSS.csv). null when the name does not say.
+  function captureSim(name) {
+    var m = /^capture-([a-z0-9]+)-\d{8}-\d{6}/i.exec(String(name || ''));
+    return m ? m[1].toLowerCase() : null;
+  }
+
+  var api = { assess: assess, thirds: thirds, capturedAt: capturedAt, predates: predates, captureSim: captureSim };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
   if (typeof document === 'undefined') return;
 
@@ -94,5 +100,5 @@
     $('reliabList').innerHTML = r.items.map(function (x) { return '<li' + (x.level === 'warn' ? ' class="warnli"' : '') + '>' + esc(x.text) + '</li>'; }).join('');
     box.hidden = false;
   }
-  root.TunerReliability = { render: render, assess: assess, capturedAt: capturedAt, predates: predates };
+  root.TunerReliability = { render: render, assess: assess, capturedAt: capturedAt, predates: predates, captureSim: captureSim };
 })(typeof self !== 'undefined' ? self : this);

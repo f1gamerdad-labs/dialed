@@ -216,11 +216,15 @@
   function label(s, v) {
     var i = s.levels.indexOf(v);
     if (s.labels && i >= 0) return s.plainLabels ? s.labels[i] : s.labels[i] + ' (' + v + ')';   // plainLabels: the number is no use to the reader (e.g. "48 cars")
-    return String(v);
+    return s.fmt ? s.fmt(v) : String(v);   // a value between two listed levels (a slider) is written the way the levels are, e.g. 125% not 1.25
   }
-  function active(s, opt) { // setting only matters when its parent setting is on
+  function active(s, opt, ini) { // setting only matters when its parent setting is on
     if (!s.requires) return true;
-    return Object.keys(s.requires).every(function (k) { return parseFloat(opt[k]) === s.requires[k]; });
+    return Object.keys(s.requires).every(function (k) {
+      // "section|KEY" names a setting in another section (an extension's own switch, for example); a plain KEY is looked up beside this setting
+      var at = k.indexOf('|'), v = at < 0 ? opt[k] : ((ini || {})[k.slice(0, at)] || {})[k.slice(at + 1)];
+      return parseFloat(v) === s.requires[k];
+    });
   }
 
   // What earlier rounds tell us: what was reverted, what was skipped, and what demonstrably helped.
@@ -291,13 +295,15 @@
     function candidates(dir) {
       return table.settings.map(function (s) {
         var o = optOf(s);
-        if (o[s.key] === undefined || !active(s, o) || mem.reverted[s.key]) return null;
+        if (o[s.key] === undefined || !active(s, o, ini) || mem.reverted[s.key]) return null;
         if (never[s.key] || (dir > 0 && noUp[s.key])) return null;   // the player said to leave this alone (or never to turn it up)
         var i = levelIndex(s, parseFloat(o[s.key]));
         if (i < 0) return null;
         // exact: the table's levels are only partly known, so a value the table does not list is left alone rather than guessed at
-        if (table.exact && s.levels.indexOf(parseFloat(o[s.key])) < 0) return null;
-        var j = i + dir;
+        // (a setting can opt out with exact: false: a slider value between two levels is then rounded down to the level below it)
+        if ((s.exact === undefined ? table.exact : s.exact) && s.levels.indexOf(parseFloat(o[s.key])) < 0) return null;
+        // a slider value that sits between two levels moves to the level just below it, not a further step down from the rounded-down one
+        var j = (s.levels.indexOf(parseFloat(o[s.key])) < 0 && !s.inverted && dir < 0) ? i : i + dir;
         if (j < 0 || j >= s.levels.length) return null;
         if (dir < 0 && s.min !== undefined && !s.inverted && s.levels[j] < s.min) return null;
         if (dir < 0 && s.minIndex !== undefined && j < s.minIndex) return null;
@@ -397,7 +403,7 @@
   // ---------- rounds: what was changed, and how it worked ----------
   function snapshot(m, names) {
     return { avgFps: m.avgFps, low1: m.low1, low01: m.low01, gpuLoad: m.gpuLoad, spikesPerMin: m.spikesPerMin,
-      vramPct: isFinite(m.vramPct) ? m.vramPct : null, captureNames: names.slice().sort() };
+      vramPct: isFinite(m.vramPct) ? m.vramPct : null, lowSpread: m.lowSpread || 0, captureNames: names.slice().sort() };
   }
 
   // Compare new captures with the baseline of the last applied round and
@@ -422,7 +428,10 @@
     if (m.seconds < 45) out.notes.push('This capture is only ' + Math.round(m.seconds) +
       ' seconds long, so the stutter count and 0.1% lows are unreliable. Capture 60 seconds for a fair comparison.');
     var rel = out.delta.low1 / b.low1;
-    out.verdict = rel <= -0.03 ? 'worse' : rel >= 0.03 ? 'better' : 'same';
+    // A difference only counts when it is bigger than the run-to-run noise: how far the separate captures of each round differ from each other (half their range is a fair guide to how far one run strays).
+    var noise = Math.max(m.lowSpread || 0, b.lowSpread || 0) / 2, thr = Math.max(0.03, noise);
+    out.verdict = rel <= -thr ? 'worse' : rel >= thr ? 'better' : 'same';
+    if (Math.abs(rel) >= 0.03 && Math.abs(rel) < thr) out.notes.push('Your 1% lows moved by about ' + Math.round(Math.abs(rel) * 100) + '%, but your separate captures differ from each other by about ' + Math.round(Math.max(m.lowSpread || 0, b.lowSpread || 0) * 100) + '%, so that is within the noise. Capture two or three clean runs each time for a firmer answer.');
 
     var inPlace = out.verify.filter(function (v) { return v.status === 'applied'; });
     var notApplied = out.verify.filter(function (v) { return v.status === 'notApplied'; });
@@ -443,7 +452,8 @@
     prev.applied.forEach(function (c) { byKey[c.key] = c; });
 
     if (out.verdict === 'worse') {
-      inPlace.forEach(function (v) {
+      // a change that was itself a put-back is not offered for putting back again: that would re-apply the setting it removed
+      inPlace.filter(function (v) { return byKey[v.key].dir !== 'revert'; }).forEach(function (v) {
         out.reverts.push(revertOf(v, byKey[v.key], 'Your 1% lows went from ' + Math.round(b.low1) + ' to ' + Math.round(m.low1) +
           ' FPS after this round, so putting this back is the safe move.', true));
       });
@@ -486,9 +496,43 @@
       var tabAt = m[3].indexOf('\t');
       var spaces = tabAt >= 0 ? m[3].slice(0, tabAt) : m[3], rest = tabAt >= 0 ? m[3].slice(tabAt) : '';
       var width = (m[1] + '=' + m[2]).length + spaces.length;
-      var pad = Math.max(width - head.length, m[4] ? 1 : 0);
+      // keep a column of trailing spaces or comments lined up, but never add trailing spaces to a line that had none (AC's video.ini, for example)
+      var pad = (m[3].length || m[4]) ? Math.max(width - head.length, m[4] ? 1 : 0) : 0;
       return head + new Array(pad + 1).join(' ') + rest + (m[4] || '');
     }).join('');
+  }
+
+  // ---------- override files that start empty (Custom Shaders Patch) ----------
+  // CSP keeps only the values a player has changed, so a key (or the whole section, or the whole file) may not be there yet.
+  // Replaces the key's value when it is there, otherwise adds it at the end of its section, creating the section if needed.
+  // `section` may carry a page prefix ("lighting_fx:PERFORMANCE"): only the part after the colon is the section name in the file.
+  function patchIniUpsert(text, changes, section) {
+    var name = String(section).replace(/^[^:\]]*:/, '');
+    var eol = text.indexOf('\r\n') >= 0 ? '\r\n' : (text.indexOf('\n') >= 0 ? '\n' : '\r\n');
+    var lines = text === '' ? [] : text.split(/\r?\n/);
+    if (lines.length && lines[lines.length - 1] === '') lines.pop();
+    changes.forEach(function (c) {
+      var start = -1, end = lines.length, i;
+      for (i = 0; i < lines.length; i++) {
+        var m = lines[i].match(/^\s*\[(.+?)\]\s*$/);
+        if (!m) continue;
+        if (start >= 0) { end = i; break; }
+        if (m[1] === name) start = i;
+      }
+      var entry = c.key + '=' + String(c.to);
+      if (start < 0) {                                              // the section is new
+        if (lines.length && lines[lines.length - 1].trim() !== '') lines.push('');
+        lines.push('[' + name + ']', entry);
+        return;
+      }
+      for (i = start + 1; i < end; i++) {
+        var k = lines[i].match(/^\s*([^=;\s][^=]*?)\s*=/);
+        if (k && k[1] === c.key) { lines[i] = entry; return; }
+      }
+      var at = end; while (at - 1 > start && lines[at - 1].trim() === '') at--;   // before the blank lines that close the section
+      lines.splice(at, 0, entry);
+    });
+    return lines.join(eol) + eol;
   }
 
   // ---------- Le Mans Ultimate: two files ----------
@@ -755,6 +799,6 @@
   }
 
   return { parseEvoProto: parseEvoProto, patchEvoProto: patchEvoProto, parseRaceRoomXml: parseRaceRoomXml, patchRaceRoomXml: patchRaceRoomXml, parsePmrXml: parsePmrXml, patchPmrXml: patchPmrXml, parseBeamngJson: parseBeamngJson, patchBeamngJson: patchBeamngJson, parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, timeline: timeline, stutterNotes: stutterNotes, parseIni: parseIni, diagnose: diagnose,
-    recommend: recommend, patchIni: patchIni, snapshot: snapshot, assessRound: assessRound, GOALS: GOALS,
+    recommend: recommend, patchIni: patchIni, patchIniUpsert: patchIniUpsert, snapshot: snapshot, assessRound: assessRound, GOALS: GOALS,
     parseLmuIni: parseLmuIni, patchLmuIni: patchLmuIni, parseLmuJson: parseLmuJson, patchLmuJson: patchLmuJson };
 });

@@ -36,11 +36,13 @@
     phase: null
   };
 
-  function setRunning(map) {
+  // holds(id): the game, or a program that keeps its own copy of the game's settings (Content Manager for AC), is open, so the game must be closed before a change can stick
+  function holds(id) { var h = window.TunerHost; return !!((h.holding && h.holding[id]) || (h.running && h.running[id])); }
+  function setRunning(map, holding) {
     if (!map) return;
-    var was = !!window.TunerHost.running[sim().id];
-    window.TunerHost.running = map;
-    if (was !== !!map[sim().id]) app.updateApply(); // the Apply button says "Close <sim> and apply..." while the sim is open
+    var was = holds(sim().id);
+    window.TunerHost.running = map; window.TunerHost.holding = holding || map;
+    if (was !== holds(sim().id)) app.updateApply(); // the Apply button says "Close <sim> and apply..." while the sim is open
   }
 
   $('appPanel').hidden = false;
@@ -112,7 +114,7 @@
 
   $('backups').addEventListener('click', function (e) {
     var btn = e.target.closest('button[data-i]'); if (!btn) return;
-    var b = backupItems[+btn.dataset.i], s = window.TunerSims.SIMS[b.sim], close = !!window.TunerHost.running[b.sim];
+    var b = backupItems[+btn.dataset.i], s = window.TunerSims.SIMS[b.sim], close = holds(b.sim);
     function go() {
       backupMsg(close ? 'Closing ' + s.name + '...' : 'Restoring...');
       send({ type: 'restoreBackup', sim: b.sim, file: b.file, closeSim: close });
@@ -149,11 +151,11 @@
   }
   function nextOriginal() {
     var b = originalQueue.shift(); if (!b) return;
-    send({ type: 'restoreBackup', sim: b.sim, file: b.file, closeSim: !!window.TunerHost.running[b.sim] });
+    send({ type: 'restoreBackup', sim: b.sim, file: b.file, closeSim: holds(b.sim) });
   }
   $('restoreOrig').addEventListener('click', function () {
     var s = sim(), list = originalsFor(s.id); if (!list.length) return;
-    var close = !!window.TunerHost.running[s.id];
+    var close = holds(s.id);
     function go() { originalRunning = true; originalQueue = list.slice(); $('restoreOrigMsg').textContent = close ? 'Closing ' + s.name + '...' : 'Restoring...'; $('restoreOrigMsg').className = 'status'; nextOriginal(); }
     if (close && window.TunerWarn) {
       window.TunerWarn.confirm({
@@ -284,7 +286,7 @@
         (m.enabledSims || []).forEach(function (id) { var t = window.TunerSims.SIMS[id]; if (t) { t.comingSoon = false; delete t.reason; } });
         m.sims.forEach(function (s) { simInfo[s.id] = s; if (s.logo) logos[s.id] = s.logo; found[s.id] = { found: s.found, installed: s.installed }; });
         app.setLogos(logos); app.setSimStatus(found);
-        setRunning(m.running);
+        setRunning(m.running, m.holding);
         send({ type: 'setSim', sim: sim().id }); // the page's saved choice wins; the hotkey then captures that sim
         // iRacing: the user picks among its renderer files
         $('iniSelect').innerHTML = m.ini.map(function (f) {
@@ -302,8 +304,12 @@
         break;
       case 'simFiles': { // every other sim: the app read its files from fixed places
         if (m.sim !== sim().id) break;
-        var gone = m.files.filter(function (f) { return f.missing; });
-        m.files.forEach(function (f) { if (!f.missing) app.setFileText(f.fileId, f.name, f.text); });
+        var gone = m.files.filter(function (f) { return f.missing && !f.optional; });
+        // optional files (Custom Shaders Patch): an override file that does not exist yet is an empty one; a missing defaults file means CSP is not installed
+        m.files.forEach(function (f) {
+          if (!f.missing) app.setFileText(f.fileId, f.name, f.text);
+          else if (f.optional && !f.isDefault) app.setFileText(f.fileId, f.name, '');
+        });
         $('iniPanel').hidden = gone.length === 0;
         if (gone.length) status('Could not find ' + gone.map(function (f) { return f.name; }).join(' and ') + ' for ' + sim().name +
           '. Start the game once so it creates its settings, or drop the file(s) below.', 'warn');
@@ -335,7 +341,7 @@
         break;
       case 'busy':
         showBusy(m.busy);
-        setRunning(m.running);
+        setRunning(m.running, m.holding);
         break;
       case 'update':
         onUpdate(m);
@@ -434,3 +440,4 @@
 
   send({ type: 'hello' });
 })();
+
