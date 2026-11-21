@@ -50,11 +50,17 @@ static class PcCheck
             f["gameDvr"] = RegInt(Registry.CurrentUser, @"System\GameConfigStore", "GameDVR_Enabled");
             f["appCapture"] = RegInt(Registry.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\GameDVR", "AppCaptureEnabled");
             f["hvci"] = RegInt(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity", "Enabled");
+            // "Record what happened": the setting that actually records in the background. AppCaptureEnabled / GameDVR_Enabled only mean the feature is allowed, and are on by default.
+            f["historicalCapture"] = RegInt(Registry.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\GameDVR", "HistoricalCaptureEnabled");
         });
         Try("virtualisation security", () =>
         {
-            foreach (var d in Wmi("SELECT VirtualizationBasedSecurityStatus FROM Win32_DeviceGuard", @"root\Microsoft\Windows\DeviceGuard"))
-            { f["vbs"] = (int)U(d, "VirtualizationBasedSecurityStatus"); break; }
+            foreach (var d in Wmi("SELECT VirtualizationBasedSecurityStatus, SecurityServicesRunning FROM Win32_DeviceGuard", @"root\Microsoft\Windows\DeviceGuard"))
+            {
+                f["vbs"] = (int)U(d, "VirtualizationBasedSecurityStatus");   // virtualisation-based security is running (it can run without Memory integrity)
+                if (d["SecurityServicesRunning"] is Array running) f["hvciRunning"] = running.Cast<object>().Any(x => Convert.ToInt32(x) == 2);   // service 2 = Memory integrity (HVCI) is actually running
+                break;
+            }
         });
         Try("windows", () =>
         {

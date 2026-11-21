@@ -169,11 +169,17 @@
 
     // ---- Windows gaming settings ----
     if (f.gameMode === 0) add('gamemode', 'check', 'Windows Game Mode is off', 'Game Mode asks Windows to prioritise a running game. It is on by default, and someone has switched it off here.', 'Settings, Gaming, Game Mode: turn it on and compare a capture.');
-    if (f.appCapture === 1 || f.gameDvr === 1) add('gamedvr', 'check', 'Xbox game capture is on in the background', 'Windows can record your games in the background, which costs some frame rate and adds stutter on some PCs.', 'Settings, Gaming, Captures: turn off background recording.');
+    // Background recording is "Record what happened" (historicalCapture). appCapture / gameDvr only say the feature is allowed, which is the Windows default,
+    // so on their own they are not a reason to tell anyone to switch anything off.
+    if (f.historicalCapture === 1) add('gamedvr', 'check', 'Xbox background recording is on', 'Windows is recording your games in the background ("Record what happened"), which costs some frame rate and adds stutter on some PCs.', 'Settings, Gaming, Captures: turn off Record what happened.');
+    else if (f.historicalCapture === 0) add('gamedvr', 'ok', 'Background game recording is off', '');
+    else if (f.appCapture === 1 || f.gameDvr === 1) add('gamedvr', 'info', 'Xbox game capture is allowed', 'Windows lets the Game Bar record. That only costs frame rate if "Record what happened" is switched on, so it is worth a look but it may be fine.', 'Settings, Gaming, Captures: check that Record what happened is off.');
     else if (f.appCapture === 0 || f.gameDvr === 0) add('gamedvr', 'ok', 'Background game capture is off', '');
-    if (f.vbs === 2 || f.hvci === 1) add('vbs', 'check', 'Memory integrity (virtualisation security) is on', 'This Windows security feature can cost a few percent of frame rate in some games. It protects against some attacks, so it is your call, not a fix.', 'Windows Security, Device security, Core isolation: Memory integrity. Turning it off lowers protection, so only do it if you accept that.');
-    else if (f.vbs === 0 || f.hvci === 0) add('vbs', 'ok', 'Virtualisation security is not slowing games', 'Memory integrity is off.');
-    if (f.hags === 2 || f.hags === 1) add('hags', 'info', 'Hardware-accelerated GPU scheduling is ' + (f.hags === 2 ? 'on' : 'off'),
+    // Memory integrity is only reported as on when it really is. Virtualisation-based security (VBS) can run without it, so that case gets its own wording.
+    var memInt = f.hvciRunning === true || f.hvciRunning === false ? f.hvciRunning : f.hvci === 1 ? true : f.hvci === 0 ? false : null;
+    if (memInt === true) add('vbs', 'check', 'Memory integrity is on', 'This Windows security feature can cost a few percent of frame rate in some games. It protects against some attacks, so it is your call, not a fix.', 'Windows Security, Device security, Core isolation: Memory integrity. Turning it off lowers protection, so only do it if you accept that.');
+    else if (f.vbs === 2) add('vbs', 'check', 'Virtualisation security (VBS) is running, but Memory integrity is off', 'Windows is running its virtualisation-based security layer. Some new installs have it on by default, and features such as Hyper-V, WSL2 and Windows Sandbox need it. It can cost a little frame rate in some games. It is your call, not a fix.', 'Only change it if you know you do not need those Windows features, and test a capture before and after. Memory integrity itself is already off.');
+    else if (memInt === false || f.vbs === 0) add('vbs', 'ok', 'Virtualisation security is not slowing games', 'Memory integrity is off.');    if (f.hags === 2 || f.hags === 1) add('hags', 'info', 'Hardware-accelerated GPU scheduling is ' + (f.hags === 2 ? 'on' : 'off'),
       'Results vary between PCs and games. It is a setting to test, not a fix.', 'Settings, System, Display, Graphics, Default graphics settings.');
 
     // ---- storage ----
