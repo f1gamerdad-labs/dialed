@@ -336,6 +336,8 @@
     // 3. Comfortably above the floor: spend spare capacity on visuals (not for the smoothness goal).
     // The usual margin is 10% above the floor. When the game is already holding the frame cap and the graphics card has clear spare
     // room, raising graphics-card-heavy settings does little to the 1% lows, so a 5% margin is enough.
+    // At most two turn-ups per round: shared results showed rounds that raised six or eight settings at once lost half their frame rate.
+    var MAX_RAISES = 2;
     var raiseMargin = d.limiter === 'cap' && d.gpuHeadroom ? -0.05 : -0.10;
     // Someone who streams or records needs the headroom for the encoder, so nothing is turned up for them.
     if (d.deficit <= raiseMargin && d.goal.raise > 0 && d.vram !== 'pressure' && !prefs.streaming) {
@@ -348,7 +350,7 @@
           .sort(function (a, b) {
             return b.s.visual / (b.s.cpu + b.s.gpu + 0.5) * histWeight(mem, b.s.key) - a.s.visual / (a.s.cpu + a.s.gpu + 0.5) * histWeight(mem, a.s.key);
           })
-          .slice(0, d.goal.raise).forEach(function (c) {
+          .slice(0, Math.min(d.goal.raise, MAX_RAISES)).forEach(function (c) {
             add(c.s, c.to, 'up', 'Your ' + PART[spare] + ' has spare capacity, and this mostly uses that.', spare);
           });
       } else if (d.limiter === 'cap') {

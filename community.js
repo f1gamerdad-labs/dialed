@@ -43,7 +43,7 @@
   if (typeof document === 'undefined') return;
 
   // ---- window ----
-  var $ = function (id) { return document.getElementById(id); }, pending = null;
+  var $ = function (id) { return document.getElementById(id); }, pending = null, pendingKey = null;
   function cfg() { return root.APP_CONFIG || {}; }
   function enabled() { return validUrl(cfg().resultsUrl) && /^entry\.\d+$/.test(cfg().resultsField || ''); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -67,10 +67,11 @@
     if ($('commAuto')) $('commAuto').checked = autoOn();
   }
   function open(d) {
-    pending = buildPayload(d);
+    pending = buildPayload(d); pendingKey = d.roundKey || null;
     var names = {}; (d.applied || []).forEach(function (c) { if (c.key && c.name) names[c.key] = c.name; });
     $('commList').innerHTML = describe(pending, { simName: d.simName, names: names }).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('');
-    $('commStatus').textContent = ''; $('commSend').disabled = false; $('community').hidden = false;
+    var already = pendingKey && sentKeys().indexOf(pendingKey) >= 0;
+    $('commStatus').textContent = already ? 'You have already shared this result. Thank you!' : ''; $('commSend').disabled = !!already; $('community').hidden = false;
   }
   function close() { $('community').hidden = true; }
   function send() {
@@ -85,6 +86,7 @@
     if (!$('commStatus')) return;
     $('commStatus').textContent = m.ok ? 'Sent. Thank you, this helps everyone get better advice.' : 'Could not send. Check your connection and try again.';
     $('commSend').disabled = !!m.ok;
+    if (m.ok && pendingKey) { var seen = sentKeys(); if (seen.indexOf(pendingKey) < 0) { seen.push(pendingKey); set(SENT, JSON.stringify(seen.slice(-100))); } }
   }
   if ($('community')) {
     $('commClose').addEventListener('click', close); $('commClose2').addEventListener('click', close); $('commSend').addEventListener('click', send);
