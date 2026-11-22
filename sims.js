@@ -408,7 +408,7 @@
 
   // First release: only these sims are switched on. The others are built and tested but shown as "Coming soon" until they ship as fast follows.
   // To release one, add its id here (the picker, capture following and the website all read comingSoon).
-  var LIVE = ['iracing', 'lmu', 'ams2', 'ac'];
+  var LIVE = ['iracing', 'lmu', 'ams2', 'ac', 'raceroom'];
   ORDER.forEach(function (id) {
     if (LIVE.indexOf(id) < 0) { SIMS[id].comingSoon = true; SIMS[id].reason = 'It is built and being tested, and arrives in a fast follow update.'; }
   });

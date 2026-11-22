@@ -275,7 +275,7 @@ sealed record SimDef(string Id, string Name, string Process, string? SteamAppId,
     public string[] CompanionNames => Companion == null ? Array.Empty<string>() : Companion.Split('|', StringSplitOptions.RemoveEmptyEntries);
     // First release ships iRacing and Le Mans Ultimate; the rest wait as "Coming soon" (the self-tests point sims at fixture folders, so they stay switched on there).
     // --enable-sims=ams2 is a tester switch: it unlocks the named sims on this PC only (never set by the installer or shortcuts).
-    public bool ComingSoon => Reason != null || (Id != "iracing" && Id != "lmu" && Id != "ams2" && Id != "ac" && Paths.SimOverrides.Count == 0 && !Paths.EnabledSims.Contains(Id));
+    public bool ComingSoon => Reason != null || (Id != "iracing" && Id != "lmu" && Id != "ams2" && Id != "ac" && Id != "raceroom" && Paths.SimOverrides.Count == 0 && !Paths.EnabledSims.Contains(Id));
     public string[] ProcessNames => Process.Split('|', StringSplitOptions.RemoveEmptyEntries);
 }
 
@@ -505,7 +505,7 @@ static class SimService
             Paths.Log_($"close: {p.ProcessName} (pid {p.Id}) did not close within {timeoutMs / 1000} s; window \"{title}\", responding: {responding}");
         }
         var who = left.Length == 0 ? display : string.Join(" and ", left.Select(p => p.ProcessName).Distinct());
-        return (false, $"{who} did not close within {timeoutMs / 1000} seconds, so nothing was changed. Close it yourself (in Task Manager if it will not respond), then apply again. It may be asking you a question, such as whether to leave a session or save something.");
+        return (false, $"{who} did not close within {timeoutMs / 1000} seconds, so nothing was changed. Close it yourself from the game's own menu (in Task Manager if it will not respond), then apply again. Games often ignore a polite close request while you are in a session or on a menu, or they ask a question first, such as whether to leave the session.");
     }
 
     // ---------- logos: read from the user's own Steam folder, never bundled ----------

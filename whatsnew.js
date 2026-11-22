@@ -4,15 +4,15 @@
   'use strict';
   var KEY = 'dialed.whatsNewSeen';
   // The release these notes describe. Change it (and ITEMS) only when there is something new to tell people; small fixes in between do not reopen the window.
-  var RELEASE = '0.7.0';
+  var RELEASE = '0.8.0';
   var TITLE = 'What\'s new in Dialed';
   // The big banner at the top: set to null for a release with no new sim. `sim` picks the logo (read from the player's own Steam folder, so it is skipped if missing).
-  var HERO = null;
+  var HERO = { sim: 'raceroom', title: 'RaceRoom is now in Dialed', sub: 'Capture a race, see what is holding your PC back, and change the right graphics settings, with a backup before every change. Free, always.' };
   var ITEMS = [
-    ['Updates install themselves', 'When Dialed opens and no capture or game is running, it now installs new versions by itself, including updates to the program. It checks every download first, never interrupts a capture, and reopens when it is done. You can switch it off in About.'],
-    ['Safer turn-up suggestions', 'When your PC has spare room, Dialed no longer suggests raising a heavy setting that could tip it into being limited, and never suggests turning up depth of field, heat haze, distortion or crowd detail.'],
-    ['Clearer empty rounds', 'If there is nothing left that Dialed can safely change, it now says why and what usually helps from there.'],
-    ['Smaller fixes', 'A Download button when an update needs a new program, and Share my result can no longer send the same round twice.']
+    ['RaceRoom', 'RaceRoom Racing Experience is supported: visible cars, anti-aliasing, textures, shadows, reflections, mirrors, particles, track detail, car shadows and the screen effects. Every value was checked in the game itself. Dialed closes RaceRoom before it applies changes, because the game rewrites its settings file when it exits.'],
+    ['Backed up and undoable', 'Every RaceRoom change is saved to a Dialed Backups folder first, and Restore my original settings puts your file back exactly as it was before Dialed first changed it.'],
+    ['When a game will not close', 'If a game ignores the request to close, for example because it is asking whether to leave a session, Dialed now says so plainly and tells you what to do. Nothing is changed until it is closed.'],
+    ['Updates installed this one for you', 'If you have 0.7.0 or later, Dialed installed this update by itself when you opened it. You can switch that off in About.']
   ];
   // pure: should the window open?
   function shouldShow(seenVersion, current, tourSeen) {
