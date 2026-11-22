@@ -4,16 +4,15 @@
   'use strict';
   var KEY = 'dialed.whatsNewSeen';
   // The release these notes describe. Change it (and ITEMS) only when there is something new to tell people; small fixes in between do not reopen the window.
-  var RELEASE = '0.6.0';
+  var RELEASE = '0.7.0';
   var TITLE = 'What\'s new in Dialed';
   // The big banner at the top: set to null for a release with no new sim. `sim` picks the logo (read from the player's own Steam folder, so it is skipped if missing).
-  var HERO = { sim: 'ac', title: 'Assetto Corsa is now in Dialed', sub: 'The original, with Content Manager and Custom Shaders Patch support. Capture a race, see what is holding your PC back, and change the right graphics settings, with a backup before every change. Free, always.' };
+  var HERO = null;
   var ITEMS = [
-    ['Assetto Corsa', 'The original Assetto Corsa is now supported. Dialed changes its video settings (anti-aliasing, shadows, reflections, mirrors, post-processing and more), with a backup before every change. Restart the game after applying, because it only reads its settings when it starts.'],
-    ['Custom Shaders Patch', 'If you use CSP, Dialed also adjusts its performance settings: pixel density, level-of-detail distances, lighting, shadows, Extra FX, particles, mirrors, rain, grass and more. It only touches features you have switched on, and only writes into CSP\'s own small override files.'],
-    ['Works with Content Manager', 'Content Manager keeps its own copy of AC\'s settings and would write the old ones back, so Dialed closes it with the game when you apply, and says so first.'],
-    ['Fairer verdicts', 'A round is only called better or worse when the change is bigger than the difference between your own captures, and Dialed stops you analysing captures under the wrong sim.'],
-    ['Automobilista 2 and the in-game hotkey', 'Automobilista 2 is supported, and the capture hotkey now works inside games that hide normal hotkeys from other programs.']
+    ['Updates install themselves', 'When Dialed opens and no capture or game is running, it now installs new versions by itself, including updates to the program. It checks every download first, never interrupts a capture, and reopens when it is done. You can switch it off in About.'],
+    ['Safer turn-up suggestions', 'When your PC has spare room, Dialed no longer suggests raising a heavy setting that could tip it into being limited, and never suggests turning up depth of field, heat haze, distortion or crowd detail.'],
+    ['Clearer empty rounds', 'If there is nothing left that Dialed can safely change, it now says why and what usually helps from there.'],
+    ['Smaller fixes', 'A Download button when an update needs a new program, and Share my result can no longer send the same round twice.']
   ];
   // pure: should the window open?
   function shouldShow(seenVersion, current, tourSeen) {

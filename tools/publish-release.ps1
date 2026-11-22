@@ -62,6 +62,17 @@ $manifest = [ordered]@{
   version = $Version; notes = $Notes; minHost = $MinHost; size = $size; sha256 = $sha
   contentUrl = "https://github.com/$repoName/releases/download/v$Version/Dialed-content-$Version.zip"
 }
+# Program updates: the in-app updater downloads this release's installer (checked against this SHA-256) when the program itself is newer than the one running.
+# "host" is the program version this release ships with (HostVersion in app\Update.cs); a page-only release carries the same host as before.
+if ($Installer -and (Test-Path $Installer)) {
+  if ((Split-Path $Installer -Leaf) -ne 'Dialed-Setup.exe') { throw "The installer must be named Dialed-Setup.exe (the website links to that exact name)." }
+  $hostVer = [regex]::Match((Get-Content (Join-Path $root 'app\Update.cs') -Raw), 'HostVersion\s*=\s*"(\d+\.\d+\.\d+)"').Groups[1].Value
+  if (-not $hostVer) { throw "Could not read HostVersion from app\Update.cs." }
+  $manifest['host'] = $hostVer
+  $manifest['installerUrl'] = "https://github.com/$repoName/releases/download/v$Version/Dialed-Setup.exe"
+  $manifest['installerSha256'] = (Get-FileHash $Installer -Algorithm SHA256).Hash.ToLower()
+  $manifest['installerSize'] = (Get-Item $Installer).Length
+}
 $manifestPath = Join-Path $out 'latest.json'
 [IO.File]::WriteAllText($manifestPath, (($manifest | ConvertTo-Json) + "`n"), $utf8)
 

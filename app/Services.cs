@@ -151,6 +151,11 @@ sealed class Settings
     public string? LastSim { get; set; }
     /// <summary>Look for page updates when the app opens (and every few hours). Contacts only the project's GitHub releases.</summary>
     public bool AutoUpdateCheck { get; set; } = true;
+    /// <summary>Install updates by itself when Dialed opens and no capture or game is running: page updates, and program updates via the release's installer.
+    /// On by default; the player can switch it off in About.</summary>
+    public bool AutoInstall { get; set; } = true;
+    /// <summary>The release whose program installer Dialed last started by itself. It is never retried automatically, so a failing install cannot loop.</summary>
+    public string? AutoInstallTried { get; set; }
     /// <summary>Spoken capture cues (the recorded voice) instead of plain beeps. Only matters when the voice clips are present.</summary>
     public bool CueVoice { get; set; } = true;
     /// <summary>Optional "owner/repo" override, for testing a fork.</summary>

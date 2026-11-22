@@ -189,13 +189,15 @@
   // After "Later" the banner goes away, but a small pill in the sidebar stays until the update is installed, so it cannot be forgotten.
   $('verPill').addEventListener('click', function () {
     if (!upd.version) return;
-    bar('ok', 'Version ' + upd.version + ' is ready', 'Changes the page and settings tables. Your history and captures are kept.', upd.notes, true);
+    bar('ok', 'Version ' + upd.version + ' is ready', upd.program ? PROGRAM_SUB : PAGE_SUB, upd.notes, true);
     $('main').scrollTop = 0;
   });
   function updStatus(text, cls) { $('updateStatus').textContent = text; $('updateStatus').className = 'status ' + (cls || ''); }
   var RELEASES_URL = 'https://github.com/f1gamerdad-labs/dialed/releases/latest';
   function openReleases() { send({ type: 'openUrl', url: RELEASES_URL }); }
-  function needsNewProgram(msg) { return /newer version of the program/i.test(msg || ''); }
+  function needsNewProgram(msg) { return /newer version of the program|releases page/i.test(msg || ''); }
+  var PAGE_SUB = 'Changes the page and settings tables. Your history and captures are kept.';
+  var PROGRAM_SUB = 'This one updates the program itself. Dialed downloads the installer, checks it, closes, installs and reopens by itself in a few seconds. Your settings, history and backups are kept.';
   $('updateDownload').addEventListener('click', openReleases);
   $('downloadLatest').addEventListener('click', openReleases);
   function bar(kind, title, sub, notes, showButtons) {
@@ -209,8 +211,8 @@
     $('updatesCard').hidden = false;
     $('versionLine').textContent = 'Dialed v' + h.appVersion.content + ' (program v' + h.appVersion.host + ')';
     var verEl = document.querySelector('.rail .ver'); if (verEl) verEl.textContent = 'v' + h.appVersion.content;
-    $('autoUpdate').checked = !!h.updates.auto;
-    $('checkUpdate').hidden = !h.updates.configured; $('autoUpdate').parentElement.hidden = !h.updates.configured;
+    $('autoUpdate').checked = !!h.updates.auto; $('autoInstall').checked = !!h.updates.autoInstall;
+    $('checkUpdate').hidden = !h.updates.configured; $('autoUpdate').parentElement.hidden = !h.updates.configured; $('autoInstall').parentElement.hidden = !h.updates.configured;
     $('revertUpdate').hidden = !h.updates.canRevert;
     if (!h.updates.configured) updStatus('Updates are not switched on for this copy yet.');
     var was = null; try { was = localStorage.getItem('dialed.justUpdated'); localStorage.removeItem('dialed.justUpdated'); } catch (e) { /* no storage */ }
@@ -226,17 +228,27 @@
     if (confirm('Go back to the previous version? Your history and settings are kept. The page reloads.')) { try { localStorage.removeItem('dialed.justUpdated'); } catch (e) { /* no storage */ } send({ type: 'revertUpdate' }); }
   });
   $('autoUpdate').addEventListener('change', function () { send({ type: 'setUpdateCheck', enabled: $('autoUpdate').checked }); });
+  $('autoInstall').addEventListener('change', function () { send({ type: 'setAutoInstall', enabled: $('autoInstall').checked }); });
   function onUpdate(m) {
     if (m.state === 'available') {
-      upd.version = m.version; upd.notes = m.notes || []; $('verPill').hidden = false;
+      upd.version = m.version; upd.notes = m.notes || []; upd.program = !!m.program; $('verPill').hidden = false;
       var later = ''; try { later = sessionStorage.getItem('dialed.updateLater') || ''; } catch (e) { /* no storage */ }
       updStatus('Version ' + m.version + ' is available.', 'good');
-      if (!(m.silent && later === m.version)) bar('ok', 'Version ' + m.version + ' is ready', 'Changes the page and settings tables. Your history and captures are kept.', m.notes, true);
+      if (m.program && !m.installer) {   // a program update with no installer attached: the player has to download it
+        bar('ok', 'Version ' + m.version + ' is ready', 'This update changes the program itself, so it needs a fresh download.', m.notes, false);
+        $('updateDownload').hidden = false;
+      } else if (!(m.silent && later === m.version)) {
+        bar('ok', 'Version ' + m.version + ' is ready', m.program ? PROGRAM_SUB : PAGE_SUB, m.notes, true);
+        if (m.tried) $('updateDownload').hidden = false;   // an automatic install of this one did not finish: offer the manual download too
+      }
     } else if (m.state === 'none') {
       if (!m.silent) updStatus('You are on the latest version (' + m.version + ').', 'good');
     } else if (m.state === 'downloading') {
       $('verPill').hidden = true;
-      bar('ok', 'Updating to version ' + m.version + '...', 'Downloading and checking it. The page reloads when it is done.', [], false);
+      bar('ok', (m.auto ? 'Updating Dialed to version ' : 'Updating to version ') + m.version + '...',
+        m.program ? 'Downloading the installer and checking it.' : 'Downloading and checking it. The page reloads when it is done.', [], false);
+    } else if (m.state === 'installing') {
+      bar('ok', 'Installing Dialed ' + m.version, 'Dialed is closing now. The installer runs and Dialed reopens by itself in a few seconds.', [], false);
     } else if (m.state === 'error') {
       updStatus(m.message, 'bad'); $('updateNow').disabled = false;
       $('downloadLatest').hidden = !needsNewProgram(m.message);

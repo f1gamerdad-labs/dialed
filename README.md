@@ -12,8 +12,10 @@ Supported: iRacing, Le Mans Ultimate, Automobilista 2 and Assetto Corsa (the ori
 3. Tick the changes you want and press Apply. Backups of your files go in a visible *Dialed Backups* folder.
 
 ## Updates
-Dialed checks this repository's latest release for page and settings-table updates. You click **Update now**; it
-checks a SHA-256 fingerprint, keeps the previous version so you can revert, and never installs program files that way.
+Dialed checks this repository's latest release when it opens. Page and settings-table updates are checked against a SHA-256
+fingerprint, the previous version is kept so you can revert, and no program files are installed that way. Program updates
+use the release's installer, which is checked (size, SHA-256, a real Windows program, the release's version) before it runs.
+Unless switched off in About, both install by themselves when Dialed opens and no capture or game is running.
 
 ## For the maintainer
 Build: `dotnet build app/TunerApp.csproj -c Release` (needs the .NET 8 SDK; WebView2 runtime on the PC).

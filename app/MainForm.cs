@@ -41,6 +41,8 @@ public sealed class MainForm : Form
             Load += async (_, _) => { await RunUpdateSelfTestAsync(testUrl); Close(); };
             return;
         }
+        // Tester only (needs --data so it never touches the real settings): run the normal app against a pretend release server on this PC.
+        if (Paths.DataOverride != null && Arg("--update-test-url") is { } liveTestUrl) UpdateService.TestManifestUrl = liveTestUrl;
         if (Arg("--selftest-sounds") is { } soundDir && Paths.DataOverride != null) // reports which spoken cues in a folder are found and are playable WAV files
         {
             Load += (_, _) =>
@@ -313,7 +315,9 @@ public sealed class MainForm : Form
             // Look for a page update shortly after the app opens, then every few hours, if the user has not switched it off.
             updateTimer.Tick += async (_, _) => { if (settings.AutoUpdateCheck) await CheckUpdateAsync(silent: true); };
             updateTimer.Start();
-            _ = Task.Run(async () => { await Task.Delay(8000); if (settings.AutoUpdateCheck) await CheckUpdateAsync(silent: true); });
+            UpdateService.CleanInstallers();   // an installer from an earlier program update is no longer needed
+            // The check just after opening is the one that may install by itself (see CheckUpdateAsync): a restart then costs the player nothing.
+            _ = Task.Run(async () => { await Task.Delay(8000); BeginInvoke(async () => { if (settings.AutoUpdateCheck) await CheckUpdateAsync(silent: true, atStartup: true); }); });   // on the window's own thread: it may reload the page or close the app
             hotkeyStatus = TryRegisterHotkey(settings.Hotkey);
             Paths.Log_($"hotkey {settings.Hotkey.Text}: " + (hotkeyStatus == "" ? "registered" : "NOT registered (" + hotkeyStatus + ")"));
             if (settings.WideHotkey && !selfTest)
@@ -420,39 +424,74 @@ public sealed class MainForm : Form
     }
 
     // ---------- page updates ----------
-    async Task CheckUpdateAsync(bool silent)
+    /// <summary>True while something is going on that an update must not interrupt: a capture, or a running game (or its launcher, such as Content Manager).</summary>
+    bool UpdateWouldInterrupt() => capture != null || SimService.All.Any(SimService.Holds);
+
+    async Task CheckUpdateAsync(bool silent, bool atStartup = false)
     {
         if (!UpdateService.Configured) { if (!silent) Post(new { type = "update", state = "error", message = "Updates are not switched on for this copy yet." }); return; }
         try
         {
             var info = await UpdateService.CheckAsync();
             pendingUpdate = info;
-            if (info == null) Post(new { type = "update", state = "none", silent, version = UpdateService.CurrentVersion() });
-            else Post(new { type = "update", state = "available", silent, version = info.Version, notes = info.Notes, size = info.Size });
+            if (info == null) { Post(new { type = "update", state = "none", silent, version = UpdateService.CurrentVersion() }); return; }
+            var program = info.NeedsProgram || UpdateService.ProgramIsOlder(info);
+            // Fully automatic: only on the check just after opening, only when nothing is running, and a program update is tried once per release.
+            if (atStartup && settings.AutoInstall && !UpdateWouldInterrupt() && !(program && settings.AutoInstallTried == info.Version) && !(program && !info.HasInstaller))
+            {
+                Paths.Log_($"automatic update to {info.Version} ({(program ? "program" : "page")})");
+                await ApplyUpdateAsync(auto: true);
+                return;
+            }
+            Post(new { type = "update", state = "available", silent, version = info.Version, notes = info.Notes, size = info.Size,
+                program, installer = info.HasInstaller, tried = program && settings.AutoInstallTried == info.Version });
         }
         catch (Exception ex)
         {
-            Paths.Log_("update check failed: " + ex.Message);
+            Paths.Log_("update check of " + UpdateService.ManifestUrl + " failed: " + ex.Message + (ex.InnerException != null ? " (" + ex.InnerException.Message + ")" : ""));
             if (!silent) Post(new { type = "update", state = "error", message = "Could not check for updates. Check your internet connection and try again." });
         }
     }
 
-    async Task ApplyUpdateAsync()
+    async Task ApplyUpdateAsync(bool auto = false)
     {
-        if (pendingUpdate == null) return;
+        var info = pendingUpdate;
+        if (info == null) return;
         if (capture != null) { Post(new { type = "update", state = "error", message = "Finish or cancel the capture first, then update." }); return; }
-        Post(new { type = "update", state = "downloading", version = pendingUpdate.Version });
+        var program = info.NeedsProgram || UpdateService.ProgramIsOlder(info);
+        Post(new { type = "update", state = "downloading", version = info.Version, program, auto });
         try
         {
-            await UpdateService.ApplyAsync(pendingUpdate);
-            pendingUpdate = null;
-            await ReloadPageAsync();
+            if (!program)
+            {
+                await UpdateService.ApplyAsync(info);
+                pendingUpdate = null;
+                if (auto) await MarkJustUpdatedAsync();
+                await ReloadPageAsync();
+                return;
+            }
+            // A program update: download the release's installer, check it, tell the player, then close so the installer can replace the files.
+            if (!info.HasInstaller) throw new InvalidOperationException("This release has no installer attached. Download the latest Dialed from the releases page.");
+            settings.AutoInstallTried = info.Version; settings.Save();   // set before running anything: a failure must never loop
+            var path = await UpdateService.DownloadInstallerAsync(info);
+            Post(new { type = "update", state = "installing", version = info.Version, auto });
+            await MarkJustUpdatedAsync();
+            await Task.Delay(3000);   // long enough to read the message
+            if (capture != null || (auto && UpdateWouldInterrupt())) { Post(new { type = "update", state = "error", message = "Something started while the update was downloading, so it was not installed. It will be offered again." }); return; }
+            UpdateService.LaunchInstaller(path);
+            exiting = true; Close();
         }
         catch (Exception ex)
         {
             Paths.Log_("update failed: " + ex.Message);
-            Post(new { type = "update", state = "error", message = ex.Message });
+            Post(new { type = "update", state = "error", message = ex.Message + (program ? " You can also download the latest Dialed from the releases page." : "") });
         }
+    }
+
+    /// <summary>So the page shows "Updated to version X" after it reloads or the program reopens.</summary>
+    async Task MarkJustUpdatedAsync()
+    {
+        try { if (web.CoreWebView2 != null) await web.CoreWebView2.ExecuteScriptAsync("try{localStorage.setItem('dialed.justUpdated','1')}catch(e){}"); } catch { /* the page just won't say so */ }
     }
 
     async Task ReloadPageAsync()
@@ -568,7 +607,7 @@ public sealed class MainForm : Form
                     Post(new
                     {
                         type = "hello", appVersion = new { content = UpdateService.CurrentVersion(), host = UpdateService.HostVersion },
-                        updates = new { configured = UpdateService.Configured, auto = settings.AutoUpdateCheck, canRevert = UpdateService.CanRevert },
+                        updates = new { configured = UpdateService.Configured, auto = settings.AutoUpdateCheck, autoInstall = settings.AutoInstall, canRevert = UpdateService.CanRevert },
                         hotkey = HotkeyInfo(), hotkeyError = hotkeyStatus, iniDir = Paths.IRacingDocs,
                         ini = IniService.List(), lastIni = settings.LastIni, seconds = settings.CaptureSeconds, countdown = settings.Countdown,
                         cueVoice = settings.CueVoice, voiceClips = SoundPack.ClipsExist(), screenHz = PcCheck.PrimaryRefresh(),
@@ -613,6 +652,10 @@ public sealed class MainForm : Form
                     break;
                 case "setUpdateCheck":
                     settings.AutoUpdateCheck = r.GetProperty("enabled").GetBoolean(); settings.Save();
+                    break;
+                case "setAutoInstall":
+                    settings.AutoInstall = r.GetProperty("enabled").GetBoolean(); settings.Save();
+                    Paths.Log_("install updates automatically: " + settings.AutoInstall);
                     break;
                 case "setTray":
                     settings.TrayMode = r.GetProperty("mode").GetBoolean(); settings.HideOnCapture = r.GetProperty("hideOnCapture").GetBoolean(); settings.NotifyOnCapture = r.GetProperty("notify").GetBoolean();
@@ -1007,12 +1050,50 @@ public sealed class MainForm : Form
         File.WriteAllText(Path.Combine(Paths.Data, "selftest-backups.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
     }
 
+    // program-update checks run first and on their own, so they do not depend on the pretend release server
+    async Task ProgramUpdateChecksAsync(Action<string, bool, string> record)
+    {
+        void Check(string name, bool pass, string detail = "") => record(name, pass, detail);
+        async Task<string?> Apply(UpdateInfo info) { try { await UpdateService.ApplyAsync(info); return null; } catch (Exception ex) { return ex.Message; } }
+        try
+        {
+            // ----- program updates: the manifest fields, and every way the installer check can say no -----
+            var hostNext = new Version(Version.Parse(UpdateService.HostVersion).Major, Version.Parse(UpdateService.HostVersion).Minor + 1, 0).ToString(3);
+            var json = "{\"version\":\"" + hostNext + "\",\"notes\":[\"x\"],\"minHost\":\"" + hostNext + "\",\"size\":10,\"sha256\":\"" + new string('a', 64) + "\",\"contentUrl\":\"https://github.com/x/y/a.zip\"," +
+                "\"host\":\"" + hostNext + "\",\"installerUrl\":\"https://github.com/x/y/Dialed-Setup.exe\",\"installerSha256\":\"" + new string('B', 64) + "\",\"installerSize\":1234}";
+            var pm = UpdateService.ParseManifest(json);
+            Check("manifest: installer fields are read", pm.HasInstaller && pm.Host == hostNext && pm.InstallerSize == 1234 && pm.InstallerSha256 == new string('b', 64));
+            Check("manifest: a release for a newer program is a program update", pm.NeedsProgram && UpdateService.ProgramIsOlder(pm));
+            var oldFmt = UpdateService.ParseManifest(json.Replace("\"host\"", "\"hostx\"").Replace("\"installerUrl\"", "\"installerUrlx\""));
+            Check("manifest: an older manifest without installer fields still reads, and is never a program update", !oldFmt.HasInstaller && !UpdateService.ProgramIsOlder(oldFmt));
+            var sameHost = UpdateService.ParseManifest(json.Replace("\"host\":\"" + hostNext + "\"", "\"host\":\"" + UpdateService.HostVersion + "\"").Replace("\"minHost\":\"" + hostNext + "\"", "\"minHost\":\"" + UpdateService.HostVersion + "\""));
+            Check("manifest: a page-only release does not need the installer", !sameHost.NeedsProgram && !UpdateService.ProgramIsOlder(sameHost));
+
+            var exe = Path.Combine(Environment.SystemDirectory, "whoami.exe");
+            var fv = System.Diagnostics.FileVersionInfo.GetVersionInfo(exe);
+            var fakeVersion = $"{fv.FileMajorPart}.{fv.FileMinorPart}.{fv.FileBuildPart}";
+            var sha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(exe))).ToLowerInvariant();
+            var good = pm with { Version = fakeVersion, InstallerSha256 = sha, InstallerSize = new FileInfo(exe).Length };
+            Check("installer check: a matching installer passes", UpdateService.VerifyInstaller(exe, good) == null, UpdateService.VerifyInstaller(exe, good) ?? "");
+            Check("installer check: wrong checksum is refused", UpdateService.VerifyInstaller(exe, good with { InstallerSha256 = new string('0', 64) })?.Contains("checksum") == true);
+            Check("installer check: wrong size is refused", UpdateService.VerifyInstaller(exe, good with { InstallerSize = good.InstallerSize + 1 }) != null);
+            Check("installer check: a different release version is refused", UpdateService.VerifyInstaller(exe, good with { Version = "99.0.0" })?.Contains("version") == true);
+            var notExe = Path.Combine(Paths.Data, "not-a-program.exe"); File.WriteAllBytes(notExe, new byte[4096]);
+            Check("installer check: a file that is not a Windows program is refused", UpdateService.VerifyInstaller(notExe, good with { InstallerSha256 = new string('0', 64), InstallerSize = 0 })?.Contains("not a Windows program") == true);
+            Check("installer check: a missing file is refused, not a crash", UpdateService.VerifyInstaller(Path.Combine(Paths.Data, "nope.exe"), good) != null);
+            Check("a program update with no installer is refused with a pointer to the releases page",
+                (await Apply(pm with { InstallerUrl = "", InstallerSha256 = "" }))?.Contains("releases page") == true);
+        }
+        catch (Exception ex) { Check("program update checks ran to the end", false, ex.Message); }
+    }
+
     // ---------- update self test: `Dialed.exe --selftest-update --data=<throwaway> --update-test-url=http://localhost:8799/` ----------
     // Runs the updater against a pretend release server prepared by the tester: good updates, and every kind of bad one.
     async Task RunUpdateSelfTestAsync(string baseUrl)
     {
         var checks = new List<object>();
         void Check(string name, bool pass, string detail = "") => checks.Add(new { name, pass, detail });
+        await ProgramUpdateChecksAsync(Check);
         async Task<(UpdateInfo? info, string? err)> Look(string file)
         {
             UpdateService.TestManifestUrl = baseUrl + file;
@@ -1054,6 +1135,8 @@ public sealed class MainForm : Form
             Check("nothing was installed by the refused ones", UpdateService.CurrentVersion() == "0.1.0" && !UpdateService.CanRevert);
             Check("the unsafe zip wrote nothing outside its folder", !File.Exists(Path.Combine(Paths.Data, "evil.txt")) && !File.Exists(Path.Combine(Path.GetDirectoryName(Paths.Data)!, "evil.txt")));
             Check("no staging or download files left behind", !Directory.GetFileSystemEntries(Path.Combine(Paths.Data, "content")).Any(x => Path.GetFileName(x).StartsWith("staging-") || Path.GetFileName(x).StartsWith("download-")));
+
+
         }
         catch (Exception ex) { Check("test ran to the end", false, ex.Message); }
         File.WriteAllText(Path.Combine(Paths.Data, "selftest-update.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
