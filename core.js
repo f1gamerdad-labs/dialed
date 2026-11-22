@@ -336,8 +336,6 @@
     // 3. Comfortably above the floor: spend spare capacity on visuals (not for the smoothness goal).
     // The usual margin is 10% above the floor. When the game is already holding the frame cap and the graphics card has clear spare
     // room, raising graphics-card-heavy settings does little to the 1% lows, so a 5% margin is enough.
-    // At most two turn-ups per round: shared results showed rounds that raised six or eight settings at once lost half their frame rate.
-    var MAX_RAISES = 2;
     var raiseMargin = d.limiter === 'cap' && d.gpuHeadroom ? -0.05 : -0.10;
     // Someone who streams or records needs the headroom for the encoder, so nothing is turned up for them.
     if (d.deficit <= raiseMargin && d.goal.raise > 0 && d.vram !== 'pressure' && !prefs.streaming) {
@@ -345,12 +343,16 @@
       if (spare) {
         var other = spare === 'gpu' ? 'cpu' : 'gpu';
         candidates(+1).filter(function (c) {
-          return c.s.visual > 0 && c.s[spare] > 0 && c.s[other] <= 1 && (d.vram === 'ok' || !c.s.vram);
+          // A heavy setting (cost 2 or more) on the spare part can use it all up and make that part the new limit, so it is only
+          // offered when there is a lot of room (30% above what the goal needs); holding the frame cap with graphics card headroom is exempt,
+          // because the cap, not that part, is the limit. A shared result showed exactly this: two CPU-heavy
+          // turn-ups tipped a PC into being CPU-limited and the stutters went from a few to 37 a minute.
+          return c.s.visual > 0 && c.s[spare] > 0 && c.s[other] <= 1 && (d.limiter === 'cap' || c.s[spare] <= 1 || d.deficit <= -0.30) && (d.vram === 'ok' || !c.s.vram);
         })
           .sort(function (a, b) {
             return b.s.visual / (b.s.cpu + b.s.gpu + 0.5) * histWeight(mem, b.s.key) - a.s.visual / (a.s.cpu + a.s.gpu + 0.5) * histWeight(mem, a.s.key);
           })
-          .slice(0, Math.min(d.goal.raise, MAX_RAISES)).forEach(function (c) {
+          .slice(0, d.goal.raise).forEach(function (c) {
             add(c.s, c.to, 'up', 'Your ' + PART[spare] + ' has spare capacity, and this mostly uses that.', spare);
           });
       } else if (d.limiter === 'cap') {
@@ -392,6 +394,13 @@
     });
     if (held.length)
       notes.push('Leaving alone because you reverted them recently: ' + held.map(function (k) { return mem.reverted[k]; }).join(', ') + '.');
+    if (!changes.length && !(d.deficit > 0 && d.limiter === 'unknown'))
+      notes.push('Nothing in your graphics settings is left that Dialed can safely change this round' +
+        (held.length ? ' (the ones you put back are left alone)' : '') + '. ' +
+        (d.deficit > 0
+          ? 'Your 1% lows (' + Math.round(m.low1) + ' FPS) are still under what this goal needs' + (d.limiter === 'cpu' ? ', and the processor is the limit. ' : '. ') +
+            'What usually helps from here: close background programs (browsers, overlays, dashboards), race with fewer cars on the grid, cap your frame rate a little below what you hold, and check the PC check page for memory speed and power plan.'
+          : 'You are meeting your goal, so there is nothing you need to give up. If you want more visual quality, try the Eye candy goal.'));
     if (changes.length && !diagGood)
       notes.push('Confidence is lower this round because ' + issues.join(' and ') + '. Capture two or three full 60 second runs for firmer advice.');
 
