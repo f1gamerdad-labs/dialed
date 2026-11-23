@@ -18,7 +18,7 @@
       } },
     { id: 'pick', title: 'Pick your sim',
       text: 'Dialed works with iRacing, Le Mans Ultimate, Automobilista 2, Assetto Corsa, ACC, AC EVO and RaceRoom today, and finds your games for you. Project Motor Racing and BeamNG are coming soon. Each sim keeps its own settings table and its own history.',
-      tip: 'Not for VR. For VR, NextLevelXR is the right tool.',
+      tip: 'VR works for iRacing only for now. Choose VR on the start screen.',
       scene: function () {
         var names = ['iRacing', 'LMU', 'AMS2', 'ACC', 'EVO', 'RaceRoom', 'PMR', 'BeamNG'];
         return '<div class="sc sc-pick"><div class="grid8">' + names.map(function (n, i) { return '<span style="--i:' + i + '"' + (i === 0 ? ' class="pick"' : i > 1 ? ' class="soon"' : '') + '>' + n + '</span>'; }).join('') + '</div></div>';

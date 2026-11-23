@@ -153,7 +153,7 @@
     $('version').textContent = tableOf(sim).testedAgainst ? 'Settings table: ' + tableOf(sim).testedAgainst + '.' : '';
     $('iniEyebrow').textContent = one ? 'Your ' + sim.name + ' file' : 'Your ' + sim.name + ' files';
     $('iniDropText').innerHTML = 'Drop ' + sim.files.map(function (f) { return '<b>' + esc(f.name) + '</b>'; }).join(' and ') + ' here, or click to choose';
-    $('iniHint').innerHTML = sim.files.map(function (f) { return esc(f.label) + ': ' + esc(f.hint); }).join('<br>') + ' VR files are not supported.';
+    $('iniHint').innerHTML = sim.files.map(function (f) { return esc(f.label) + ': ' + esc(f.hint); }).join('<br>') + (sim.id === 'iracing' ? '' : ' VR files are not supported.');
     $('iniInput').multiple = !one;
     $('sIniTitle').textContent = one ? 'Game file' : 'Game files';
     // the mode switch (Driving / Replay) comes from the sim
