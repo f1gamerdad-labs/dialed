@@ -29,7 +29,7 @@
   // The open round (applied, not yet measured) for this sim and mode, if any.
   function pendingIndex(h, simId, section) {
     for (var i = h.length - 1; i >= 0; i--) {
-      if ((h[i].sim || 'iracing') === simId && sectionOf(h[i]) === section) return h[i].result ? -1 : i;
+      if ((h[i].sim || 'iracing') === simId && sectionOf(h[i]) === section && !!h[i].vr === isVrActive()) return h[i].result ? -1 : i;
     }
     return -1;
   }
@@ -43,7 +43,7 @@
     return n;
   }
   function historyFor(simId, section) {
-    return Store.load().filter(function (h) { return (h.sim || 'iracing') === simId && sectionOf(h) === section; });
+    return Store.load().filter(function (h) { return (h.sim || 'iracing') === simId && sectionOf(h) === section && !!h.vr === isVrActive(); });   // VR and flat-screen rounds never mix
   }
 
   function showError(msg) { $('error').textContent = msg || ''; $('error').hidden = !msg; }
@@ -58,6 +58,14 @@
     var loaded = state.sim.files.filter(function (f) { return state.files[f.id]; });
     state.iniName = loaded.map(function (f) { return state.files[f.id].name; }).join(', ') || null;
     state.iniText = loaded.length ? state.files[loaded[0].id].text : null;
+    $('vrTargetField').hidden = !isVrActive(); $('vrHalfField').hidden = !isVrActive();
+  }
+  // VR beta (tester switch): true while iRacing's OpenXR file is the one loaded
+  function vrHalf() { return $('vrHalf').value === '1'; }   // aiming for half the headset rate, with the headset's motion smoothing filling in the rest
+  function tableOf(sim) { return isVrActive() && sim.vrTable ? sim.vrTable : sim.table; }
+  function isVrActive() {
+    var s = state.sim, f = s && s.files && state.files[s.files[0].id];
+    return !!(f && s.isVrActiveFile && s.isVrActiveFile(f.name));
   }
 
   // Reads and checks one file's text. Returns true when it was accepted.
@@ -142,7 +150,7 @@
   function renderSimUI() {
     var sim = state.sim, one = sim.files.length === 1;
     renderPicker();
-    $('version').textContent = sim.table.testedAgainst ? 'Settings table: ' + sim.table.testedAgainst + '.' : '';
+    $('version').textContent = tableOf(sim).testedAgainst ? 'Settings table: ' + tableOf(sim).testedAgainst + '.' : '';
     $('iniEyebrow').textContent = one ? 'Your ' + sim.name + ' file' : 'Your ' + sim.name + ' files';
     $('iniDropText').innerHTML = 'Drop ' + sim.files.map(function (f) { return '<b>' + esc(f.name) + '</b>'; }).join(' and ') + ' here, or click to choose';
     $('iniHint').innerHTML = sim.files.map(function (f) { return esc(f.label) + ': ' + esc(f.hint); }).join('<br>') + ' VR files are not supported.';
@@ -300,12 +308,12 @@
     var names = state.caps.map(function (c) { return c.name; });
     var m = core.summarise(state.caps);
     var prefs = window.TunerPrefs ? window.TunerPrefs.forSim(sim.id) : {};   // the player's own choices: protected settings, streaming, sync, screen refresh rate
-    var d = core.diagnose(m, state.ini, { goal: goal, target: parseFloat($('target').value), capInfo: sim.capInfo || undefined, screenHz: prefs.screenHz });
+    var d = core.diagnose(m, state.ini, { goal: goal, target: isVrActive() ? parseFloat($('vrTarget').value) / (vrHalf() ? 2 : 1) : parseFloat($('target').value), vrHalf: isVrActive() && vrHalf(), headsetHz: isVrActive() ? parseFloat($('vrTarget').value) : 0, capInfo: isVrActive() ? function () { var hz = parseFloat($('vrTarget').value), t = hz / (vrHalf() ? 2 : 1); return { cap: t, refresh: hz }; } : (sim.capInfo || undefined), screenHz: isVrActive() ? 0 : prefs.screenHz });   // in VR the headset sets the rate: the flat-screen frame cap and monitor refresh do not apply
     var hist = Store.load(), pi = pendingIndex(hist, sim.id, section), prev = pi >= 0 ? hist[pi] : null;
     if (prev) { prev.section = sectionOf(prev); prev.no = roundNo(hist, prev); }
     // Captures recorded before the changes were applied cannot show what the changes did (for example old files added back after applying).
     var staleRound = !!(prev && window.TunerReliability && window.TunerReliability.predates && window.TunerReliability.predates(names, prev.at));
-    var a = prev && !staleRound ? core.assessRound(prev, m, d, state.ini, sim.table, names) : null;
+    var a = prev && !staleRound ? core.assessRound(prev, m, d, state.ini, tableOf(sim), names) : null;
     // The round being reported on counts as evidence straight away (it is only saved as finished when the next round is applied),
     // so a change that just showed no effect is not pushed again, and one that helped is trusted more.
     var ctxHistory = historyFor(sim.id, section);
@@ -313,7 +321,7 @@
       var key = prev.at;
       ctxHistory = ctxHistory.map(function (h) { return h.at === key ? Object.assign({}, h, { result: { verdict: a.verdict } }) : h; });
     }
-    var r = core.recommend(m, d, state.ini, sim.table, section, { history: ctxHistory, prefs: prefs });
+    var r = core.recommend(m, d, state.ini, tableOf(sim), section, { history: ctxHistory, prefs: prefs });
     state.result = { m: m, d: d, r: r, goal: goal, names: names, section: section, sim: sim.id };
     state.assess = a;
 
@@ -351,7 +359,7 @@
           '</td><td class="n">' + s.low01.toFixed(1) + '</td><td class="n">' + (s.hasGpu ? Math.round(s.gpuLoad * 100) + '%' : 'n/a') + '</td><td class="n">' + s.spikesPerMin.toFixed(1) + '</td></tr>';
       }).join('');
 
-    $('scopeLine').textContent = sim.scopeLine(mode);
+    $('scopeLine').textContent = isVrActive() ? 'These changes go to your VR graphics file (rendererDX11OpenXR.ini) only. Your flat-screen settings stay as they are.' : sim.scopeLine(mode);
     renderLastRound(prev, a, m, staleRound);
     renderRows();
     // sim-specific advice that is not about frame rate, for example "this game is in exclusive full screen, so it vanishes when you click another monitor"
@@ -389,7 +397,7 @@
       html += '<tr class="' + hide.trim() + '"><td class="ck"><input type="checkbox" data-i="' + i + '"' + (c.defaultChecked ? ' checked' : '') + ' aria-label="Include ' + esc(c.name) + '"></td>' +
         '<td>' + esc(c.name) + (c.dir === 'revert' ? '<span class="tag revert">Revert last round</span>' : '') +
         (c.skippedBefore ? '<span class="tag">You skipped this last round</span>' : '') +
-        '<span class="tag scope">' + esc(state.sim.scopeOf(c)) + '</span><code>' + esc(c.key) + '</code></td>' +
+        '<span class="tag scope">' + esc(isVrActive() ? 'Changes your VR settings' : state.sim.scopeOf(c)) + '</span><code>' + esc(c.key) + '</code></td>' +
         '<td class="chg ' + (c.dir === 'up' ? 'good' : c.dir === 'revert' ? 'revert' : 'warn') + '">' + esc(c.fromLabel) + ' &rarr; ' + esc(c.toLabel) + '</td>' +
         '<td>' + (c.dir === 'revert' ? '' : dots(c.relief)) + '</td><td>' + (c.dir === 'revert' ? '' : dots(c.visual)) + '</td>' +
         '<td>' + (c.confidence ? '<span class="conf conf-' + c.confidence + '">' + c.confidence + '</span><span class="tag">' + esc(c.confWhy) + '</span>' : '') + '</td>' +
@@ -479,7 +487,7 @@
       var chosen = {};
       sel.forEach(function (c) { chosen[c.key] = true; });
       var round = {
-        id: hist.filter(function (h) { return (h.sim || 'iracing') === sim.id; }).length + 1, at: new Date().toISOString(), sim: sim.id, goal: res.goal, section: res.section, iniName: state.iniName,
+        id: hist.filter(function (h) { return (h.sim || 'iracing') === sim.id; }).length + 1, at: new Date().toISOString(), sim: sim.id, goal: res.goal, section: res.section, vr: isVrActive() || undefined, iniName: state.iniName,
         baseline: core.snapshot(res.m, res.names),
         applied: sel.map(function (c) { return { key: c.key, name: c.name, section: c.section, from: c.from, to: c.to, fromLabel: c.fromLabel, toLabel: c.toLabel, visual: c.visual, dir: c.dir, confidence: c.confidence }; }),
         limiter: res.d.limiter, runs: state.caps.length,

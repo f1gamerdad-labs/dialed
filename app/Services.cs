@@ -83,6 +83,8 @@ static class Paths
     public static Dictionary<string, string> SimOverrides { get; } = new();
     /// <summary>Tester switch (--enable-sims=ams2,acc): sims switched on for this run only, using their real settings folders.</summary>
     public static HashSet<string> EnabledSims { get; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Tester switch (--enable-vr): lets iRacing's OpenXR graphics file be chosen. Off for everyone else.</summary>
+    public static bool VrEnabled { get; set; }
     public static string IRacingDocs => DocsOverride ?? Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "iRacing");
     public static string PresentMon => Path.Combine(AppContext.BaseDirectory, "tools", "PresentMon.exe");
@@ -145,7 +147,10 @@ sealed class Settings
     public Hotkey Hotkey { get; set; } = new();
     /// <summary>Also listen for the capture hotkey in a way that works inside games that block normal hotkeys. Watches that one combination only.</summary>
     public bool WideHotkey { get; set; } = true;
+    /// <summary>How long one capture records: 60, 120 or 150 seconds (a longer one covers a whole lap on a long track). Anything else reads as 60.</summary>
     public int CaptureSeconds { get; set; } = 60;
+    public static readonly int[] CaptureLengths = { 60, 120, 150 };
+    public static int ValidCaptureSeconds(int s) => Array.IndexOf(CaptureLengths, s) >= 0 ? s : 60;
     public int Countdown { get; set; } = 10;
     public string? LastIni { get; set; }
     public string? LastSim { get; set; }
@@ -621,8 +626,9 @@ static class IniService
     public static bool IsValidName(string name) =>
         name == Path.GetFileName(name) && name.StartsWith("renderer", StringComparison.OrdinalIgnoreCase) &&
         name.EndsWith(".ini", StringComparison.OrdinalIgnoreCase) &&
-        // This tool is not for VR: the OpenVR and OpenXR files are never offered or touched.
-        !name.Contains("OpenVR", StringComparison.OrdinalIgnoreCase) && !name.Contains("OpenXR", StringComparison.OrdinalIgnoreCase);
+        // VR is off by default: the OpenVR and OpenXR files are never offered or touched, unless the tester switch
+        // --enable-vr is on, and then only the OpenXR one (the OpenVR file stays off limits).
+        !name.Contains("OpenVR", StringComparison.OrdinalIgnoreCase) && (Paths.VrEnabled || !name.Contains("OpenXR", StringComparison.OrdinalIgnoreCase));
 
     public static object[] List()
     {

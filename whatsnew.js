@@ -4,16 +4,13 @@
   'use strict';
   var KEY = 'dialed.whatsNewSeen';
   // The release these notes describe. Change it (and ITEMS) only when there is something new to tell people; small fixes in between do not reopen the window.
-  var RELEASE = '0.9.0';
+  var RELEASE = '0.10.0';
   var TITLE = 'What\'s new in Dialed';
   // The big banner at the top: set to null for a release with no new sim. `sim` picks the logo (read from the player's own Steam folder, so it is skipped if missing).
-  var HERO = { sim: 'acc', title: 'ACC and AC EVO are now in Dialed', sub: 'Assetto Corsa Competizione and Assetto Corsa EVO, with every setting checked in the game itself. Capture a race, see what is holding your PC back, and change the right graphics settings, with a backup before every change. Free, always.' };
+  var HERO = null;
   var ITEMS = [
-    ['Assetto Corsa Competizione', 'Resolution scale, shadows, view distance, effects, foliage, textures, mirrors, fog, bloom, car and foliage detail, opponents visible and more. Dialed writes everywhere ACC reads from, so the changes are there the next time you start the game, with nothing to re-select in the menu. Upscaling (DLSS and FSR) is left to you.'],
-    ['Assetto Corsa EVO', 'Supersampling, anti-aliasing, textures, level of detail, lighting, reflections, shadows, particles, grass, clouds, depth of field, motion blur and mirrors: 23 settings in all. Upscaling, resolution and frame limits are left to you.'],
-    ['Reads what the game really runs', 'For ACC, Dialed now reads the settings the game starts with, not a stored copy, and says plainly when a change is not in effect.'],
-    ['Le Mans Ultimate', 'The "not yet tested" line is gone from its setup page.'],
-    ['Updates install themselves', 'Dialed installs new versions by itself when it opens and no capture or game is running. You can switch that off in About.']
+    ['Longer captures', 'Choose 60, 120 or 150 seconds under Capture length, so one capture can cover a whole lap at a long track such as Spa and reach the most demanding parts. If a later round was captured at a very different length, Dialed tells you the comparison may not be fair.'],
+    ['A start screen', 'Dialed now opens by asking which sim you want to tune. Tick "Skip this screen next time" to go straight to your last choice, or use Choose what to test in the sidebar at any time.']
   ];
   // pure: should the window open?
   function shouldShow(seenVersion, current, tourSeen) {

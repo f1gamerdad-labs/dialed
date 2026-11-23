@@ -31,6 +31,7 @@
     <div class="brand"><h1><span class="gt">Dialed</span></h1><span class="pill">BETA</span></div>
     <p class="tagline">Sim Graphics Optimiser</p>
     <p class="by">by F1GamerDad</p>
+    <button class="ghost" id="startOpen" style="width:100%;text-align:center;margin:10px 0 0">Choose what to test</button>
     <div class="simpicker" id="simPicker" role="group" aria-label="Choose your sim"></div>
     <div class="state"><span class="dot" id="sideDot"></span><div><b id="sideState">Ready</b><span id="sideSub">Add captures to begin</span></div></div>
 
@@ -110,12 +111,13 @@
             <div class="field" id="iniSelectField"><label for="iniSelect">iRacing graphics file</label><select id="iniSelect"></select></div>
             <div class="field"><label for="hotkeyBox">Capture hotkey</label><input id="hotkeyBox" readonly placeholder="Click, then press keys"></div>
             <div class="field"><label for="runsSelect">Runs in a row</label><select id="runsSelect"><option value="1">One capture</option><option value="3">Three, one after another</option></select></div>
+            <div class="field"><label for="lenSelect">Capture length</label><select id="lenSelect"><option value="60">60 seconds</option><option value="120">120 seconds</option><option value="150">150 seconds</option></select></div>
             <div class="field" id="cueField" hidden><label for="cueSelect">Countdown sound</label><select id="cueSelect"><option value="voice">F1GamerDad's voice</option><option value="beeps">Plain beeps</option></select></div>
             <div class="field"><button id="capBtn">Start capture</button></div>
           </div>
           <p class="status" id="capStatus" role="status"></p>
           <div class="reminder"><b>Open this app before you start the sim.</b> Windows asks for permission when the app opens, and that prompt can freeze a full-screen game. Once the app is open, you never see it again, and the hotkey works from inside the game.</div>
-    <p class="hint">Click Start capture, or press the hotkey while you are in <span id="capSimName">the sim</span>. You get a 10 second countdown (spoken or beeps, your choice), then 60 seconds are recorded, then a sound to say it is done. Drive (or watch a replay) with the same track, car and field each time.</p>
+    <p class="hint">Click Start capture, or press the hotkey while you are in <span id="capSimName">the sim</span>. You get a 10 second countdown (spoken or beeps, your choice), then the capture length you chose is recorded (60 seconds is a good default; 120 or 150 covers a whole lap on a long track such as Spa), then a sound to say it is done. Drive (or watch a replay) with the same track, car and field each time, and use the same capture length every round.</p>
           <p style="margin:12px 0 0"><button class="ghost" id="openCaps">Open captures folder</button> <button class="ghost" id="openBackups">Open backups folder</button></p>
         </div>
 
@@ -163,6 +165,8 @@
             <div class="field"><label>Priority</label>
               <div class="seg"><label><input type="radio" name="goal" value="smooth">Smoothness</label><label><input type="radio" name="goal" value="balanced" checked>Balanced</label><label><input type="radio" name="goal" value="eyecandy">Eye candy</label></div></div>
             <div class="field"><label for="target">Target FPS (blank = your frame cap)</label><input type="number" id="target" min="30" max="500" placeholder="auto"></div>
+            <div class="field" id="vrTargetField" hidden><label for="vrTarget">Headset refresh rate</label><select id="vrTarget"><option value="72">72 Hz</option><option value="80">80 Hz</option><option value="90" selected>90 Hz</option><option value="120">120 Hz</option></select></div>
+            <div class="field" id="vrHalfField" hidden><label for="vrHalf">Aim for</label><select id="vrHalf"><option value="0" selected>Full rate</option><option value="1">Half rate (motion smoothing)</option></select></div>
           </div>
           <p class="opt-note" id="modeHint">Capture while driving on track. Changes go to your normal driving settings.</p>
           <p class="opt-note" id="goalHint">Balanced: a steady frame rate, keeping what looks good.</p>
@@ -310,6 +314,22 @@
     </div>
   </div>
 </div>
+<!-- start screen: which sim, and monitor or VR -->
+<div class="overlay" id="start" hidden role="dialog" aria-modal="true" aria-labelledby="startTitle">
+  <div class="modal" style="width:min(640px, 100%)">
+    <div class="modal-head"><h2 id="startTitle">What do you want to tune?</h2></div>
+    <div style="padding:0 22px 6px 28px">
+      <p class="eyebrow">Sim</p>
+      <div class="simpicker" id="startSims" role="group" aria-label="Choose your sim" style="grid-template-columns:repeat(auto-fill, minmax(120px, 1fr))"></div>
+      <div id="startWhereField" hidden><p class="eyebrow">Where do you race?</p>
+        <div class="seg" id="startWhere" style="margin-bottom:12px"></div></div>
+    </div>
+    <div class="modal-foot">
+      <label class="hint" style="margin:0;display:flex;gap:8px;align-items:center"><input type="checkbox" id="startSkip"> Skip this screen next time</label>
+      <button id="startGo">Start</button>
+    </div>
+  </div>
+</div>
 <!-- one-time, optional offer of update emails (shown after the first saved round) -->
 <div class="newsnote" id="newsNote" hidden role="dialog" aria-labelledby="newsNoteTitle">
   <p class="newsnote-title" id="newsNoteTitle">Want to hear when ACC support and big updates land?</p>
@@ -436,11 +456,13 @@
 <script src="settings-table-pmr.js"></script>
 <script src="settings-table-raceroom.js"></script>
 <script src="settings-table-evo.js"></script>
+<script src="settings-table-iracing-vr.js"></script>
 <script src="looks.js"></script>
 <script src="sims.js"></script>
 <script src="app.js"></script>
 <script src="bridge.js"></script>
 <script src="ui.js"></script>
+<script src="start.js"></script>
 <script src="intro.js"></script>
 <script src="warn.js"></script>
 <script src="whatsnew.js"></script>

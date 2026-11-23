@@ -29,6 +29,7 @@
     <Content Include="..\bridge.js" Link="web\bridge.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\ui.js" Link="web\ui.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\intro.js" Link="web\intro.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\start.js" Link="web\start.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\warn.js" Link="web\warn.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\report.js" Link="web\report.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\news.js" Link="web\news.js" CopyToOutputDirectory="PreserveNewest" />
@@ -57,6 +58,7 @@
     <Content Include="..\settings-table-pmr.js" Link="web\settings-table-pmr.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\settings-table-raceroom.js" Link="web\settings-table-raceroom.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\settings-table-evo.js" Link="web\settings-table-evo.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\settings-table-iracing-vr.js" Link="web\settings-table-iracing-vr.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\config.js" Link="web\config.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\version.json" Link="web\version.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\styles.css" Link="web\styles.css" CopyToOutputDirectory="PreserveNewest" />

@@ -65,6 +65,20 @@
     else send({ type: 'readSim', sim: s.id });
   }
   $('iniSelect').addEventListener('change', loadSim);
+  // iRacing: choose the monitor file or the VR (OpenXR) file in the list, as the start screen asked. Only when VR is switched on.
+  function pickIni(last) {
+    if (!window.TunerSims.SIMS.iracing.vrEnabled) return false;
+    var wantVr = !!(window.TunerStart && window.TunerStart.vr), isVr = function (n) { return /OpenXR/i.test(n); };
+    var pool = Array.prototype.map.call($('iniSelect').options, function (o) { return o.value; }).filter(function (n) { return isVr(n) === wantVr; });
+    if (!pool.length) return false;
+    $('iniSelect').value = last && pool.indexOf(last) >= 0 ? last : pool[0];
+    return true;
+  }
+  window.TunerHost.pickIni = function () {
+    if (sim().id !== 'iracing' || !window.TunerSims.SIMS.iracing.vrEnabled) return;
+    if (pickIni()) loadSim();
+    else if (window.TunerStart && window.TunerStart.vr) status('No VR graphics file found. Start iRacing in VR once so it creates rendererDX11OpenXR.ini.', 'warn');
+  };
   window.addEventListener('focus', function () { // picks up in-game changes and newly opened programs
     if (!capturing) { loadSim(); send({ type: 'busyCheck' }); }
   });
@@ -281,6 +295,7 @@
   ['trayMode', 'trayHide', 'trayNotify'].forEach(function (id) {
     $(id).addEventListener('change', function () { send({ type: 'setTray', mode: $('trayMode').checked, hideOnCapture: $('trayHide').checked, notify: $('trayNotify').checked }); });
   });
+  $('lenSelect').addEventListener('change', function () { send({ type: 'setCaptureSeconds', seconds: parseInt($('lenSelect').value, 10) || 60 }); });
   $('cueSelect').addEventListener('change', function () { send({ type: 'setCueVoice', voice: $('cueSelect').value === 'voice' }); });
 
   // ---------- messages from the app ----------
@@ -291,6 +306,7 @@
         $('hotkeyBox').value = m.hotkey.text;
         $('cueField').hidden = !m.voiceClips;               // the voice/beeps choice only makes sense when the recorded clips are installed
         $('cueSelect').value = m.cueVoice === false ? 'beeps' : 'voice';
+        $('lenSelect').value = [60, 120, 150].indexOf(m.seconds) >= 0 ? String(m.seconds) : '60';
         $('adminBar').hidden = m.elevated !== false;          // only when the program says it is NOT elevated (an older program says nothing)
         $('ioExport').hidden = !m.tray;                       // exporting needs the 0.4 program; importing works anywhere
         if (m.tray) { $('trayMode').checked = !!m.tray.mode; $('trayHide').checked = !!m.tray.hideOnCapture; $('trayNotify').checked = !!m.tray.notify; $('trayCard').hidden = false; }   // an older program has no tray, so the card stays hidden
@@ -306,6 +322,7 @@
         // which sims are installed, their logos, and which are open
         var logos = {}, found = {};
         // tester switch (--enable-sims=...): the program says which "coming soon" sims to switch on for this run
+        window.TunerSims.SIMS.iracing.vrEnabled = !!m.vrEnabled;   // tester switch --enable-vr: iRacing's OpenXR file may be chosen
         (m.enabledSims || []).forEach(function (id) { var t = window.TunerSims.SIMS[id]; if (t) { t.comingSoon = false; delete t.reason; } });
         m.sims.forEach(function (s) { simInfo[s.id] = s; if (s.logo) logos[s.id] = s.logo; found[s.id] = { found: s.found, installed: s.installed }; });
         app.setLogos(logos); app.setSimStatus(found);
@@ -316,6 +333,8 @@
           return '<option value="' + f.name + '">' + f.name + ' (' + new Date(f.modified).toLocaleDateString() + ')</option>';
         }).join('');
         if (m.lastIni && m.ini.some(function (f) { return f.name === m.lastIni; })) $('iniSelect').value = m.lastIni;
+        if (m.vrEnabled) pickIni(m.lastIni);   // the start screen says whether the monitor file or the VR file is wanted
+        document.dispatchEvent(new Event('tuner:hello'));
         if (sim().id === 'iracing' && !m.ini.length) {
           $('iniPanel').hidden = false;
           status('Could not find iRacing graphics files in ' + m.iniDir + '. Drop your rendererDX11Monitor.ini below instead.', 'warn');

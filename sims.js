@@ -13,6 +13,7 @@
   var tPMR = isNode ? require('./settings-table-pmr.js') : root.SETTINGS_TABLE_PMR;
   var tRR = isNode ? require('./settings-table-raceroom.js') : root.SETTINGS_TABLE_RACEROOM;
   var tEVO = isNode ? require('./settings-table-evo.js') : root.SETTINGS_TABLE_EVO;
+  var tIRVR = isNode ? require('./settings-table-iracing-vr.js') : root.SETTINGS_TABLE_IRACING_VR;
 
   // ---------- iRacing ----------
   var iracing = {
@@ -20,11 +21,12 @@
     process: 'iRacingSim64DX11.exe',
     steamAppId: null,
     table: tIR,
+    vrTable: tIRVR,   // used while the OpenXR file is the one loaded (tester switch --enable-vr)
     files: [{
       id: 'main', name: 'rendererDX11Monitor.ini', label: 'iRacing graphics file',
       hint: 'Found in Documents\\iRacing. Use the file that was active when you made the captures.',
-      sections: ['Graphics Options', 'Replay Graphics'],
-      match: function (n) { return /^renderer.*\.ini$/i.test(n) && !/OpenVR|OpenXR/i.test(n); },
+      sections: ['Graphics Options', 'Replay Graphics', 'OpenXR'],
+      match: function (n) { return /^renderer.*\.ini$/i.test(n) && !/OpenVR/i.test(n) && (iracing.vrEnabled || !/OpenXR/i.test(n)); },
       parse: function (t) { return core.parseIni(t); },
       patch: function (t, changes, section) { return core.patchIni(t, changes, section); }
     }],
@@ -32,7 +34,10 @@
       { id: 'driving', label: 'Driving', section: 'Graphics Options', hint: 'Capture while driving on track. Changes go to your normal driving settings.' },
       { id: 'replay', label: 'Replay', section: 'Replay Graphics', hint: 'Capture while a replay is playing. Changes go to the replay settings only, so your driving settings stay as they are.' }
     ],
-    isVrFile: function (n) { return /OpenVR|OpenXR/i.test(n); },
+    // VR (beta, tester switch --enable-vr): the OpenXR file can be chosen; the OpenVR file never can.
+    vrEnabled: false,
+    isVrFile: function (n) { return /OpenVR/i.test(n) || (!iracing.vrEnabled && /OpenXR/i.test(n)); },
+    isVrActiveFile: function (n) { return iracing.vrEnabled && /OpenXR/i.test(n); },
     note: '<b>Driving and replays are separate in iRacing.</b> Pick Driving or Replay below: changes only affect the one you pick, and your other settings stay as they are.',
     scopeLine: function (mode) { return 'These changes go to your ' + (mode.id === 'replay' ? 'replay' : 'driving') + ' settings only.'; },
     scopeOf: function (c) { return c.section === 'Replay Graphics' ? 'Changes your replay settings' : 'Changes your driving settings'; },
@@ -44,7 +49,7 @@
       '<b>Long Beach</b> street circuit: walls, grandstands and crowds close to the track.',
       'Use an <b>AI race or a busy hosted session</b>, not Test Drive: an empty track hides most of the load. For Replay, capture the start of a busy race replay.'
     ],
-    captureHint: 'Capture 60 seconds on track with a full field, same track and car each time.',
+    captureHint: 'Capture 60 seconds on track with a full field, same track and car each time. On a long track, choose 120 or 150 seconds so the capture covers a whole lap.',
     requiredFiles: ['main']
   };
 
@@ -92,7 +97,7 @@
       '<b>Bahrain at night</b> with a full grid: floodlights and lots of cars in view.',
       'Capture the <b>first lap</b> each time, from the same grid slot.'
     ],
-    captureHint: 'Capture 60 seconds on track with a full field, same track and car each time.',
+    captureHint: 'Capture 60 seconds on track with a full field, same track and car each time. On a long track, choose 120 or 150 seconds so the capture covers a whole lap.',
     requiredFiles: ['video', 'graphics']
   };
 
@@ -130,7 +135,7 @@
       '<b>Daytona at night</b> with a full multiclass grid.',
       'Capture the <b>first lap</b> each time, from the same grid slot.'
     ],
-    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time. On a long track, choose 120 or 150 seconds so the capture covers a whole lap.',
     requiredFiles: ['main']
   };
 
@@ -219,7 +224,7 @@
       '<b>Spa-Francorchamps race start</b> with a full grid, ideally in the rain if you use a weather mod.',
       'Use an <b>AI race</b>, not practice: an empty track hides most of the load.'
     ],
-    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time. On a long track, choose 120 or 150 seconds so the capture covers a whole lap.',
     requiredFiles: ['main'],
     extraFiles: cspFiles, mergeParse: acMergeParse
   };
@@ -303,7 +308,7 @@
       '<b>Monza race start</b>: the whole field bunched into turn 1.',
       'Capture the <b>first lap</b> each time, from the same grid slot.'
     ],
-    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time. On a long track, choose 120 or 150 seconds so the capture covers a whole lap.',
     displayTip: function (ini) {
       var g = ini['graphicOptions'] || {};
       return g.useFullscreen === '1' ? 'ACC is in Fullscreen mode. A full-screen game disappears whenever you click another monitor, which makes using Dialed awkward. In ACC, Options, Video, turn Fullscreen off (windowed) and use the borderless or maximised window option: it looks the same and keeps your frame rate.' : null;
@@ -339,7 +344,7 @@
       '<b>A race start with a full grid</b> on the busiest track you have, in <b>rain or at dusk</b> if you can.',
       'Capture the <b>first lap</b> each time, from the same grid slot.'
     ],
-    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time. On a long track, choose 120 or 150 seconds so the capture covers a whole lap.',
     requiredFiles: ['main']
   };
   // ---------- RaceRoom Racing Experience ----------
@@ -374,7 +379,7 @@
       '<b>Hockenheim</b> race start with a full grid: the stadium section is one of the heaviest spots.',
       'Capture the <b>first lap</b> each time, from the same grid slot.'
     ],
-    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time. On a long track, choose 120 or 150 seconds so the capture covers a whole lap.',
     displayTip: function (ini) {
       var g = ini['RaceRoom'] || {};
       return g.windowMode === '1' ? 'RaceRoom is in Full Screen mode. A full-screen game disappears whenever you click another monitor, which makes using Dialed awkward. In RaceRoom, Graphics, Display, set Display Mode to Borderless Windowed: it looks the same and keeps your frame rate.' : null;
@@ -407,7 +412,7 @@
       '<b>A race start with a full grid</b> in <b>rain or at dusk</b>, on the busiest track you have.',
       'Capture the <b>first lap</b> each time, from the same grid slot.'
     ],
-    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time.',
+    captureHint: 'Capture 60 seconds on track with a full grid, same track and car each time. On a long track, choose 120 or 150 seconds so the capture covers a whole lap.',
     requiredFiles: ['main']
   };
   // ---------- BeamNG.drive ----------
@@ -441,7 +446,7 @@
       '<b>Italy</b> through the towns with traffic switched on.',
       'Drive the <b>same route at the same speed</b> each capture, with the same amount of traffic.'
     ],
-    captureHint: 'Capture 60 seconds driving the same route each time, on a busy map with traffic if you can.',
+    captureHint: 'Capture 60 seconds (or 120 to 150 for a longer route) driving the same route each time, on a busy map with traffic if you can.',
     displayTip: function (ini) {
       var g = ini['BeamNG'] || {};
       return g.GraphicDisplayModes === 'Fullscreen' ? 'BeamNG is in Fullscreen mode. A full-screen game disappears whenever you click another monitor, which makes using Dialed awkward. In BeamNG, Options, Graphics, set Display Mode to Borderless: it looks the same and keeps your frame rate.' : null;

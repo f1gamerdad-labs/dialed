@@ -196,7 +196,7 @@
     var relieve = limiter === 'cap' ? (m.slowSide || 'cpu') : limiter === 'unknown' ? 'gpu' : limiter;
 
     return {
-      cap: cap, capped: capped, target: target, goal: goal, floorFps: floorFps,
+      cap: cap, capped: capped, target: target, goal: goal, floorFps: floorFps, vrHalf: !!opts.vrHalf, headsetHz: opts.headsetHz || 0,
       limiter: limiter, relieve: relieve,
       deficit: floorFps / m.low1 - 1,            // > 0 means 1% lows are below the goal's floor
       gpuHeadroom: known && (m.hasGpu ? m.gpuLoad < 0.8 : m.gpuUtil < 80),
@@ -359,14 +359,20 @@
             add(c.s, c.to, 'up', 'Your ' + PART[spare] + ' has spare capacity, and this mostly uses that.', spare);
           });
       } else if (d.limiter === 'cap') {
-        notes.push('You are holding your frame cap, but the graphics card is already working hard, so there is no clear room to add visuals.');
+        notes.push(table.vr ? 'You are holding your VR target, but the graphics card is already working hard, so there is no clear room to add visuals.'
+          : 'You are holding your frame cap, but the graphics card is already working hard, so there is no clear room to add visuals.');
       }
     }
 
     if (d.deficit >= 0.25)
       notes.push('Your 1% lows (' + Math.round(m.low1) + ' FPS) are a long way below the ' + Math.round(d.floorFps) +
         ' FPS this goal needs at a ' + Math.round(d.target) + ' FPS target. These changes may not close the gap on their own. ' +
-        'A lower target or frame cap of about ' + Math.round(m.low1) + ' FPS would feel steadier on this hardware.');
+        (!table.vr ? 'A lower target or frame cap of about ' + Math.round(m.low1) + ' FPS would feel steadier on this hardware.'
+          : d.vrHalf ? 'Even half your headset rate is out of reach with these settings. A lower render resolution would help most.'
+          : 'In VR, a lower render resolution, or aiming for half your headset rate with motion smoothing, would feel steadier than chasing ' + Math.round(d.target) + ' FPS.'));
+    if (table.vr && d.vrHalf)
+      notes.push('You are aiming for half your headset rate (' + Math.round(d.target) + ' FPS at ' + Math.round(d.headsetHz) + ' Hz). This only works when the headset\'s motion smoothing is switched on and set to lock to half rate (Smart Smoothing in Pimax Play, Motion Smoothing in SteamVR, Application SpaceWarp or ASW on Meta). ' +
+        'Frame times need to stay steady for it to look smooth, so the 1% lows matter even more than usual. Fast-moving edges can shimmer, and there is a little extra latency.');
 
     // 4. Checks that apply whatever the goal.
     var vid = parseFloat(gopt.VidMemToUseMB);
@@ -378,11 +384,11 @@
       notes.push('Most stutters start on the processor side. Before changing settings, close browsers, overlays and dashboard apps and capture again, because background programs are a common cause.');
     if (d.stutter !== 'ok' && m.spikeSide === 'gpu')
       notes.push('Most stutters start on the graphics card side. Graphics memory pressure and shader or texture loading are the usual causes.');
-    if (!isFinite(d.cap))
+    if (!isFinite(d.cap) && !table.vr)   // in VR the headset sets the rate, so frame cap and monitor sync advice does not apply
       notes.push(prefs.sync === 'vrr' && prefs.screenHz > 0
         ? 'You use G-Sync or FreeSync and no frame rate limit is set. Capping about 3 FPS below your refresh rate (' + Math.round(prefs.screenHz - 3) + ' FPS) keeps it working smoothly.'
         : 'No frame rate limit is set. Capping a few FPS below your refresh rate usually gives steadier frame times.');
-    if (prefs.sync === 'vsync')
+    if (prefs.sync === 'vsync' && !table.vr)
       notes.push('V-sync is on: when your frame rate dips below your refresh rate' + (prefs.screenHz > 0 ? ' (' + Math.round(prefs.screenHz) + ' Hz)' : '') + ', V-sync can drop you to half of it, which feels like a big stutter. That is why Dialed treats your refresh rate as the target and watches the 1% lows closely.');
     if (prefs.streaming)
       notes.push('You stream or record while racing, so Dialed does not suggest turning anything up. Capture with your streaming or recording software running while you race, so the numbers include its cost.');
@@ -417,7 +423,8 @@
   // ---------- rounds: what was changed, and how it worked ----------
   function snapshot(m, names) {
     return { avgFps: m.avgFps, low1: m.low1, low01: m.low01, gpuLoad: m.gpuLoad, spikesPerMin: m.spikesPerMin,
-      vramPct: isFinite(m.vramPct) ? m.vramPct : null, lowSpread: m.lowSpread || 0, captureNames: names.slice().sort() };
+      vramPct: isFinite(m.vramPct) ? m.vramPct : null, lowSpread: m.lowSpread || 0, captureNames: names.slice().sort(),
+      perCapture: m.captureCount > 0 ? m.seconds / m.captureCount : 0 };
   }
 
   // Compare new captures with the baseline of the last applied round and
@@ -440,7 +447,12 @@
     out.delta = { avgFps: m.avgFps - b.avgFps, low1: m.low1 - b.low1, low01: m.low01 - b.low01,
       spikesPerMin: m.spikesPerMin - b.spikesPerMin, vramPct: (b.vramPct !== null && isFinite(m.vramPct)) ? m.vramPct - b.vramPct : null };
     if (m.seconds < 45) out.notes.push('This capture is only ' + Math.round(m.seconds) +
-      ' seconds long, so the stutter count and 0.1% lows are unreliable. Capture 60 seconds for a fair comparison.');
+      ' seconds long, so the stutter count and 0.1% lows are unreliable. Capture at least 60 seconds for a fair comparison.');
+    // A shorter or longer capture covers a different part of the lap (or session), so the numbers are not like for like.
+    var perNow = m.captureCount > 0 ? m.seconds / m.captureCount : 0;
+    if (b.perCapture > 0 && perNow > 0 && Math.abs(perNow - b.perCapture) / b.perCapture > 0.25)
+      out.notes.push('Your earlier captures were about ' + Math.round(b.perCapture) + ' seconds each and these are about ' + Math.round(perNow) +
+        ', so they cover different parts of the lap. For a fair comparison use the same capture length every round.');
     var rel = out.delta.low1 / b.low1;
     // A difference only counts when it is bigger than the run-to-run noise: how far the separate captures of each round differ from each other (half their range is a fair guide to how far one run strays).
     var noise = Math.max(m.lowSpread || 0, b.lowSpread || 0) / 2, thr = Math.max(0.03, noise);

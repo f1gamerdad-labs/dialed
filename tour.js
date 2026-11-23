@@ -24,7 +24,7 @@
         return '<div class="sc sc-pick"><div class="grid8">' + names.map(function (n, i) { return '<span style="--i:' + i + '"' + (i === 0 ? ' class="pick"' : i > 1 ? ' class="soon"' : '') + '>' + n + '</span>'; }).join('') + '</div></div>';
       } },
     { id: 'capture', title: 'Capture three runs',
-      text: 'Start your game and press {hotkey} while you drive. You get a spoken or beeped countdown, then Dialed records 60 seconds. Do it three times in the same session, with a full grid on your heaviest track if you can. Dialed can run all three for you, one after another.',
+      text: 'Start your game and press {hotkey} while you drive. You get a spoken or beeped countdown, then Dialed records 60 seconds (or 120 or 150 for a whole lap on a long track, set under Capture length). Do it three times in the same session, with a full grid on your heaviest track if you can. Dialed can run all three for you, one after another.',
       tip: 'Close Chrome, OBS and Discord first: background programs are the most common cause of stutter.',
       scene: function (ctx) {
         var keys = (ctx.hotkey || 'Ctrl+Shift+F11').split('+').map(function (k) { return '<kbd>' + k + '</kbd>'; }).join('');

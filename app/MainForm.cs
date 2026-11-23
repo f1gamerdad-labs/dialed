@@ -30,6 +30,7 @@ public sealed class MainForm : Form
         Paths.LmuOverride = Arg("--lmu");
         foreach (var s in SimService.All) if (Arg("--sim-" + s.Id) is { } so) Paths.SimOverrides[s.Id] = so;
         Paths.DataOverride = Arg("--data");
+        if (Environment.GetCommandLineArgs().Any(a => a.Equals("--enable-vr", StringComparison.OrdinalIgnoreCase))) Paths.VrEnabled = true;
         if (Arg("--enable-sims") is { } en) foreach (var id in en.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)) Paths.EnabledSims.Add(id);
         Paths.Ensure();
         settings = Settings.Load();
@@ -394,13 +395,13 @@ public sealed class MainForm : Form
             currentSim = sim; settings.LastSim = sim.Id; settings.Save();
             Post(new { type = "capture", phase = "sim", sim = sim.Id }); // the page switches its picker to match
         }
-        Paths.Log_($"capture start: {sim.Name}, {settings.CaptureSeconds}s");
+        Paths.Log_($"capture start: {sim.Name}, {Settings.ValidCaptureSeconds(settings.CaptureSeconds)}s");
         TrayText("Dialed: capturing");
         if (settings.HideOnCapture && Visible) HideToTray(true);   // out of the way of the game; the sounds still say what is happening
         if (!SoundPack.Has("announce")) CaptureService.BeepSeq((784, 110), (1047, 150)); // "got it", so the press is audible even when the app is hidden behind a full-screen game (the spoken "Capture about to start" does this job when it exists)
         try
         {
-            var r = await CaptureService.RunAsync(sim, settings.CaptureSeconds, settings.Countdown, Post, capture.Token);
+            var r = await CaptureService.RunAsync(sim, Settings.ValidCaptureSeconds(settings.CaptureSeconds), settings.Countdown, Post, capture.Token);
             Post(new { type = "capture", phase = "done", sim = sim.Id, name = r.Name, text = r.Text, vramUsedBytes = r.VramUsedBytes, vramTotalBytes = r.VramTotalBytes, busy = r.Busy });
             Notify("Capture complete", "Click to open Dialed.");
         }
@@ -609,12 +610,12 @@ public sealed class MainForm : Form
                         type = "hello", appVersion = new { content = UpdateService.CurrentVersion(), host = UpdateService.HostVersion },
                         updates = new { configured = UpdateService.Configured, auto = settings.AutoUpdateCheck, autoInstall = settings.AutoInstall, canRevert = UpdateService.CanRevert },
                         hotkey = HotkeyInfo(), hotkeyError = hotkeyStatus, iniDir = Paths.IRacingDocs,
-                        ini = IniService.List(), lastIni = settings.LastIni, seconds = settings.CaptureSeconds, countdown = settings.Countdown,
+                        ini = IniService.List(), lastIni = settings.LastIni, seconds = Settings.ValidCaptureSeconds(settings.CaptureSeconds), countdown = settings.Countdown,
                         cueVoice = settings.CueVoice, voiceClips = SoundPack.ClipsExist(), screenHz = PcCheck.PrimaryRefresh(),
                         tray = new { mode = settings.TrayMode, hideOnCapture = settings.HideOnCapture, notify = settings.NotifyOnCapture },
                         elevated = Unelevated.IsElevated(), docsDir = Paths.DialedDocs,
                         busy = Busy.Running(), sims = SimService.Describe(), running = SimService.RunningMap(), holding = SimService.HoldingMap(), sim = currentSim.Id,
-                        enabledSims = Paths.EnabledSims.ToArray(),
+                        enabledSims = Paths.EnabledSims.ToArray(), vrEnabled = Paths.VrEnabled,
                     });
                     break;
                 case "log": // errors from the page itself, so they end up in the same log
@@ -663,6 +664,11 @@ public sealed class MainForm : Form
                     if (tray != null && Visible) tray.Visible = settings.TrayMode;
                     else if (settings.TrayMode) Tray().Visible = true;
                     Paths.Log_($"tray: keep in tray {settings.TrayMode}, hide on capture {settings.HideOnCapture}, notify {settings.NotifyOnCapture}");
+                    break;
+                case "setCaptureSeconds":
+                    if (capture != null) break;   // never changes the length of a capture that is running
+                    settings.CaptureSeconds = Settings.ValidCaptureSeconds(r.GetProperty("seconds").GetInt32()); settings.Save();
+                    Paths.Log_("capture length: " + settings.CaptureSeconds + " s");
                     break;
                 case "setCueVoice":
                     settings.CueVoice = r.GetProperty("voice").GetBoolean(); settings.Save();
