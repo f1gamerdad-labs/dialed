@@ -4,15 +4,16 @@
   'use strict';
   var KEY = 'dialed.whatsNewSeen';
   // The release these notes describe. Change it (and ITEMS) only when there is something new to tell people; small fixes in between do not reopen the window.
-  var RELEASE = '0.8.0';
+  var RELEASE = '0.9.0';
   var TITLE = 'What\'s new in Dialed';
   // The big banner at the top: set to null for a release with no new sim. `sim` picks the logo (read from the player's own Steam folder, so it is skipped if missing).
-  var HERO = { sim: 'raceroom', title: 'RaceRoom is now in Dialed', sub: 'Capture a race, see what is holding your PC back, and change the right graphics settings, with a backup before every change. Free, always.' };
+  var HERO = { sim: 'acc', title: 'ACC and AC EVO are now in Dialed', sub: 'Assetto Corsa Competizione and Assetto Corsa EVO, with every setting checked in the game itself. Capture a race, see what is holding your PC back, and change the right graphics settings, with a backup before every change. Free, always.' };
   var ITEMS = [
-    ['RaceRoom', 'RaceRoom Racing Experience is supported: visible cars, anti-aliasing, textures, shadows, reflections, mirrors, particles, track detail, car shadows and the screen effects. Every value was checked in the game itself. Dialed closes RaceRoom before it applies changes, because the game rewrites its settings file when it exits.'],
-    ['Backed up and undoable', 'Every RaceRoom change is saved to a Dialed Backups folder first, and Restore my original settings puts your file back exactly as it was before Dialed first changed it.'],
-    ['When a game will not close', 'If a game ignores the request to close, for example because it is asking whether to leave a session, Dialed now says so plainly and tells you what to do. Nothing is changed until it is closed.'],
-    ['Updates installed this one for you', 'If you have 0.7.0 or later, Dialed installed this update by itself when you opened it. You can switch that off in About.']
+    ['Assetto Corsa Competizione', 'Resolution scale, shadows, view distance, effects, foliage, textures, mirrors, fog, bloom, car and foliage detail, opponents visible and more. Dialed writes everywhere ACC reads from, so the changes are there the next time you start the game, with nothing to re-select in the menu. Upscaling (DLSS and FSR) is left to you.'],
+    ['Assetto Corsa EVO', 'Supersampling, anti-aliasing, textures, level of detail, lighting, reflections, shadows, particles, grass, clouds, depth of field, motion blur and mirrors: 23 settings in all. Upscaling, resolution and frame limits are left to you.'],
+    ['Reads what the game really runs', 'For ACC, Dialed now reads the settings the game starts with, not a stored copy, and says plainly when a change is not in effect.'],
+    ['Le Mans Ultimate', 'The "not yet tested" line is gone from its setup page.'],
+    ['Updates install themselves', 'Dialed installs new versions by itself when it opens and no capture or game is running. You can switch that off in About.']
   ];
   // pure: should the window open?
   function shouldShow(seenVersion, current, tourSeen) {

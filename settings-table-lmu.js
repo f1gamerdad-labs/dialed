@@ -14,7 +14,7 @@
   var OFF_TO_ULTRA = ['Off', 'Low', 'Medium', 'High', 'Ultra'];
 
   root.SETTINGS_TABLE_LMU = {
-    testedAgainst: 'Le Mans Ultimate (not yet tested on real captures)',
+    testedAgainst: '',   // no "Settings table" line is shown for Le Mans Ultimate
     updated: '2026-11-17',
     settings: [
       // --- Shadows and lighting ---

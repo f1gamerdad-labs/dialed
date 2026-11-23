@@ -142,7 +142,7 @@
   function renderSimUI() {
     var sim = state.sim, one = sim.files.length === 1;
     renderPicker();
-    $('version').textContent = 'Settings table: ' + sim.table.testedAgainst + '.';
+    $('version').textContent = sim.table.testedAgainst ? 'Settings table: ' + sim.table.testedAgainst + '.' : '';
     $('iniEyebrow').textContent = one ? 'Your ' + sim.name + ' file' : 'Your ' + sim.name + ' files';
     $('iniDropText').innerHTML = 'Drop ' + sim.files.map(function (f) { return '<b>' + esc(f.name) + '</b>'; }).join(' and ') + ' here, or click to choose';
     $('iniHint').innerHTML = sim.files.map(function (f) { return esc(f.label) + ': ' + esc(f.hint); }).join('<br>') + ' VR files are not supported.';

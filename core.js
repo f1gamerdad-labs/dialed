@@ -207,6 +207,9 @@
 
   // ---------- recommendations ----------
   function levelIndex(s, v) { // index of the highest level <= current value
+    // an exact match wins, so a list kept in quality order whose numbers are not in order (AC EVO stores Off as 4) still works
+    var at = s.levels.indexOf(v);
+    if (at >= 0) return at;
     var idx = -1;
     for (var i = 0; i < s.levels.length; i++) {
       if (s.inverted ? s.levels[i] === v : s.levels[i] <= v) idx = i;
@@ -655,30 +658,45 @@
     }
     return out;
   }
-  function evoRoot(b) { var root = evoFields(b, 0, b.length), f2 = null; root.forEach(function (f) { if (f.num === 2 && f.wire === 2) f2 = f; }); return { root: root, f2: f2 }; }
+  function evoRoot(b) {
+    var root = evoFields(b, 0, b.length), f1 = null, f2 = null;
+    root.forEach(function (f) { if (f.wire === 2 && f.num === 1) f1 = f; if (f.wire === 2 && f.num === 2) f2 = f; });
+    return { root: root, f1: f1, f2: f2 };
+  }
+  // Keys: 'fN' = field N of the graphics message (root field 2), 'fN.M' = field M inside it, 'dN' = field N of the display message (root field 1).
+  // The game does not store a value of 0, so a field that is missing (or whose parent message is missing) reads as '0'.
   var EVO_PATHS = ['f19.1', 'f26', 'f47.1', 'f47.2'];
-  function parseEvoProto(text) {
+  function parseEvoProto(text, paths) {
     var out = { EVO: {} }, b = evoBytes(text), r;
     try { r = evoRoot(b); } catch (e) { return out; }
-    if (!r.f2) return out;
-    var inner = evoFields(b, r.f2.pstart, r.f2.pend);
-    EVO_PATHS.forEach(function (path) {
-      var parts = path.slice(1).split('.'), top = null;
-      inner.forEach(function (f) { if (f.num === Number(parts[0])) top = f; });
-      if (parts.length === 1) { out.EVO[path] = top && top.wire === 0 ? String(top.value) : (top ? undefined : '0'); if (out.EVO[path] === undefined) delete out.EVO[path]; return; }
-      if (!top || top.wire !== 2) return;
-      evoFields(b, top.pstart, top.pend).forEach(function (f) { if (f.num === Number(parts[1]) && f.wire === 0) out.EVO[path] = String(f.value); });
+    if (!r.f2) return out;   // not the file this reader knows: offer nothing
+    var inner = evoFields(b, r.f2.pstart, r.f2.pend), disp = r.f1 ? evoFields(b, r.f1.pstart, r.f1.pend) : [];
+    (paths || EVO_PATHS).forEach(function (path) {
+      var display = path.charAt(0) === 'd', parts = path.slice(1).split('.'), top = null;
+      (display ? disp : inner).forEach(function (f) { if (f.num === Number(parts[0])) top = f; });
+      if (parts.length === 1) { if (!top) out.EVO[path] = '0'; else if (top.wire === 0) out.EVO[path] = String(top.value); return; }
+      if (top && top.wire !== 2) return;   // not a message where one was expected: leave it unread
+      out.EVO[path] = '0';
+      if (top) evoFields(b, top.pstart, top.pend).forEach(function (f) { if (f.num === Number(parts[1]) && f.wire === 0) out.EVO[path] = String(f.value); });
     });
     return out;
   }
   // edits: { fieldNumber: { set: n } | { sub: { fieldNumber: n } } }. Fields set to 0 are removed; fields that are absent and set above 0 are inserted in order.
   function evoRebuild(b, from, to, edits) {
-    var fields = evoFields(b, from, to), out = [], pending = Object.keys(edits).map(Number).filter(function (n) { return edits[n].set !== undefined; }).sort(function (a, c) { return a - c; });
+    var fields = evoFields(b, from, to), out = [], pending = Object.keys(edits).map(Number).sort(function (a, c) { return a - c; });
     var seen = {};
     fields.forEach(function (f) { seen[f.num] = true; });
     pending = pending.filter(function (n) { return !seen[n]; });
+    // a field that is not in the file yet: a plain value is written if above 0; a message is created holding its values above 0
+    function insert(n) {
+      var e = edits[n];
+      if (e.set !== undefined) { if (e.set > 0) out.push.apply(out, evoWv(n * 8).concat(evoWv(e.set))); return; }
+      var payload = [];
+      Object.keys(e.sub || {}).map(Number).sort(function (a, c) { return a - c; }).forEach(function (k) { if (e.sub[k] > 0) payload = payload.concat(evoWv(k * 8), evoWv(e.sub[k])); });
+      if (payload.length) out.push.apply(out, evoWv(n * 8 + 2).concat(evoWv(payload.length), payload));
+    }
     fields.forEach(function (f) {
-      while (pending.length && pending[0] < f.num) { var n = pending.shift(); if (edits[n].set > 0) out.push.apply(out, evoWv(n * 8).concat(evoWv(edits[n].set))); }
+      while (pending.length && pending[0] < f.num) insert(pending.shift());
       var e = edits[f.num];
       if (e && f.wire === 0 && e.set !== undefined) { if (e.set > 0) out.push.apply(out, evoWv(f.num * 8).concat(evoWv(e.set))); return; }
       if (e && f.wire === 2 && e.sub) {
@@ -688,21 +706,23 @@
       }
       for (var i = f.start; i < f.end; i++) out.push(b[i]);
     });
-    pending.forEach(function (n) { if (edits[n].set > 0) out.push.apply(out, evoWv(n * 8).concat(evoWv(edits[n].set))); });
+    pending.forEach(insert);
     return out;
   }
   function patchEvoProto(text, changes) {
     var b = evoBytes(text), r = evoRoot(b);
     if (!r.f2) return text;
-    var edits = {};
+    var edits = {}, dedits = {};
     changes.forEach(function (c) {
-      var parts = c.key.slice(1).split('.'), n = Number(parts[0]);
-      if (parts.length === 1) edits[n] = { set: Number(c.to) };
-      else { edits[n] = edits[n] || { sub: {} }; edits[n].sub = edits[n].sub || {}; edits[n].sub[parts[1]] = Number(c.to); }
+      var display = c.key.charAt(0) === 'd', parts = c.key.slice(1).split('.'), n = Number(parts[0]), target = display ? dedits : edits;
+      if (parts.length === 1) target[n] = { set: Number(c.to) };
+      else { target[n] = target[n] || { sub: {} }; target[n].sub = target[n].sub || {}; target[n].sub[parts[1]] = Number(c.to); }
     });
-    var inner = evoRebuild(b, r.f2.pstart, r.f2.pend, edits), out = [];
+    if (Object.keys(dedits).length && !r.f1) return text;   // no display message to change: leave the file alone
+    var inner = evoRebuild(b, r.f2.pstart, r.f2.pend, edits), disp = r.f1 && Object.keys(dedits).length ? evoRebuild(b, r.f1.pstart, r.f1.pend, dedits) : null, out = [];
     r.root.forEach(function (f) {
       if (f === r.f2) out.push.apply(out, evoWv(f.num * 8 + 2).concat(evoWv(inner.length), inner));
+      else if (f === r.f1 && disp) out.push.apply(out, evoWv(f.num * 8 + 2).concat(evoWv(disp.length), disp));
       else for (var i = f.start; i < f.end; i++) out.push(b[i]);
     });
     return evoText(out);

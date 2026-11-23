@@ -227,6 +227,43 @@
   // ---------- sims that are listed but not switched on yet ----------
   function soon(id, name, short, reason) { return { id: id, name: name, short: short, comingSoon: true, reason: reason }; }
   // ---------- Assetto Corsa Competizione ----------
+  // ACC keeps each setting in up to three places, and which one the game reads at launch depends on the setting:
+  //   - the seven Unreal Engine quality groups (view distance, anti-aliasing, shadows, post-processing, textures, effects, foliage) and the resolution
+  //     scale are read from GameUserSettings.ini ([ScalabilityGroups] sg.*; a missing line means Epic);
+  //   - the settings that also appear in the "graphicOptions" block (mirrors, car LOD, fog, bloom, ...) are read from that block;
+  //   - customGraphicOptions is the saved Custom preset, which the game loads only when the player selects Custom in the menu.
+  // Dialed writes all of them, and reads the ACTIVE values (what the game runs at launch), not the stored Custom preset.
+  var ACC_SG = { resolutionQuality: 'sg.ResolutionQuality', viewDistanceQuality: 'sg.ViewDistanceQuality', antiAliasingQuality: 'sg.AntiAliasingQuality',
+    shadowQuality: 'sg.ShadowQuality', postProcessQuality: 'sg.PostProcessQuality', textureQuality: 'sg.TextureQuality', effectsQuality: 'sg.EffectsQuality', foliageQuality: 'sg.FoliageQuality' };
+  var ACC_SHARED = ['shadowDistanceQuality', 'contactShadows', 'mirrorQualityLevel', 'mirrorDistance', 'mirrorsResolution', 'maxCarsVisible', 'materialsQuality',
+    'bloomQuality', 'volumetricFog', 'foliageLodQuality', 'carLODSet', 'isMBlurEnabled', 'advancedSharpenFilter'];
+  function accMergeParse(texts) {
+    var ini = texts.main !== undefined ? core.parseAccJson(texts.main) : {};
+    var eff = {}, cust = ini.customGraphicOptions || {}, act = ini.graphicOptions || {};
+    Object.keys(cust).forEach(function (k) { eff[k] = cust[k]; });
+    ACC_SHARED.forEach(function (k) { if (act[k] !== undefined) eff[k] = act[k]; });
+    if (texts.engine !== undefined) {
+      var sg = (core.parseIni(texts.engine) || {}).ScalabilityGroups || {};
+      Object.keys(ACC_SG).forEach(function (k) {
+        var v = sg[ACC_SG[k]];
+        if (k === 'resolutionQuality') { if (v !== undefined && isFinite(parseFloat(v))) eff[k] = String(Math.round(parseFloat(v))); }
+        else eff[k] = v !== undefined && isFinite(parseFloat(v)) ? String(Math.round(parseFloat(v))) : '3';   // no line: the game's own default, Epic
+      });
+      ini.ScalabilityGroups = sg;
+    }
+    ini.customGraphicOptions = eff;
+    return ini;
+  }
+  // one change to a table setting becomes up to three writes (see above)
+  function accExpand(changes) {
+    var out = changes.slice();
+    changes.forEach(function (c) {
+      if (c.section !== 'customGraphicOptions') return;
+      if (ACC_SHARED.indexOf(c.key) >= 0) out.push({ section: 'graphicOptions', key: c.key, to: c.to });
+      if (ACC_SG[c.key]) out.push({ section: 'ScalabilityGroups', key: ACC_SG[c.key], to: c.key === 'resolutionQuality' ? Number(c.to).toFixed(6) : c.to });
+    });
+    return out;
+  }
   function accCapInfo(ini) {
     var g = ini['customGraphicOptions'] || {};
     var cap = parseFloat(g.frameLimit);
@@ -240,16 +277,23 @@
     files: [{
       id: 'main', name: 'menuSettings.json', label: 'ACC settings file', rel: 'Config\\menuSettings.json',
       hint: 'In Documents\\Assetto Corsa Competizione\\Config.',
-      sections: ['customGraphicOptions'],
+      sections: ['customGraphicOptions', 'graphicOptions'],
       match: function (n) { return /^menuSettings\.json$/i.test(n); },
       parse: function (t) { return core.parseAccJson(t); },
       patch: function (t, changes, section) { return core.patchAccJson(t, changes, section); }
+    }, {
+      id: 'engine', name: 'GameUserSettings.ini', label: 'ACC engine settings', rel: '', optional: true,
+      hint: 'In %LOCALAPPDATA%\\AC2\\Saved\\Config\\WindowsNoEditor. The Unreal Engine file the game reads its quality groups from at launch.',
+      sections: ['ScalabilityGroups'], match: function () { return false; },
+      parse: function (t) { return core.parseIni(t); },
+      patch: function (t, changes, section) { return core.patchIniUpsert(t, changes, section); }
     }],
+    mergeParse: accMergeParse, expandChanges: accExpand,
     modes: [{ id: 'driving', label: 'Driving', section: 'customGraphicOptions', hint: 'Capture while driving on track. ACC uses the same graphics settings for replays.' }],
     isVrFile: function () { return false; },
-    note: '<b>Set ACC\'s graphics preset to Custom.</b> Dialed changes the sliders on ACC\'s Custom graphics page (Video, then Graphics). ' +
-      'If a preset such as High or Epic is selected, the game ignores them. Kunos does not publish what each number means, so every suggestion is shown as low confidence: ' +
-      'after applying, open the Graphics page in ACC and check the sliders moved.',
+    note: '<b>Dialed changes the settings ACC runs with.</b> ACC keeps each setting in more than one place (its menu file, its active settings and the Unreal Engine file), ' +
+      'and Dialed writes all of them, so the changes are there the next time you start ACC. It closes ACC first, because the game rewrites these files when it exits. ' +
+      'Resolution scale only counts while DLSS and FSR are off. Dialed leaves upscaling (DLSS and FSR), anti-aliasing type, V-sync and the frame limit to you.',
     scopeLine: function () { return 'ACC has one set of graphics settings, so every change below applies to both driving and replays.'; },
     scopeOf: function () { return 'Changes driving and replays'; },
     capInfo: accCapInfo,
@@ -274,21 +318,23 @@
     table: tEVO,
     files: [{
       id: 'main', name: 'video.videosettings', label: 'AC EVO video settings', rel: 'video.videosettings',
-      hint: 'In Saved Games\\ACE. A binary file: Dialed only changes the few settings it has checked.',
+      hint: 'In Saved Games\\ACE. A binary file: Dialed only changes the settings it has checked.',
       sections: ['EVO'],
       match: function (n) { return /^video\.videosettings$/i.test(n); },
-      parse: function (t) { return core.parseEvoProto(t); },
+      // d12.1 is the Gameplay framerate limit (0 = Off), read only so the frame cap is known
+      parse: function (t) { return core.parseEvoProto(t, tEVO.settings.map(function (s) { return s.key; }).concat(['d12.1'])); },
       patch: function (t, changes) { return core.patchEvoProto(t, changes); }
     }],
     modes: [{ id: 'driving', label: 'Driving', section: 'EVO', hint: 'Capture while driving on track. AC EVO uses the same graphics settings for replays.' }],
     isVrFile: function () { return false; },
-    note: '<b>AC EVO support is early and small.</b> AC EVO is still early access, and it keeps its video settings in a binary file. ' +
-      'Dialed has checked four settings so far: Shadows, Ambient occlusion, Max cars ahead and Max cars behind. Other settings are not changed. ' +
-      'Every suggestion is low confidence, and Dialed only ever lowers a setting. After applying, open Settings, then Video, then Graphics in AC EVO and check the change. ' +
-      'If AC EVO updates and its file changes, Dialed finds nothing it recognises and offers no changes.',
+    note: '<b>AC EVO is still early access</b>, and it keeps its video settings in a binary file. Dialed reads 23 of its graphics settings, ' +
+      'from supersampling and anti-aliasing to shadows, reflections, clouds and mirrors, and only ever lowers a setting, one step at a time. ' +
+      'Upscaling (DLSS and FSR3), resolution, frame-rate limits and V-sync are left to you. AC EVO only reads its settings when you apply them in the game or restart it, ' +
+      'so Dialed closes it before applying. If an AC EVO update changes the file, Dialed finds nothing it recognises and offers no changes.',
     scopeLine: function () { return 'AC EVO has one set of graphics settings, so every change below applies to both driving and replays.'; },
     scopeOf: function () { return 'Changes driving and replays'; },
-    capInfo: function () { return { cap: NaN, refresh: NaN }; }, // the frame-rate limit is not read from this file, so the target is the user's own
+    // the Gameplay framerate limit (Settings, Video, Display) is d12.1 in the file; 0 (absent) means Off. Confirmed 23 Nov 2026: 60 -> 144 -> Off.
+    capInfo: function (ini) { var v = parseFloat(((ini && ini.EVO) || {})['d12.1']); return { cap: v > 0 ? v : NaN, refresh: NaN }; },
     scenarios: [
       '<b>A race start with a full grid</b> on the busiest track you have, in <b>rain or at dusk</b> if you can.',
       'Capture the <b>first lap</b> each time, from the same grid slot.'
@@ -408,7 +454,7 @@
 
   // First release: only these sims are switched on. The others are built and tested but shown as "Coming soon" until they ship as fast follows.
   // To release one, add its id here (the picker, capture following and the website all read comingSoon).
-  var LIVE = ['iracing', 'lmu', 'ams2', 'ac', 'raceroom'];
+  var LIVE = ['iracing', 'lmu', 'ams2', 'ac', 'acc', 'acevo', 'raceroom'];
   ORDER.forEach(function (id) {
     if (LIVE.indexOf(id) < 0) { SIMS[id].comingSoon = true; SIMS[id].reason = 'It is built and being tested, and arrives in a fast follow update.'; }
   });
@@ -429,6 +475,7 @@
   // Applies recommended changes to whichever files they belong to. Returns { fileId: newText } for files that changed.
   function applyChanges(sim, texts, changes) {
     var out = {};
+    if (sim.expandChanges) changes = sim.expandChanges(changes);   // a setting that lives in several places is written to each
     sim.files.concat(sim.extraFiles || []).forEach(function (f) {
       var text = texts[f.id], touched = false;
       if (text === undefined && f.optional && !f.readOnly) text = '';   // an override file that does not exist yet starts empty

@@ -264,8 +264,9 @@ static class Backup
 // The sims this app knows. To add one: add a SimDef here and a profile in the page (sims.js).
 // ---------------------------------------------------------------------------------------------------------------------
 /// <summary>Optional: the file may not exist yet (it is created when a change is saved, after an empty backup so a restore puts it back to "nothing").
-/// InstallRel: a read-only file inside the game's own folder (never written), used for defaults the user file overrides.</summary>
-sealed record SimFile(string Id, string Name, string Rel, bool Optional = false, string? InstallRel = null);
+/// InstallRel: a read-only file inside the game's own folder (never written), used for defaults the user file overrides.
+/// LocalAppRel: a settings file that lives under %LOCALAPPDATA% (ACC keeps its engine scalability file there), whatever folder the sim's other files use.</summary>
+sealed record SimFile(string Id, string Name, string Rel, bool Optional = false, string? InstallRel = null, string? LocalAppRel = null);
 /// <summary>Process may list several names separated by "|". DocsRel: the sim keeps its settings under Documents\DocsRel instead of its Steam folder.
 /// Reason: when set, the sim is a "Coming soon" tile (listed, but never read or written).</summary>
 sealed record SimDef(string Id, string Name, string Process, string? SteamAppId, string? SteamFolder, string? BackupsRel, SimFile[] Files,
@@ -275,7 +276,7 @@ sealed record SimDef(string Id, string Name, string Process, string? SteamAppId,
     public string[] CompanionNames => Companion == null ? Array.Empty<string>() : Companion.Split('|', StringSplitOptions.RemoveEmptyEntries);
     // First release ships iRacing and Le Mans Ultimate; the rest wait as "Coming soon" (the self-tests point sims at fixture folders, so they stay switched on there).
     // --enable-sims=ams2 is a tester switch: it unlocks the named sims on this PC only (never set by the installer or shortcuts).
-    public bool ComingSoon => Reason != null || (Id != "iracing" && Id != "lmu" && Id != "ams2" && Id != "ac" && Id != "raceroom" && Paths.SimOverrides.Count == 0 && !Paths.EnabledSims.Contains(Id));
+    public bool ComingSoon => Reason != null || (Id != "iracing" && Id != "lmu" && Id != "ams2" && Id != "ac" && Id != "acc" && Id != "raceroom" && Id != "acevo" && Paths.SimOverrides.Count == 0 && !Paths.EnabledSims.Contains(Id));
     public string[] ProcessNames => Process.Split('|', StringSplitOptions.RemoveEmptyEntries);
 }
 
@@ -316,7 +317,8 @@ static class SimService
         new(id, name, process, appId, folder, null, Array.Empty<SimFile>(), null, reason);
     // Assetto Corsa Competizione: Documents\Assetto Corsa Competizione\Config\menuSettings.json (the Custom graphics sliders live in its customGraphicOptions block).
     public static readonly SimDef Acc = new("acc", "Assetto Corsa Competizione", "AC2-Win64-Shipping", "805550", "Assetto Corsa Competizione",
-        Paths.BackupsFolderName, new[] { new SimFile("main", "menuSettings.json", @"Config\menuSettings.json") }, DocsRel: "Assetto Corsa Competizione");
+        Paths.BackupsFolderName, new[] { new SimFile("main", "menuSettings.json", @"Config\menuSettings.json"),
+            new SimFile("engine", "GameUserSettings.ini", "", Optional: true, LocalAppRel: @"AC2\Saved\Config\WindowsNoEditor\GameUserSettings.ini") }, DocsRel: "Assetto Corsa Competizione");
     // Assetto Corsa EVO: Saved Games\ACE\video.videosettings (binary; the page only touches the few fields it has checked). Backups sit in Saved Games\ACE\Dialed Backups.
     public static readonly SimDef AcEvo = new("acevo", "Assetto Corsa EVO", "AssettoCorsaEVO", "3058630", "Assetto Corsa EVO",
         Paths.BackupsFolderName, new[] { new SimFile("main", "video.videosettings", "video.videosettings") }, SavedRel: "ACE");
@@ -430,6 +432,11 @@ static class SimService
     public static string? FilePath(SimDef sim, SimFile f)
     {
         if (f.InstallRel != null) { var g = InstallDir(sim); return g == null ? null : Path.Combine(g, f.InstallRel); }
+        if (f.LocalAppRel != null)   // ACC's engine file lives under %LOCALAPPDATA% (the self-test points the sim at a throwaway folder instead)
+        {
+            if (Paths.SimOverrides.TryGetValue(sim.Id, out var ov)) return Path.Combine(ov, "localapp", f.LocalAppRel);
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), f.LocalAppRel);
+        }
         var r = Root(sim); return r == null ? null : Path.Combine(r, f.Rel);
     }
 
