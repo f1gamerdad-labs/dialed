@@ -30,7 +30,6 @@ public sealed class MainForm : Form
         Paths.LmuOverride = Arg("--lmu");
         foreach (var s in SimService.All) if (Arg("--sim-" + s.Id) is { } so) Paths.SimOverrides[s.Id] = so;
         Paths.DataOverride = Arg("--data");
-        if (Environment.GetCommandLineArgs().Any(a => a.Equals("--enable-vr", StringComparison.OrdinalIgnoreCase))) Paths.VrEnabled = true;
         if (Arg("--enable-sims") is { } en) foreach (var id in en.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)) Paths.EnabledSims.Add(id);
         Paths.Ensure();
         settings = Settings.Load();
@@ -871,7 +870,11 @@ public sealed class MainForm : Form
             Check("iRacing: restore put the old text back", File.ReadAllText(live) == "OLD");
             Check("iRacing: restore backed up the file it replaced", BackupService.List().Any(i => i.ToString()!.Contains("before restore")), "");
             Check("iRacing: restore refuses a path trick", !BackupService.Restore("iracing", @"..\app.ini").ok);
-            Check("iRacing: restore refuses a VR file", !BackupService.Restore("iracing", "rendererDX11OpenXR 2026-11-17 17-28-48.ini").ok);
+            Paths.VrEnabled = false;   // VR is supported by default; with the switch off the OpenXR file must still be refused
+            Check("iRacing: with VR switched off, restore refuses a VR file", !BackupService.Restore("iracing", "rendererDX11OpenXR 2026-11-17 17-28-48.ini").ok);
+            Check("iRacing: with VR switched off, the VR file name is not valid", !IniService.IsValidName("rendererDX11OpenXR.ini"));
+            Paths.VrEnabled = true;
+            Check("iRacing: the OpenXR file name is valid, the OpenVR one never is", IniService.IsValidName("rendererDX11OpenXR.ini") && !IniService.IsValidName("rendererDX11OpenVR.ini"));
 
             var loose = BackupService.ScanLoose();
             Check("iRacing: finds the 2 loose monitor backups only", loose.Length == 2, $"found {loose.Length}");

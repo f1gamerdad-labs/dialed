@@ -4,11 +4,14 @@
   'use strict';
   var KEY = 'dialed.whatsNewSeen';
   // The release these notes describe. Change it (and ITEMS) only when there is something new to tell people; small fixes in between do not reopen the window.
-  var RELEASE = '0.10.0';
+  var RELEASE = '0.10.1';
   var TITLE = 'What\'s new in Dialed';
   // The big banner at the top: set to null for a release with no new sim. `sim` picks the logo (read from the player's own Steam folder, so it is skipped if missing).
-  var HERO = null;
+  var HERO = { sim: 'iracing', title: 'VR is now in Dialed (iRacing only for now)', sub: 'Choose VR on the start screen and Dialed tunes your iRacing VR file: render resolution, foveated rendering and the usual graphics settings. It has only been tested on a Pimax Dream Air. Other headsets should work, but the results can\'t be guaranteed, so please share your results. Free, always.' };
   var ITEMS = [
+    ['Aim for half your headset rate', 'In VR you can aim for half your headset\'s refresh rate with the headset\'s motion smoothing switched on. For example, 36 FPS on a 72 Hz headset.'],
+    ['Share your VR results', 'The Share my result button marks VR rounds, so VR tuning can be checked on more headsets.'],
+    ['A fix for a false "fresh baseline" message', 'Dialed no longer says your graphics card changed when its first hardware check came back empty.'],
     ['Longer captures', 'Choose 60, 120 or 150 seconds under Capture length, so one capture can cover a whole lap at a long track such as Spa and reach the most demanding parts. If a later round was captured at a very different length, Dialed tells you the comparison may not be fair.'],
     ['A start screen', 'Dialed now opens by asking which sim you want to tune. Tick "Skip this screen next time" to go straight to your last choice, or use Choose what to test in the sidebar at any time.']
   ];

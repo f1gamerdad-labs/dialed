@@ -83,8 +83,8 @@ static class Paths
     public static Dictionary<string, string> SimOverrides { get; } = new();
     /// <summary>Tester switch (--enable-sims=ams2,acc): sims switched on for this run only, using their real settings folders.</summary>
     public static HashSet<string> EnabledSims { get; } = new(StringComparer.OrdinalIgnoreCase);
-    /// <summary>Tester switch (--enable-vr): lets iRacing's OpenXR graphics file be chosen. Off for everyone else.</summary>
-    public static bool VrEnabled { get; set; }
+    /// <summary>Lets iRacing's OpenXR (VR) graphics file be chosen. On since 0.10.1; the OpenVR file is still never touched.</summary>
+    public static bool VrEnabled { get; set; } = true;
     public static string IRacingDocs => DocsOverride ?? Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "iRacing");
     public static string PresentMon => Path.Combine(AppContext.BaseDirectory, "tools", "PresentMon.exe");
@@ -626,8 +626,7 @@ static class IniService
     public static bool IsValidName(string name) =>
         name == Path.GetFileName(name) && name.StartsWith("renderer", StringComparison.OrdinalIgnoreCase) &&
         name.EndsWith(".ini", StringComparison.OrdinalIgnoreCase) &&
-        // VR is off by default: the OpenVR and OpenXR files are never offered or touched, unless the tester switch
-        // --enable-vr is on, and then only the OpenXR one (the OpenVR file stays off limits).
+        // iRacing's OpenXR (VR) file is supported; the older OpenVR file is never offered or touched.
         !name.Contains("OpenVR", StringComparison.OrdinalIgnoreCase) && (Paths.VrEnabled || !name.Contains("OpenXR", StringComparison.OrdinalIgnoreCase));
 
     public static object[] List()

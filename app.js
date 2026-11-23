@@ -278,7 +278,7 @@
     var cb = $('commBtn');
     function shareData() {
       var kept = {}; a.verify.forEach(function (v, i) { if (prev.applied[i]) kept[prev.applied[i].key] = v.status; });
-      return { simId: state.sim.id, simName: state.sim.name, mode: currentMode().id, appVersion: window.TunerHost && window.TunerHost.contentVersion, verdict: a.verdict, before: b, after: m, applied: prev.applied, kept: kept,
+      return { simId: state.sim.id, simName: state.sim.name, mode: prev.vr ? 'VR' : currentMode().id, appVersion: window.TunerHost && window.TunerHost.contentVersion, verdict: a.verdict, before: b, after: m, applied: prev.applied, kept: kept,
         limiter: prev.limiter || null, runs: prev.runs || null, roundKey: prev.at, hardware: window.TunerPc && window.TunerPc.hardware ? window.TunerPc.hardware() : null };
     }
     if (cb) cb.addEventListener('click', function () { window.TunerCommunity.open(shareData()); });
@@ -344,7 +344,7 @@
     $('tiles').innerHTML =
       tile('Average FPS', m.avgFps.toFixed(0), '', 'Target ' + Math.round(d.target) + (isFinite(d.cap) ? ', cap ' + d.cap : ', no cap')) +
       tile('1% low FPS', m.low1.toFixed(0), lowCls, d.goal.label + ' needs ' + Math.round(d.floorFps) + ' or more') +
-      tile('What is limiting you', LIMIT[d.limiter][0], '', LIMIT[d.limiter][1]) +
+      tile('What is limiting you', d.limiter === 'cap' && isVrActive() ? 'Headset rate' : LIMIT[d.limiter][0], '', d.limiter === 'cap' && isVrActive() ? 'You are holding the frame rate you aimed for.' : LIMIT[d.limiter][1]) +
       tile('Graphics memory', d.vram === 'unknown' ? 'n/a' : Math.round(m.vramPct * 100) + '% full',
         { ok: 'good', watch: 'warn', pressure: 'bad', unknown: '' }[d.vram], d.vram === 'unknown' ? 'Not in this capture' : Math.round(m.vramUsedMB) + ' of ' + Math.round(m.vramSizeMB) + ' MB') +
       tile('Stutters', m.spikesPerMin.toFixed(1) + ' / min', { ok: 'good', some: 'warn', bad: 'bad' }[d.stutter],

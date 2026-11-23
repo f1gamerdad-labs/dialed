@@ -17,7 +17,8 @@
   function compare(old, cur) {
     if (!old || !cur) return { changed: false, items: [], driver: false, hardware: false };
     var items = [], driver = false, hardware = false;
-    cur.gpus.forEach(function (g) {
+    // a fingerprint saved with no graphics cards in it (the hardware read came back empty that time) is no baseline to compare against
+    (old.gpus && old.gpus.length ? cur.gpus : []).forEach(function (g) {
       var was = old.gpus.filter(function (o) { return o.name === g.name; })[0];
       if (!was) { items.push('A different graphics card is installed (' + g.name + ').'); hardware = true; }
       else if (was.date && g.date && was.date !== g.date) { items.push('The ' + g.name + ' driver changed (dated ' + was.date + ' before, ' + g.date + ' now).'); driver = true; }

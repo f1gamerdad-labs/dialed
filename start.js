@@ -29,6 +29,7 @@
     $('startWhere').innerHTML = [['0', 'Monitor'], ['1', 'VR headset']].map(function (o) {
       return '<label><input type="radio" name="startWhere" value="' + o[0] + '"' + ((pick.vr ? '1' : '0') === o[0] ? ' checked' : '') + '>' + o[1] + '</label>';
     }).join('');
+    $('startVrNote').hidden = !(vr && pick.vr);
     $('startGo').textContent = 'Start with ' + sims.SIMS[pick.sim].short + (vr && pick.vr ? ' in VR' : '');
     updateChip();
   }
