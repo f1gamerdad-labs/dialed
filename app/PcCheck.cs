@@ -107,7 +107,10 @@ static class PcCheck
         var i = o.IndexOf(':'); var rest = i >= 0 ? o[(i + 1)..].Trim() : o.Trim();
         var open = rest.IndexOf('('); var guid = (open > 0 ? rest[..open] : rest).Trim();
         var name = open > 0 ? rest[(open + 1)..].TrimEnd(')', ' ', '\r', '\n') : "";
-        return new { guid, name };
+        // Windows 11's "Power mode" (Best performance / Balanced / Best power efficiency) is an overlay on top of the plan powercfg reports, so it is read separately.
+        string? overlay = null;
+        try { overlay = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Power\User\PowerSchemes")?.GetValue("ActiveOverlayAcPowerScheme") as string; } catch { /* not there on older Windows */ }
+        return new { guid, name, overlay };
     }
 
     /// <summary>nvidia-smi ships with the NVIDIA driver. Missing (AMD or Intel graphics) means null, not an error.</summary>

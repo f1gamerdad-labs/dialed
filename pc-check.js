@@ -76,7 +76,9 @@
           'You have one memory module, so memory runs in single channel, which is much slower than two sticks working together.',
           'Add a second matching stick (or replace it with a matching pair), in the slots your motherboard manual names for dual channel.');
       } else {
-        var chans = ram.map(function (r) { var m = /Channel\s*([A-D0-9])/i.exec(r.locator || ''); return m ? m[1].toUpperCase() : null; });
+        // Some boards report each stick on its own memory controller ("Controller0-ChannelA" and "Controller1-ChannelA"). Those are different channels,
+        // so a channel is the controller plus the channel letter, not the letter alone.
+        var chans = ram.map(function (r) { var m = /(?:Controller\s*(\d+)\W*)?Channel\s*([A-D0-9])/i.exec(r.locator || ''); return m ? (m[1] !== undefined ? 'c' + m[1] + '-' : '') + m[2].toUpperCase() : null; });
         var known = chans.filter(Boolean);
         if (ram.length === 2 && known.length === 2 && chans[0] === chans[1]) {
           add('ram-channels', 'fix', 'Both memory sticks are on the same channel',
@@ -102,6 +104,10 @@
       else if (pg.indexOf('381b4222-f694-41f0-9685-ff5bb260df2e') === 0) kind = 'balanced';
       else if (pg.indexOf('8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c') === 0 || pg.indexOf('e9a42b02-d5df-448d-aa00-03f14749eb61') === 0) kind = 'performance';
       else if (/power saver/i.test(pn)) kind = 'saver'; else if (/balanced/i.test(pn)) kind = 'balanced'; else if (/high performance|ultimate performance/i.test(pn)) kind = 'performance';
+      // Windows 11's Power mode sits on top of a Balanced plan: Best performance counts as performance, Best power efficiency as power saving.
+      var ov = String(f.power.overlay || '').toLowerCase();
+      if (kind === 'balanced' && ov.indexOf('ded574b5-45a0-4f42-8737-46345c09c238') === 0) { kind = 'performance'; pn = 'Balanced plan with the Best performance power mode'; }
+      else if (kind === 'balanced' && ov.indexOf('961cc777-2547-4f9d-8174-7d86181b8a7a') === 0) kind = 'saver';
       if (kind === 'saver') add('power', 'fix', 'Windows is on the Power saver plan', 'Power saver keeps your processor clocks low, which costs frame rate.', 'Settings, System, Power: set the power mode to Best performance (or use the High performance plan in Control Panel).');
       else if (kind === 'balanced') add('power', 'check', 'Windows is on the Balanced power plan', 'Balanced is fine for most PCs, but on some it lets processor clocks drop between demands, which can show up as stutter.', 'If you want to try it: Settings, System, Power, set the power mode to Best performance, then compare a capture.');
       else if (kind === 'performance') add('power', 'ok', 'Power plan is set for performance', 'Active plan: ' + pn + '.');
