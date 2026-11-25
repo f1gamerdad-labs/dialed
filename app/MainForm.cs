@@ -322,7 +322,7 @@ public sealed class MainForm : Form
             Paths.Log_($"hotkey {settings.Hotkey.Text}: " + (hotkeyStatus == "" ? "registered" : "NOT registered (" + hotkeyStatus + ")"));
             if (settings.WideHotkey && !selfTest)
             {
-                keyWatch = new KeyWatch(() => BeginInvoke(() => HotkeyPressed("in-game listener")));
+                keyWatch = new KeyWatch(at => BeginInvoke(() => HotkeyPressed("in-game listener", at)));
                 keyWatch.Set(settings.Hotkey);
                 Paths.Log_("hotkey in-game listener: " + (keyWatch.Start() ? "on" : "could not start"));
             }
@@ -348,18 +348,23 @@ public sealed class MainForm : Form
 
     protected override void WndProc(ref Message m)
     {
-        if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HOTKEY_ID) { HotkeyPressed("hotkey"); return; }
+        if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HOTKEY_ID) { HotkeyPressed("hotkey", unchecked((uint)GetMessageTime())); return; }
         base.WndProc(ref m);
     }
 
     KeyWatch? keyWatch;
-    DateTime lastHotkey = DateTime.MinValue;
-    /// <summary>Both ways of hearing the hotkey end up here; if they hear the same press, only the first one counts.</summary>
-    void HotkeyPressed(string via)
+    uint? lastHotkeyAt;
+    [DllImport("user32.dll")] static extern int GetMessageTime();
+
+    /// <summary>
+    /// Both ways of hearing the hotkey end up here; if they hear the same press, only the first one counts.
+    /// <paramref name="at"/> is when the key was pressed (Windows' millisecond clock), not when we got round to handling it. Starting a capture keeps this
+    /// thread busy, so the second hearing of one press can be handled seconds later; judged by handling time it looked like a new press and cancelled the capture.
+    /// </summary>
+    void HotkeyPressed(string via, uint at)
     {
-        var now = DateTime.UtcNow;
-        if ((now - lastHotkey).TotalMilliseconds < 700) return;
-        lastHotkey = now;
+        if (lastHotkeyAt is uint last && Math.Abs((long)unchecked((int)(at - last))) < 700) return;
+        lastHotkeyAt = at;
         Paths.Log_($"hotkey pressed ({via}): " + settings.Hotkey.Text);
         _ = ToggleCaptureAsync();
     }

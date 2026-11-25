@@ -20,11 +20,11 @@ sealed class KeyWatch : IDisposable
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] static extern IntPtr GetModuleHandle(string? name);
 
     readonly HookProc proc;   // kept in a field so it is not collected while Windows still holds it
-    readonly Action onPress;
+    readonly Action<uint> onPress;   // given the time of the key press (Windows' millisecond clock)
     IntPtr hook = IntPtr.Zero;
     int vk; bool ctrl, shift, alt, isDown;
 
-    public KeyWatch(Action onPress) { this.onPress = onPress; proc = Callback; }
+    public KeyWatch(Action<uint> onPress) { this.onPress = onPress; proc = Callback; }
 
     public bool Running => hook != IntPtr.Zero;
 
@@ -57,7 +57,7 @@ sealed class KeyWatch : IDisposable
                 if (msg is WM_KEYDOWN or WM_SYSKEYDOWN)
                 {
                     // only the exact combination counts, and holding the key down fires once (like the normal hotkey)
-                    if (!isDown && Held(VK_CONTROL) == ctrl && Held(VK_SHIFT) == shift && Held(VK_MENU) == alt) { isDown = true; onPress(); }
+                    if (!isDown && Held(VK_CONTROL) == ctrl && Held(VK_SHIFT) == shift && Held(VK_MENU) == alt) { isDown = true; onPress(unchecked((uint)Marshal.ReadInt32(lParam, 12))); }   // offset 12: the hook data's time stamp
                 }
                 else if (msg is WM_KEYUP or WM_SYSKEYUP) isDown = false;
             }
