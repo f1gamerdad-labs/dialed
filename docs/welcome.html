@@ -46,7 +46,7 @@ h1 { font-size:clamp(34px,6vw,52px); margin-bottom:10px; background:var(--grad);
     <ol class="steps">
       <li><b>Open Dialed before you start your sim.</b> Windows asks for permission when it opens, and that prompt can freeze a full-screen game.</li>
       <li>Windows may say <b>"Windows protected your PC"</b> because Dialed is not signed yet. Click <b>More info</b>, then <b>Run anyway</b>.</li>
-      <li>Pick iRacing or Le Mans Ultimate, run three captures in the same busy session, then press Analyse.</li>
+      <li>Pick your sim, run three captures in the same busy session, then press Analyse.</li>
     </ol>
   </div>
 
@@ -59,8 +59,11 @@ h1 { font-size:clamp(34px,6vw,52px); margin-bottom:10px; background:var(--grad);
   <p class="meta"><a href="./">Back to the Dialed website</a></p>
 </div>
 <script>
-  // Start the installer download shortly after the page opens (the button above always works too).
-  setTimeout(function () { window.location.href = document.getElementById('dl').href; }, 1500);
+  // Start the installer download shortly after the page opens. Pressing the button first cancels that, so nobody gets two copies;
+  // once it has started on its own the button says it is only for when nothing arrived.
+  var dl = document.getElementById('dl');
+  var auto = setTimeout(function () { window.location.href = dl.href; dl.textContent = 'Didn’t start? Download again'; }, 1500);
+  dl.addEventListener('click', function () { clearTimeout(auto); });
 </script>
 </body>
 </html>

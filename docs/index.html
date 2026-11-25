@@ -96,6 +96,11 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
 :root[data-theme="light"] .frame { box-shadow:0 20px 50px rgba(27,18,51,.18); }
 :root[data-theme="light"] .sim img { filter:invert(1) hue-rotate(180deg); }
 .themebtn { all:unset; cursor:pointer; box-sizing:border-box; color:var(--muted); font-weight:700; font-size:14px; padding:6px 12px; border:1px solid var(--line); border-radius:999px; } .themebtn:hover { color:var(--text); border-color:var(--pink); } .themebtn:focus-visible { outline:2px solid var(--pink); outline-offset:2px; }code { background:#0e0720; border:1px solid var(--line); border-radius:6px; padding:1px 7px; font-size:.9em; color:var(--muted); }
+.praise { margin:34px 0; } .quotes { display:flex; flex-wrap:wrap; gap:16px; }
+.quote { flex:1 1 280px; margin:0; background:linear-gradient(160deg,var(--card2),var(--card)); border:1px solid var(--line); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; justify-content:space-between; gap:12px; position:relative; overflow:hidden; }
+.quote::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--grad); }
+.quote blockquote { margin:0; font-size:17px; line-height:1.5; color:var(--text); } .quote blockquote::before { content:"\201C"; } .quote blockquote::after { content:"\201D"; }
+.quote figcaption { font-size:13.5px; color:var(--muted); } .quote figcaption b { color:var(--text); }
 </style>
 </head>
 <body>
@@ -118,6 +123,14 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
   <div class="shot"><div class="frame"><img src="img/app-results.png" alt="Dialed's results screen: average FPS, 1% lows, what is limiting you and graphics memory use, with the frame-time chart below" width="1280" height="800"></div>
   <p class="cap">Real screen, real captures. Here the graphics card is flat out and graphics memory is nearly full, so Dialed looks for savings there first. Below it, your frame times over the capture.</p></div>
 </div></header>
+
+<section class="praise" aria-label="What racers are saying"><div class="wrap">
+  <div class="quotes">
+    <figure class="quote"><blockquote>That’s one of the best piece of simracing software I’ve used in the last couple of years.</blockquote><figcaption><b>@Phornung</b> on YouTube</figcaption></figure>
+    <figure class="quote"><blockquote>It has made a huge difference. Long beach full grid used to be a nightmare but not anymore.</blockquote><figcaption><b>@DaveJ-MTB</b> on YouTube</figcaption></figure>
+    <figure class="quote"><blockquote>Absolutely awesome! Great for getting settings dialed in</blockquote><figcaption><b>@MatthewKnott22</b> on YouTube</figcaption></figure>
+  </div>
+</div></section>
 
 <section id="start"><div class="wrap">
   <p class="eyebrow">Quick start</p><h2>Your first five minutes.</h2>
@@ -147,6 +160,13 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
   <p class="cap">The priority list: what to change, how much load it takes off, how much you will notice it, and how sure Dialed is.</p></div>
 </div></section>
 
+<section class="praise" aria-label="Results from racers"><div class="wrap">
+  <div class="quotes">
+    <figure class="quote"><blockquote>Big improvement on my rig, and I’ve been tweaking on this stuff for years!! Thank you!!</blockquote><figcaption><b>@garybudzien4621</b> on YouTube</figcaption></figure>
+    <figure class="quote"><blockquote>Running triples on iRacing feels smoother than it ever has</blockquote><figcaption><b>@JoshJanno</b> on YouTube</figcaption></figure>
+  </div>
+</div></section>
+
 <section><div class="wrap two">
   <div>
     <p class="eyebrow">Built to be trusted</p><h2>Rules, not a chatbot.</h2>
@@ -154,6 +174,13 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
     <ul class="list"><li><b>Private.</b> Your captures and files stay on your PC.</li><li><b>Honest.</b> Settings it has not been able to verify are marked low confidence.</li><li><b>Careful.</b> It only touches the graphics settings it lists, and keeps everything else in your file exactly as it was.</li><li><b>Updates inside the app,</b> never while you are driving, and always your choice.</li></ul>
   </div>
   <div class="frame"><img src="img/app-setup.png" alt="Dialed's setup screen with a sim picker, capture list and goal selector" width="1280" height="800" loading="lazy"></div>
+</div></section>
+
+<section class="praise" aria-label="PC check and settings"><div class="wrap">
+  <div class="quotes">
+    <figure class="quote"><blockquote>It caught that my memory speed was back down at 2133 MT/s rather than its XMP speed of 3600!</blockquote><figcaption><b>@tporter23</b> on YouTube</figcaption></figure>
+    <figure class="quote"><blockquote>So easy to use and its made a big improvement on my rig.</blockquote><figcaption><b>@Regal-p3l</b> on YouTube</figcaption></figure>
+  </div>
 </div></section>
 
 <section id="more"><div class="wrap">
@@ -175,6 +202,14 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
   <p class="cap">The share image, made on your PC for Discord or a comment. Nothing is uploaded.</p></div>
 </div></section>
 
+<section class="praise" aria-label="Across sims and VR"><div class="wrap">
+  <div class="quotes">
+    <figure class="quote"><blockquote>I recently upgraded my graphics card specifically for VR use and this app has significantly gained FPS for me. Thank you!</blockquote><figcaption><b>@FookieVR</b> on YouTube</figcaption></figure>
+    <figure class="quote"><blockquote>I’m able to run full grid on AC, at dusk, Heavy thunderstorm going on, headlights, all reflections and even a Reshade preset.</blockquote><figcaption><b>@Jimmyzation</b> on YouTube</figcaption></figure>
+    <figure class="quote"><blockquote>It has improved my overall performance in LMU</blockquote><figcaption><b>@stephenadams5538</b> on YouTube</figcaption></figure>
+  </div>
+</div></section>
+
 <section id="sims"><div class="wrap">
   <p class="eyebrow">Sims</p><h2>One app, one picker.</h2>
   <p class="sub">Pick your sim under the Dialed name in the left pane. Each sim has its own settings table, its own history and a suggested heavy test session. Dialed finds your games through Steam.</p>
@@ -190,6 +225,13 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
     <div class="sim"><img src="assets/sims/acevo.png" alt="Assetto Corsa EVO" loading="lazy"><p>23 graphics settings, from supersampling and anti-aliasing to shadows, reflections, clouds and mirrors, one careful step at a time. Upscaling is left to you.</p><span class="status">Supported</span></div>
   </div>
   <p class="meta" style="margin-top:14px">iRacing, Le Mans Ultimate, Automobilista 2, Assetto Corsa, ACC, AC EVO and RaceRoom are ready. The other two are built and still being tested on track, and arrive as free updates. They are shown in the app as Coming soon, and you can say which one you want most with the Ideas button.</p>
+</div></section>
+
+<section class="praise" aria-label="Community"><div class="wrap">
+  <div class="quotes">
+    <figure class="quote"><blockquote>This app is a life saver. [...] This is a game changer for me.</blockquote><figcaption><b>@chessaddler</b> on YouTube</figcaption></figure>
+    <figure class="quote"><blockquote>Wow! Thank you so much for sharing this, and what a difference it has made!</blockquote><figcaption><b>@antonmccourtie4817</b> on YouTube</figcaption></figure>
+  </div>
 </div></section>
 
 <section id="access"><div class="wrap">
