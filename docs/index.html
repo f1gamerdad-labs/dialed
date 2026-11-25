@@ -97,10 +97,13 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
 :root[data-theme="light"] .sim img { filter:invert(1) hue-rotate(180deg); }
 .themebtn { all:unset; cursor:pointer; box-sizing:border-box; color:var(--muted); font-weight:700; font-size:14px; padding:6px 12px; border:1px solid var(--line); border-radius:999px; } .themebtn:hover { color:var(--text); border-color:var(--pink); } .themebtn:focus-visible { outline:2px solid var(--pink); outline-offset:2px; }code { background:#0e0720; border:1px solid var(--line); border-radius:6px; padding:1px 7px; font-size:.9em; color:var(--muted); }
 .praise { margin:34px 0; } .quotes { display:flex; flex-wrap:wrap; gap:16px; }
-.quote { flex:1 1 280px; margin:0; background:linear-gradient(160deg,var(--card2),var(--card)); border:1px solid var(--line); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; justify-content:space-between; gap:12px; position:relative; overflow:hidden; }
-.quote::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--grad); }
-.quote blockquote { margin:0; font-size:17px; line-height:1.5; color:var(--text); } .quote blockquote::before { content:"\201C"; } .quote blockquote::after { content:"\201D"; }
-.quote figcaption { font-size:13.5px; color:var(--muted); } .quote figcaption b { color:var(--text); }
+/* Quotes are brand orange running into pink, stopping short of purple, with dark ink in both themes, so they stand apart from the purple cards. */
+.quote { flex:1 1 280px; margin:0; background:linear-gradient(135deg,#ff8a1f 0%,#ff8a1f 35%,#ff6a4a 65%,#ff3f86 100%); color:#1d0b33; border-radius:18px; padding:58px 26px 22px; display:flex; flex-direction:column; justify-content:space-between; gap:18px; position:relative; overflow:hidden; box-shadow:0 12px 32px rgba(255,138,31,.28); }
+.quote::before, .quote::after { position:absolute; font-family:Georgia,"Times New Roman",serif; font-style:italic; font-weight:700; line-height:1; pointer-events:none; }
+.quote::before { content:"\201C"; left:16px; top:2px; font-size:118px; color:#fff; text-shadow:4px 4px 0 rgba(29,11,51,.85); }
+.quote::after { content:"\201D"; right:18px; bottom:-34px; font-size:118px; color:rgba(255,255,255,.45); }
+.quote blockquote { margin:0; font-size:18px; font-weight:700; line-height:1.45; position:relative; z-index:1; }
+.quote figcaption { font-size:13.5px; color:#3d1c3f; padding-right:56px; position:relative; z-index:1; } .quote figcaption b { color:#1d0b33; font-size:14.5px; }
 </style>
 </head>
 <body>
