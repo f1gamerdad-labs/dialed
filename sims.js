@@ -454,14 +454,18 @@
     requiredFiles: ['main']
   };
 
-  var SIMS = { iracing: iracing, lmu: lmu, ams2: ams2, ac: ac, acc: acc, acevo: acevo, raceroom: raceroom, pmr: pmr, beamng: beamng };
-  var ORDER = ['iracing', 'lmu', 'ams2', 'ac', 'acc', 'acevo', 'raceroom', 'pmr', 'beamng'];
+  // Planned but not built yet: a tile only, with no settings table or files.
+  var PLANNED = 'It is planned, and arrives in a later update.';
+  var acrally = soon('acrally', 'Assetto Corsa Rally', 'AC Rally', PLANNED), ats = soon('ats', 'American Truck Simulator', 'ATS', PLANNED), rf2 = soon('rf2', 'rFactor 2', 'rF2', PLANNED);
+
+  var SIMS = { iracing: iracing, lmu: lmu, ams2: ams2, ac: ac, acc: acc, acevo: acevo, raceroom: raceroom, pmr: pmr, beamng: beamng, acrally: acrally, ats: ats, rf2: rf2 };
+  var ORDER = ['iracing', 'lmu', 'ams2', 'ac', 'acc', 'acevo', 'raceroom', 'pmr', 'beamng', 'acrally', 'ats', 'rf2'];
 
   // First release: only these sims are switched on. The others are built and tested but shown as "Coming soon" until they ship as fast follows.
   // To release one, add its id here (the picker, capture following and the website all read comingSoon).
   var LIVE = ['iracing', 'lmu', 'ams2', 'ac', 'acc', 'acevo', 'raceroom'];
   ORDER.forEach(function (id) {
-    if (LIVE.indexOf(id) < 0) { SIMS[id].comingSoon = true; SIMS[id].reason = 'It is built and being tested, and arrives in a fast follow update.'; }
+    if (LIVE.indexOf(id) < 0) { SIMS[id].comingSoon = true; SIMS[id].reason = SIMS[id].reason || 'It is built and being tested, and arrives in a fast follow update.'; }
   });
 
   // ---------- helpers shared by the page and the tests ----------

@@ -124,7 +124,7 @@
   });
 
   // ---------- what the page says changes with the sim ----------
-  var LOGOS = window.TunerLogos = window.TunerLogos || { iracing: 'assets/sims/iracing.png' };
+  var LOGOS = window.TunerLogos = window.TunerLogos || { iracing: 'assets/sims/iracing.png', acrally: 'assets/sims/acrally.png', ats: 'assets/sims/ats.png', rf2: 'assets/sims/rf2.png' };
   var STATUS = {}; // simId -> { found: bool } once the Windows app has looked
 
   function renderPicker() {

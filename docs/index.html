@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dialed: sim graphics settings built from your own PC</title>
-<meta name="description" content="Dialed reads your frame data and your sim's graphics settings, then tells you which settings to change first for a smoother frame rate. Free, always, for iRacing, Le Mans Ultimate, Automobilista 2, Assetto Corsa (including Custom Shaders Patch), Assetto Corsa Competizione, Assetto Corsa EVO and RaceRoom, with Project Motor Racing and BeamNG coming soon. VR is supported for iRacing only, tested on a Pimax Dream Air.">
+<meta name="description" content="Dialed reads your frame data and your sim's graphics settings, then tells you which settings to change first for a smoother frame rate. Free, always, for iRacing, Le Mans Ultimate, Automobilista 2, Assetto Corsa (including Custom Shaders Patch), Assetto Corsa Competizione, Assetto Corsa EVO and RaceRoom, with Project Motor Racing, BeamNG, Assetto Corsa Rally, American Truck Simulator and rFactor 2 coming soon. VR is supported for iRacing only, tested on a Pimax Dream Air.">
 <meta property="og:title" content="Dialed by F1GamerDad: Sim Graphics Optimiser">
 <meta property="og:description" content="Capture a few laps. Dialed tells you what to change first. Rules-based, private, with backups and undo.">
 <meta property="og:image" content="img/app-results.png">
@@ -94,7 +94,7 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
 :root[data-theme="light"] .btn, :root[data-theme="light"] .btn:hover { color:#fff !important; }
 :root[data-theme="light"] .btn.ghost { color:var(--text) !important; }
 :root[data-theme="light"] .frame { box-shadow:0 20px 50px rgba(27,18,51,.18); }
-:root[data-theme="light"] .sim img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] .sim img { filter:invert(1) hue-rotate(180deg); } :root[data-theme="light"] .sim img.colour { filter:none; }
 .themebtn { all:unset; cursor:pointer; box-sizing:border-box; color:var(--muted); font-weight:700; font-size:14px; padding:6px 12px; border:1px solid var(--line); border-radius:999px; } .themebtn:hover { color:var(--text); border-color:var(--pink); } .themebtn:focus-visible { outline:2px solid var(--pink); outline-offset:2px; }code { background:#0e0720; border:1px solid var(--line); border-radius:6px; padding:1px 7px; font-size:.9em; color:var(--muted); }
 .praise { margin:34px 0; } .quotes { display:flex; flex-wrap:wrap; gap:16px; }
 /* Quotes are brand orange running into pink, stopping short of purple, with dark ink in both themes, so they stand apart from the purple cards. */
@@ -109,7 +109,7 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
 <body>
 <nav class="top"><div class="wrap">
   <a class="brand" href="#top"><img src="assets/f1gd-logo.png" alt="">Dialed</a>
-  <a class="l" href="#start">Quick start</a><a class="l" href="#how">How it works</a><a class="l" href="#sims">Sims</a><a class="l" href="#help">Help</a><a class="l keep" href="#access">Get early access</a><button class="themebtn" id="themeBtn" type="button" aria-label="Switch to the light theme">Light</button>
+  <a class="l" href="#start">Quick start</a><a class="l" href="#how">How it works</a><a class="l" href="#sims">Sims</a><a class="l" href="#help">Help</a><a class="l keep" href="#access">Download now</a><button class="themebtn" id="themeBtn" type="button" aria-label="Switch to the light theme">Light</button>
 </div></nav>
 
 <header class="hero" id="top"><div class="wrap">
@@ -118,7 +118,7 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
   <p class="tag">Your PC, <span>measured.</span> Your settings, <span>dialed.</span></p>
   <p class="lead">Drive a few laps while Dialed records your frame times. It reads your sim's graphics settings, works out <b>whether your processor, graphics card or graphics memory is holding you back</b>, and gives you a short list of changes to make first, with the biggest gain for the least visual cost.</p>
   <div class="cta">
-    <a class="btn" id="dl" href="#access">Get early access, it's free</a>
+    <a class="btn" id="dl" href="#access">Download now, it's free</a>
     <a class="btn ghost" href="#start">Your first five minutes</a>
   </div>
   <p class="meta">Free, always · Windows 10 and 11 · 58 MB installer · the download link is emailed to you · no account</p>
@@ -223,11 +223,14 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
     <div class="sim"><img src="assets/sims/ac.png" alt="Assetto Corsa" loading="lazy" style="height:84px"><p>The original, with Content Manager and Custom Shaders Patch support. Dialed closes Content Manager with the game when you apply, because it would otherwise write the old settings back.</p><span class="status">Supported</span></div>
     <div class="sim"><img src="assets/sims/acc.png" alt="Assetto Corsa Competizione" loading="lazy"><p>21 graphics settings, from resolution scale and shadows to mirrors and fog. Dialed writes the files ACC reads at launch, so there is nothing to re-select in the menu.</p><span class="status">Supported</span></div>
     <div class="sim"><img src="assets/sims/raceroom.png" alt="RaceRoom" loading="lazy"><p>Textures, shadows, reflections, mirrors, particles, visible cars and more. Dialed closes RaceRoom before applying, because the game rewrites its file when it exits.</p><span class="status">Supported</span></div>
+    <div class="sim"><img src="assets/sims/acevo.png" alt="Assetto Corsa EVO" loading="lazy"><p>23 graphics settings, from supersampling and anti-aliasing to shadows, reflections, clouds and mirrors, one careful step at a time. Upscaling is left to you.</p><span class="status">Supported</span></div>
     <div class="sim"><img src="assets/sims/pmr.png" alt="Project Motor Racing" loading="lazy"><p>Shadows, fog, grass, textures and effects, one step at a time.</p><span class="status soon">Coming soon</span></div>
     <div class="sim"><img src="assets/sims/beamng.png" alt="BeamNG.drive" loading="lazy"><p>Uses BeamNG's own quality levels and its own cost ratings.</p><span class="status soon">Coming soon</span></div>
-    <div class="sim"><img src="assets/sims/acevo.png" alt="Assetto Corsa EVO" loading="lazy"><p>23 graphics settings, from supersampling and anti-aliasing to shadows, reflections, clouds and mirrors, one careful step at a time. Upscaling is left to you.</p><span class="status">Supported</span></div>
+    <div class="sim"><img src="assets/sims/acrally.png" alt="Assetto Corsa Rally" loading="lazy"><p>On the list. Support is still to be built.</p><span class="status soon">Coming soon</span></div>
+    <div class="sim"><img class="colour" src="assets/sims/ats.png" alt="American Truck Simulator" loading="lazy" style="height:84px"><p>On the list. Support is still to be built.</p><span class="status soon">Coming soon</span></div>
+    <div class="sim"><img class="colour" src="assets/sims/rf2.png" alt="rFactor 2" loading="lazy" style="height:84px"><p>On the list. Support is still to be built.</p><span class="status soon">Coming soon</span></div>
   </div>
-  <p class="meta" style="margin-top:14px">iRacing, Le Mans Ultimate, Automobilista 2, Assetto Corsa, ACC, AC EVO and RaceRoom are ready. The other two are built and still being tested on track, and arrive as free updates. They are shown in the app as Coming soon, and you can say which one you want most with the Ideas button.</p>
+  <p class="meta" style="margin-top:14px">iRacing, Le Mans Ultimate, Automobilista 2, Assetto Corsa, ACC, AC EVO and RaceRoom are ready. Project Motor Racing and BeamNG are built and still being tested on track. Assetto Corsa Rally, American Truck Simulator and rFactor 2 are planned. All five will arrive as free updates, and you can say which one you want most with the Ideas button.</p>
 </div></section>
 
 <section class="praise" aria-label="Community"><div class="wrap">
@@ -238,8 +241,8 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
 </div></section>
 
 <section id="access"><div class="wrap">
-  <p class="eyebrow">Early access</p><h2>Get Dialed, free.</h2>
-  <p class="sub">Dialed is in early access, and it is free and always will be. Enter your email and I'll send you the download link, plus a short note when something worth knowing lands (a new sim, a big settings update). One click to unsubscribe, any time.</p>
+  <p class="eyebrow">Download now</p><h2>Get Dialed, free.</h2>
+  <p class="sub">Dialed is free and always will be. Enter your email and I'll send you the download link, plus a short note when something worth knowing lands (a new sim, a big settings update). One click to unsubscribe, any time.</p>
   <div class="card" style="padding:30px 28px;margin-bottom:18px" id="accessCard">
     <form id="accessForm" class="newsform" action="https://app.kit.com/forms/10202736/subscriptions" method="post">
       <input type="email" name="email_address" id="accessEmail" placeholder="Your email address" required autocomplete="email" aria-label="Email address">
@@ -269,7 +272,7 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
   <details><summary>Does it change my game files?</summary><p>Only when you press Apply, only the graphics settings it lists, and always after saving a backup. Backups live in a visible <code>Dialed Backups</code> folder next to the sim's own settings, and you can restore any of them in the app.</p></details>
   <details><summary>Why does it close my sim?</summary><p>Sims rewrite their settings file when they exit, which would overwrite the change. So Dialed warns you clearly, closes the sim, saves the file, and you start the sim again.</p></details>
   <details><summary>Which sim should I test with, and where?</summary><p>Pick the heaviest session your PC handles: a full grid, ideally in rain or at night, and capture the first lap. The Setup page lists suggested tests for each sim, and a Launch button starts the game through Steam with Dialed already open. Use the same session every time so rounds compare fairly.</p></details>
-  <details><summary>Does it work with Assetto Corsa, Content Manager and Custom Shaders Patch?</summary><p>Yes, with the original Assetto Corsa. Dialed changes the video settings in <code>Documents\Assetto Corsa\cfg\video.ini</code>. If you use Custom Shaders Patch it also adjusts its performance settings (pixel density, level-of-detail distances, lighting, shadows, Extra FX, particles, mirrors, rain and grass), but only for features you have switched on, and only by writing into CSP's own small override files. Content Manager keeps its own copy of AC's settings and writes it back when the game closes, so Dialed closes it together with the game when you apply and tells you first. Weather mods such as Pure are left alone. This is the original Assetto Corsa; Assetto Corsa Competizione and AC EVO are separate games, still coming soon.</p></details>
+  <details><summary>Does it work with Assetto Corsa, Content Manager and Custom Shaders Patch?</summary><p>Yes, with the original Assetto Corsa. Dialed changes the video settings in <code>Documents\Assetto Corsa\cfg\video.ini</code>. If you use Custom Shaders Patch it also adjusts its performance settings (pixel density, level-of-detail distances, lighting, shadows, Extra FX, particles, mirrors, rain and grass), but only for features you have switched on, and only by writing into CSP's own small override files. Content Manager keeps its own copy of AC's settings and writes it back when the game closes, so Dialed closes it together with the game when you apply and tells you first. Weather mods such as Pure are left alone. This is the original Assetto Corsa; Assetto Corsa Competizione and AC EVO are separate games, and Dialed supports those too.</p></details>
   <details><summary>Does it work in VR?</summary><p>Yes, for iRacing only for now. Choose VR on the start screen and Dialed tunes your iRacing VR file: render resolution, foveated rendering and the usual graphics settings. If your headset uses motion smoothing, you can aim for half your headset's refresh rate. I have only tested it on a Pimax Dream Air, so I can't guarantee the results on other headsets. If you try it, please use Share my result after each round so I can keep testing. The other sims are monitor-only for now. NextLevelXR is a separate VR tool that I use and recommend; Dialed is independent and does not replace it.</p></details>
   <details><summary>Something went wrong.</summary><p>Use the <b>Report</b> button in the app. It saves a zip with your log and (if you tick them) your captures and graphics settings, and sends your message to me. The zip is not uploaded by the app.</p></details>
   <details><summary>Does it send anything about me?</summary><p>No. The only network use is checking GitHub for updates (which you can switch off) and the Report and Ideas buttons when you press them. There is also an optional Share my result button that shows you exactly what it would send and only sends it if you press Send. The more results people share, the more confident the recommendations can become over time. If you want to help improve the advice without pressing it every time, you can tick "share automatically" there (or in About). Then each finished round sends the same anonymous summary: the sim, what limited your PC, the settings changed with their confidence, whether each change was kept, the before and after frame rates and, if you ran the PC check, your processor, graphics card, memory and screen count. No name, email, file paths or capture files. It is off until you turn it on, and you can switch it off at any time.</p></details>
@@ -283,14 +286,14 @@ footer { margin-top:80px; border-top:1px solid var(--line); background:var(--rai
     <h2>Made by a sim racer, for sim racers.</h2>
     <p>Dialed is a hobby project from F1GamerDad, and it will always be free for everyone.</p>
     <ul class="ticks"><li>No account in the app, no ads, no trial</li><li>Nothing about you tracked or sold</li><li>Updates inside the app</li></ul>
-    <p><a class="btn" id="dl2" href="#access">Get early access</a></p>
+    <p><a class="btn" id="dl2" href="#access">Download now</a></p>
     <p id="tipRow" hidden style="margin-top:22px"><a class="btn ghost" id="tipLink" href="#">☕ Buy me a pit stop coffee</a><br><span class="meta">Tips are optional and change nothing in the app.</span></p>
   </div>
 </div></section>
 
 <footer><div class="wrap">
   <p><b>Dialed by F1GamerDad.</b> Frame capture uses Intel PresentMon (MIT licence). Fonts: Lato and Russo One (SIL Open Font License). See the <a href="https://github.com/f1gamerdad-labs/dialed/blob/main/THIRD_PARTY_NOTICES.md">third-party notices</a>.</p>
-  <p>iRacing, Le Mans Ultimate, Assetto Corsa Competizione, Assetto Corsa EVO, Automobilista 2, RaceRoom, Project Motor Racing, BeamNG.drive and other sim names and logos belong to their owners. Dialed is independent and is not made, endorsed or supported by them or by NextLevelXR. Use at your own risk; Dialed keeps a backup of every file it changes.</p>
+  <p>iRacing, Le Mans Ultimate, Assetto Corsa Competizione, Assetto Corsa EVO, Automobilista 2, RaceRoom, Project Motor Racing, BeamNG.drive, Assetto Corsa Rally, American Truck Simulator, rFactor 2 and other sim names and logos belong to their owners. Dialed is independent and is not made, endorsed or supported by them or by NextLevelXR. Use at your own risk; Dialed keeps a backup of every file it changes.</p>
   <p>© 2026 F1GamerDad. All rights reserved. <a href="https://github.com/f1gamerdad-labs/dialed">Source and releases on GitHub</a> · <a href="https://ko-fi.com/f1gamerdad">Tip jar</a></p>
 </div></footer>
 <script>
