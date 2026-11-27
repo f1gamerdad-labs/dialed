@@ -13,6 +13,7 @@
   var tPMR = isNode ? require('./settings-table-pmr.js') : root.SETTINGS_TABLE_PMR;
   var tRR = isNode ? require('./settings-table-raceroom.js') : root.SETTINGS_TABLE_RACEROOM;
   var tEVO = isNode ? require('./settings-table-evo.js') : root.SETTINGS_TABLE_EVO;
+  var tACR = isNode ? require('./settings-table-acrally.js') : root.SETTINGS_TABLE_ACRALLY;
   var tIRVR = isNode ? require('./settings-table-iracing-vr.js') : root.SETTINGS_TABLE_IRACING_VR;
 
   // ---------- iRacing ----------
@@ -402,12 +403,18 @@
     }],
     modes: [{ id: 'driving', label: 'Driving', section: 'PMR', hint: 'Capture while driving on track. PMR uses the same graphics settings for replays.' }],
     isVrFile: function () { return false; },
-    note: '<b>PMR stores each graphics choice as its position in the menu list.</b> Dialed only ever moves a setting one step down that list, so it always lands on a real menu choice. ' +
-      'The names of most positions are not known yet, so you will see "Step 2" where the menu would say something like Low, and every suggestion is low confidence. ' +
-      'After applying, open Graphics, then Advanced Graphics Settings in PMR and check the change.',
+    note: '<b>Dialed changes the settings on PMR\'s Advanced Graphics page,</b> only ever lowering one, one step at a time. ' +
+      'Resolution, display mode, V-sync, frame limits, anti-aliasing, upscaling and frame generation are left to you. ' +
+      'Applying sets the hardware profile to Custom, and Dialed closes the game first.',
+    // a named hardware profile would put its own values back, so any change also selects Custom (position 6)
+    expandChanges: function (changes) { return changes.length ? changes.concat([{ section: 'PMR', key: 'SettingsVideoGraphicsHardwareProfile', to: 6 }]) : changes; },
     scopeLine: function () { return 'PMR has one set of graphics settings, so every change below applies to both driving and replays.'; },
     scopeOf: function () { return 'Changes driving and replays'; },
-    capInfo: function () { return { cap: NaN, refresh: NaN }; }, // the frame-rate limit is stored as a menu position, so the target is the user's own
+    // the frame-rate limit is stored as a menu position; the menu has no "off"
+    capInfo: function (ini) {
+      var i = parseFloat(((ini && ini.PMR) || {}).SettingsVideoDisplayFrameRateLimit);
+      return { cap: [30, 60, 90, 120, 144, 180][i - 1] || NaN, refresh: NaN };
+    },
     scenarios: [
       '<b>A race start with a full grid</b> in <b>rain or at dusk</b>, on the busiest track you have.',
       'Capture the <b>first lap</b> each time, from the same grid slot.'
@@ -454,16 +461,53 @@
     requiredFiles: ['main']
   };
 
+  // ---------- Assetto Corsa Rally ----------
+  var ACR_KEYS = tACR.settings.map(function (s) { return s.key; });
+  var acrally = {
+    id: 'acrally', name: 'Assetto Corsa Rally', short: 'AC Rally',
+    process: 'acr.exe',
+    steamAppId: '3917090',
+    table: tACR,
+    files: [{
+      id: 'main', name: 'PlayerDataSaveSlot.sav', label: 'AC Rally player save', rel: 'Saved\\SaveGames\\PlayerDataSaveSlot.sav',
+      hint: 'In %LOCALAPPDATA%\\acr\\Saved\\SaveGames. A binary save file: Dialed only changes the graphics quality values.',
+      sections: ['ACR'],
+      match: function (n) { return /^PlayerDataSaveSlot\.sav$/i.test(n); },
+      parse: function (t) { return core.parseAcrSave(t, ACR_KEYS, tACR.presets); },
+      patch: function (t, changes) { return core.patchAcrSave(t, changes, ACR_KEYS, tACR.presets); }
+    }],
+    modes: [{ id: 'driving', label: 'Driving', section: 'ACR', hint: 'Capture while driving a stage. AC Rally uses the same graphics settings for replays.' }],
+    isVrFile: function () { return false; },
+    note: '<b>AC Rally support is new,</b> and the game is still early access. Dialed reads the 15 settings on the Graphic quality page and only ever lowers one, one step at a time. ' +
+      'Upscaling, resolution scale, sharpness, frame generation, V-sync and the frame limiter are left to you. AC Rally keeps these in its player save, so Dialed closes the game before applying, ' +
+      'and restoring a backup puts back that whole file, including your last car and stage choices. Applying under a named graphics preset changes the preset to Custom, as the game does, keeping that preset\'s resolution scale.',
+    scopeLine: function () { return 'AC Rally has one set of graphics settings, so every change below applies to both driving and replays.'; },
+    scopeOf: function () { return 'Changes driving and replays'; },
+    capInfo: function (ini) { var v = parseFloat(((ini && ini.ACRINFO) || {}).frameLimit); return { cap: v > 0 ? v : NaN, refresh: NaN }; },
+    displayTip: function (ini) {
+      var info = (ini && ini.ACRINFO) || {};
+      if (!info.preset || info.preset === 'Custom' || tACR.presets[info.preset]) return null;
+      return 'Your AC Rally graphics preset is not Custom, so Dialed cannot see the settings in use and suggests no changes. In AC Rally, open Graphics, change any one Graphic quality setting (and change it back if you like) so the preset reads Custom, then press Back to apply.';
+    },
+    scenarios: [
+      '<b>The same stage, car and weather every time</b>: pick a stage with trees, crowds and villages.',
+      '<b>Rain or dusk</b> if you can: the heaviest conditions.',
+      'Capture from the <b>start line</b> each time and drive it the same way.'
+    ],
+    captureHint: 'Capture 60 seconds of driving from the start line, same stage and car each time. Choose 120 or 150 seconds if you want more of the stage covered.',
+    requiredFiles: ['main']
+  };
+
   // Planned but not built yet: a tile only, with no settings table or files.
   var PLANNED = 'It is planned, and arrives in a later update.';
-  var acrally = soon('acrally', 'Assetto Corsa Rally', 'AC Rally', PLANNED), ats = soon('ats', 'American Truck Simulator', 'ATS', PLANNED), rf2 = soon('rf2', 'rFactor 2', 'rF2', PLANNED);
+  var ats = soon('ats', 'American Truck Simulator', 'ATS', PLANNED), rf2 = soon('rf2', 'rFactor 2', 'rF2', PLANNED);
 
   var SIMS = { iracing: iracing, lmu: lmu, ams2: ams2, ac: ac, acc: acc, acevo: acevo, raceroom: raceroom, pmr: pmr, beamng: beamng, acrally: acrally, ats: ats, rf2: rf2 };
   var ORDER = ['iracing', 'lmu', 'ams2', 'ac', 'acc', 'acevo', 'raceroom', 'pmr', 'beamng', 'acrally', 'ats', 'rf2'];
 
   // First release: only these sims are switched on. The others are built and tested but shown as "Coming soon" until they ship as fast follows.
   // To release one, add its id here (the picker, capture following and the website all read comingSoon).
-  var LIVE = ['iracing', 'lmu', 'ams2', 'ac', 'acc', 'acevo', 'raceroom'];
+  var LIVE = ['iracing', 'lmu', 'ams2', 'ac', 'acc', 'acevo', 'raceroom', 'pmr', 'acrally'];
   ORDER.forEach(function (id) {
     if (LIVE.indexOf(id) < 0) { SIMS[id].comingSoon = true; SIMS[id].reason = SIMS[id].reason || 'It is built and being tested, and arrives in a fast follow update.'; }
   });

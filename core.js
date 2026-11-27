@@ -740,6 +740,84 @@
     return evoText(out);
   }
 
+  // ---------- Assetto Corsa Rally: Saved\SaveGames\PlayerDataSaveSlot.sav ----------
+  // An Unreal save, read here as Latin-1 text (one character per byte). Strings are an int32 length (counting the NUL), the text, a NUL.
+  // The quality settings are a map of (enum type name, setting name, int32 value). Before the map: the graphics preset name, 12 bytes and the
+  // map's count. The int32 after "PlayerSaveGameData" is the size of everything that follows it, so it changes if the preset name does.
+  // Anything that does not look exactly like this is not read and not written.
+  function acrInt(t, at) { return (t.charCodeAt(at) & 255) + (t.charCodeAt(at + 1) & 255) * 256 + (t.charCodeAt(at + 2) & 255) * 65536 + (t.charCodeAt(at + 3) & 255) * 16777216; }
+  function acrBytes(v) { return String.fromCharCode(v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255); }
+  function acrStr(s) { return acrBytes(s.length + 1) + s + '\0'; }
+  function acrFloat(t, at) {
+    var d = new DataView(new ArrayBuffer(4));
+    for (var i = 0; i < 4; i++) d.setUint8(i, t.charCodeAt(at + i) & 255);
+    return d.getFloat32(0, true);
+  }
+  function acrLayout(text, keys) {
+    var marker = acrStr('PlayerSaveGameData'), m = text.indexOf(marker);
+    if (m < 0) return null;
+    var sizeAt = m + marker.length;
+    if (acrInt(text, sizeAt) !== text.length - sizeAt - 4) return null;
+    var values = {};
+    keys.forEach(function (k) {
+      var s = acrStr(k), i = text.indexOf(s);
+      if (i < 0 || text.indexOf(s, i + 1) >= 0 || acrInt(text, i + s.length) > 10) return;
+      values[k] = i + s.length;
+    });
+    // the map starts with the first enum type name; its count sits just before, and the preset name ends 12 bytes before that
+    var first = text.search(/EAll[A-Za-z]*ScalabilityQuality\0|EAlwaysOn[A-Za-z]*ScalabilityQuality\0/);
+    if (first < 0) return null;
+    var end = first - 20;   // back over: an int32, two floats, the map count and the first type name's length
+    var preset = null;
+    for (var len = 2; len <= 24; len++) {
+      var at = end - len - 4;
+      if (at > sizeAt && acrInt(text, at) === len && text.charAt(end - 1) === '\0' && /^[A-Za-z]+$/.test(text.slice(at + 4, end - 1))) { preset = { at: at, name: text.slice(at + 4, end - 1) }; break; }
+    }
+    return preset ? { sizeAt: sizeAt, preset: preset, values: values } : null;
+  }
+  // presets: { name: { key: value } } from the settings table. With a named preset the game uses the preset's values, not the ones stored.
+  function parseAcrSave(text, keys, presets) {
+    var out = { ACR: {} }, l = acrLayout(text, keys);
+    if (!l) return out;
+    var name = l.preset.name, known = (presets || {})[name];
+    out.ACRINFO = { preset: name };
+    var limit = acrFloat(text, l.preset.at - 60);   // frame limiter, 0 = off
+    if (limit >= 30 && limit <= 300) out.ACRINFO.frameLimit = String(Math.round(limit));
+    if (name !== 'Custom' && !known) return out;   // the values in the file are not the ones in use: offer nothing
+    Object.keys(l.values).forEach(function (k) { out.ACR[k] = String(name === 'Custom' ? acrInt(text, l.values[k]) : known[k]); });
+    return out;
+  }
+  // Writes the changed values. Under a known named preset every value is written (preset plus changes) and the preset becomes Custom,
+  // exactly what the game does itself when one setting is changed. Under an unknown preset nothing is written.
+  function patchAcrSave(text, changes, keys, presets) {
+    var l = acrLayout(text, keys);
+    if (!l) return text;
+    var name = l.preset.name, known = (presets || {})[name];
+    if (name !== 'Custom' && !known) return text;
+    if (!changes.some(function (c) { return l.values[c.key] !== undefined; })) return text;
+    var set = {};
+    if (name !== 'Custom') Object.keys(l.values).forEach(function (k) { set[k] = known[k]; });
+    changes.forEach(function (c) { set[c.key] = Number(c.to); });
+    var chars = text.split('');
+    Object.keys(set).forEach(function (k) {
+      var at = l.values[k];
+      if (at === undefined) return;
+      var b = acrBytes(set[k]);
+      for (var i = 0; i < 4; i++) chars[at + i] = b.charAt(i);
+    });
+    var out = chars.join('');
+    if (name !== 'Custom') {
+      // A preset also sets the resolution scale. The float 4 bytes after the preset name is Custom's, so it takes the preset's value, as in the game.
+      var scale = known.ResolutionScale, scaleAt = l.preset.at + 4 + name.length + 1 + 4, was = acrFloat(text, scaleAt);
+      if (!(scale > 0) || !(was >= 33 && was <= 200)) return text;   // not where it should be: change nothing
+      var f = new DataView(new ArrayBuffer(4)); f.setFloat32(0, scale, true);
+      out = out.slice(0, scaleAt) + String.fromCharCode(f.getUint8(0), f.getUint8(1), f.getUint8(2), f.getUint8(3)) + out.slice(scaleAt + 4);
+      out = out.slice(0, l.preset.at) + acrStr('Custom') + out.slice(l.preset.at + 4 + name.length + 1);
+      out = out.slice(0, l.sizeAt) + acrBytes(out.length - l.sizeAt - 4) + out.slice(l.sizeAt + 4);
+    }
+    return out;
+  }
+
   // ---------- RaceRoom: UserData\graphics_options.xml ----------
   // One <name type="bool|int32|uint32|float32|...">value</name> per line. Section is always 'RaceRoom'. Booleans read as 1/0.
   function parseRaceRoomXml(text) {
@@ -841,7 +919,7 @@
     return head + body;
   }
 
-  return { parseEvoProto: parseEvoProto, patchEvoProto: patchEvoProto, parseRaceRoomXml: parseRaceRoomXml, patchRaceRoomXml: patchRaceRoomXml, parsePmrXml: parsePmrXml, patchPmrXml: patchPmrXml, parseBeamngJson: parseBeamngJson, patchBeamngJson: patchBeamngJson, parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, timeline: timeline, stutterNotes: stutterNotes, parseIni: parseIni, diagnose: diagnose,
+  return { parseAcrSave: parseAcrSave, patchAcrSave: patchAcrSave, parseEvoProto: parseEvoProto,patchEvoProto: patchEvoProto, parseRaceRoomXml: parseRaceRoomXml, patchRaceRoomXml: patchRaceRoomXml, parsePmrXml: parsePmrXml, patchPmrXml: patchPmrXml, parseBeamngJson: parseBeamngJson, patchBeamngJson: patchBeamngJson, parseAccJson: parseLmuJson, patchAccJson: patchAccJson, parseAms2Xml: parseAms2Xml, patchAms2Xml: patchAms2Xml, parseCapture: parseCapture, summarise: summarise, timeline: timeline, stutterNotes: stutterNotes, parseIni: parseIni, diagnose: diagnose,
     recommend: recommend, patchIni: patchIni, patchIniUpsert: patchIniUpsert, snapshot: snapshot, assessRound: assessRound, GOALS: GOALS,
     parseLmuIni: parseLmuIni, patchLmuIni: patchLmuIni, parseLmuJson: parseLmuJson, patchLmuJson: patchLmuJson };
 });

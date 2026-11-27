@@ -281,7 +281,7 @@ sealed record SimDef(string Id, string Name, string Process, string? SteamAppId,
     public string[] CompanionNames => Companion == null ? Array.Empty<string>() : Companion.Split('|', StringSplitOptions.RemoveEmptyEntries);
     // First release ships iRacing and Le Mans Ultimate; the rest wait as "Coming soon" (the self-tests point sims at fixture folders, so they stay switched on there).
     // --enable-sims=ams2 is a tester switch: it unlocks the named sims on this PC only (never set by the installer or shortcuts).
-    public bool ComingSoon => Reason != null || (Id != "iracing" && Id != "lmu" && Id != "ams2" && Id != "ac" && Id != "acc" && Id != "raceroom" && Id != "acevo" && Paths.SimOverrides.Count == 0 && !Paths.EnabledSims.Contains(Id));
+    public bool ComingSoon => Reason != null || (Id != "iracing" && Id != "lmu" && Id != "ams2" && Id != "ac" && Id != "acc" && Id != "raceroom" && Id != "acevo" && Id != "acrally" && Id != "pmr" && Paths.SimOverrides.Count == 0 && !Paths.EnabledSims.Contains(Id));
     public string[] ProcessNames => Process.Split('|', StringSplitOptions.RemoveEmptyEntries);
 }
 
@@ -337,7 +337,11 @@ static class SimService
     // outside BeamNG's own user folder (BeamNG.drive\current), which the game scans for mods and content.
     public static readonly SimDef BeamNg = new("beamng", "BeamNG.drive", "BeamNG.drive.x64", "284160", "BeamNG.drive",
         Paths.BackupsFolderName, new[] { new SimFile("main", "settings.json", @"BeamNG.drive\current\settings\settings.json") }, LocalRel: "BeamNG");
-    public static readonly SimDef[] All = { IRacing, Lmu, Ams2, Ac, Acc, AcEvo, RaceRoom, Pmr, BeamNg };
+    // Assetto Corsa Rally: %LOCALAPPDATA%\acr\Saved\SaveGames\PlayerDataSaveSlot.sav (an Unreal save; the page only touches the graphics values).
+    // Backups sit in %LOCALAPPDATA%\acr\Dialed Backups, outside the game's own Saved folder.
+    public static readonly SimDef AcRally = new("acrally", "Assetto Corsa Rally", "acr", "3917090", "Assetto Corsa Rally",
+        Paths.BackupsFolderName, new[] { new SimFile("main", "PlayerDataSaveSlot.sav", @"Saved\SaveGames\PlayerDataSaveSlot.sav") }, LocalRel: "acr");
+    public static readonly SimDef[] All = { IRacing, Lmu, Ams2, Ac, Acc, AcEvo, RaceRoom, Pmr, BeamNg, AcRally };
     public static SimDef? ById(string? id) => All.FirstOrDefault(s => s.Id == id);
 
     // Game files are not guaranteed UTF-8; Latin-1 round-trips every byte unchanged.
@@ -668,7 +672,7 @@ static class BackupService
 {
     // "rendererDX11Monitor 2026-11-17 17-28-48.ini", "Settings 2026-11-17 17-28-48.JSON" (optionally "... before restore"),
     // or the older iRacing-only "rendererDX11Monitor.20261117-172848.ini"
-    static readonly Regex Current = new(@"^(?<base>.+?) (?<ts>\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2})(?<tag> before restore)?(?<ext>\.ini|\.json|\.xml|\.videosettings)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    static readonly Regex Current = new(@"^(?<base>.+?) (?<ts>\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2})(?<tag> before restore)?(?<ext>\.ini|\.json|\.xml|\.videosettings|\.sav)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     static readonly Regex Legacy = new(@"^(?<base>.+)\.(?<ts>\d{8}-\d{6})\.ini$", RegexOptions.Compiled);
     // Loose manual backups such as "rendererDX11Monitor.ini.bak-2026-10-15" or "rendererDX11Monitor.ini.backup-2026..."
     static readonly Regex Loose = new(@"^renderer[^\\/]*\.ini\.(bak|backup)([-_.][^\\/]*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -696,7 +700,7 @@ static class BackupService
         {
             var dir = SimService.BackupsDir(sim);
             if (dir == null || !Directory.Exists(dir)) continue;
-            foreach (var f in new DirectoryInfo(dir).GetFiles().Where(x => x.Extension.Equals(".ini", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".json", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".xml", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".videosettings", StringComparison.OrdinalIgnoreCase)))
+            foreach (var f in new DirectoryInfo(dir).GetFiles().Where(x => x.Extension.Equals(".ini", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".json", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".xml", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".videosettings", StringComparison.OrdinalIgnoreCase) || x.Extension.Equals(".sav", StringComparison.OrdinalIgnoreCase)))
                 if (TryParse(sim, f.Name, out var target, out var at))
                     items.Add((at, new { sim = sim.Id, file = f.Name, target, at = at.ToString("s"), kb = (int)Math.Ceiling(f.Length / 1024.0) }));
         }

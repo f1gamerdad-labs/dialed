@@ -1,44 +1,51 @@
 /* Project Motor Racing settings table. THIS IS THE FILE TO UPDATE WHEN PMR PATCHES.
 
    Same fields as settings-table-lmu.js. Every setting is a <param name="SettingsVideoGraphics..." value="N"/> line in
-   Documents\My Games\ProjectMotorRacing\savegame1\settings.xml (section 'PMR').
+   Documents\My Games\ProjectMotorRacing\savegame1\settings.xml (section 'PMR'). The value is the choice's position, counting from 1.
 
-   WHAT IS KNOWN (checked 2026-11-18 against Sean's in-game Graphics and Advanced Graphics pages): each value is the position of the
-   choice in that setting's own menu list, counting from 1, and a higher number is always a higher-quality choice. "Off" is always 1.
-   Seen on this PC: Shadow Quality 3 = High, Shadow Distance Quality 2 = Medium, Grass Quality 3 = Medium, SSAO Quality 4 = Medium,
-   Atmosphere Quality 2 = Medium, Volumetric Fog Quality 3 = High, Texture Resolution 1 = Low, Texture Filtering 4 = Aniso 2x,
-   and every on/off effect 1 = Off.
-   WHAT IS NOT KNOWN: the names of the other positions, and how many there are. So every entry is noRaise (only ever lowered, one
-   step at a time, which always lands on a real menu choice), names of unseen positions are shown as "Step n", and every entry is
-   `unverified` (low confidence). The cpu/gpu/vram/visual numbers are estimates. */
+   CONFIRMED ON SEAN'S PC (2026-11-28, Steam build 26109592): every option name was read from the Advanced Graphics page, then every
+   setting was saved at its lowest and at its highest and the file compared. Some lists skip choices (Texture resolution is only Low or
+   Ultra, stored 1 and 2) and Atmosphere starts at 2. See notes\pmr-settings.md. cpu/gpu/vram/visual numbers are estimates.
+   One round on 28 Nov 2026 (screen space shadows off, volumetric fog and atmosphere one step down) moved the frame rate by about 1 fps,
+   within run to run variation, so those three are rated light.
+
+   NOT IN THE TABLE ON PURPOSE: everything on the Graphics page (resolution, display mode, V-sync, frame limits, anti-aliasing,
+   upscaling and frame generation) and file values the menu does not show. Dialed only ever lowers a setting here, one step at a time,
+   and sets the hardware profile to Custom when it does (see sims.js). */
 (function (root) {
   var S = 'PMR';
-  function steps(known) { var out = []; for (var i = 1; i <= 8; i++) out.push(known[i] || ('Step ' + i)); return out; }
-  var LV = [1, 2, 3, 4, 5, 6, 7, 8];
-  var OFF = steps({ 1: 'Off' });
-  function e(key, name, cpu, gpu, vram, visual, known, min) {
-    return { section: S, key: 'SettingsVideoGraphics' + key, name: name, cpu: cpu, gpu: gpu, vram: vram, visual: visual,
-      levels: LV, labels: steps(known), min: min || 1, noRaise: true, unverified: true };
+  function pos(from, labels) { return labels.map(function (_, i) { return from + i; }); }
+  function pct(from, to, step) { var out = []; for (var v = from; v <= to; v += step) out.push(v + '%'); return out; }
+  function e(key, name, cost, labels, extra) {
+    var s = { section: S, key: 'SettingsVideoGraphics' + key, name: name, cpu: cost[0], gpu: cost[1], vram: cost[2], visual: cost[3],
+      levels: pos(1, labels), labels: labels, noRaise: true, plainLabels: true };
+    for (var k in extra || {}) s[k] = extra[k];
+    return s;
   }
+  var ONOFF = ['Off', 'On'], LOWULTRA = ['Low', 'Ultra'];
 
   root.SETTINGS_TABLE_PMR = {
-    testedAgainst: 'Project Motor Racing (positions checked in the game menu; names of unseen positions unknown, so low confidence)',
-    updated: '2026-11-18',
+    testedAgainst: 'Project Motor Racing, Steam build 26109592 (every list confirmed on 28 Nov 2026)',
+    updated: '2026-11-28',
     exact: true,
     settings: [
-      e('ShadowQuality', 'Shadow quality', 1, 3, 2, 3, { 3: 'High' }, 2),
-      e('ShadowDistanceQuality', 'Shadow distance quality', 1, 2, 1, 2, { 2: 'Medium' }),
-      e('SSAOQuality', 'SSAO (ambient occlusion) quality', 0, 2, 0, 2, { 1: 'Off', 4: 'Medium' }),
-      e('VolumetricFogQuality', 'Volumetric fog quality', 0, 2, 1, 1, { 3: 'High' }),
-      e('AtmosphereQuality', 'Atmosphere quality', 0, 2, 0, 1, { 2: 'Medium' }),
-      e('GrassQuality', 'Grass quality', 1, 2, 1, 1, { 3: 'Medium' }),
-      e('TextureResolution', 'Texture resolution', 0, 1, 3, 2, { 1: 'Low' }),
-      e('TextureFiltering', 'Texture filtering', 0, 1, 0, 1, { 4: 'Aniso 2x' }, 3),
-      { section: S, key: 'SettingsVideoGraphicsScreenSpaceReflections', name: 'Screen space reflections', cpu: 0, gpu: 2, vram: 0, visual: 2, levels: LV, labels: OFF, noRaise: true, unverified: true },
-      { section: S, key: 'SettingsVideoGraphicsScreenSpaceShadows', name: 'Screen space shadows', cpu: 0, gpu: 2, vram: 0, visual: 1, levels: LV, labels: OFF, noRaise: true, unverified: true },
-      { section: S, key: 'SettingsVideoGraphicsCloudShadows', name: 'Cloud shadows', cpu: 0, gpu: 1, vram: 0, visual: 1, levels: LV, labels: OFF, noRaise: true, unverified: true },
-      { section: S, key: 'SettingsVideoGraphicsLensFlareQuality', name: 'Lens flare quality', cpu: 0, gpu: 1, vram: 0, visual: 1, levels: LV, labels: OFF, noRaise: true, unverified: true },
-      { section: S, key: 'SettingsVideoGraphicsDoF', name: 'Depth of field', cpu: 0, gpu: 1, vram: 0, visual: 1, levels: LV, labels: OFF, noRaise: true, unverified: true }
+      e('ShadowQuality', 'Shadow quality', [1, 3, 2, 3], ['Off', 'Medium', 'High', 'Ultra'], { minIndex: 1 }),
+      e('ShadowDistanceQuality', 'Shadow distance quality', [1, 2, 1, 2], ['Low', 'Medium', 'Ultra']),
+      e('ShadowMapFiltering', 'Shadow map filtering', [0, 1, 0, 1], LOWULTRA),
+      e('ScreenSpaceShadows', 'Screen space shadows', [0, 1, 0, 1], ONOFF),
+      e('ScreenSpaceReflections', 'Screen space reflections', [0, 3, 0, 2], ['Off', 'Medium', 'High', 'Ultra']),
+      e('SSAOQuality', 'SSAO quality', [0, 2, 0, 2], ['Off', 'Mobile', 'Low', 'Medium', 'High', 'Very High'], { minIndex: 2 }),
+      e('VolumetricFogQuality', 'Volumetric fog quality', [0, 1, 1, 1], ['Low', 'Medium', 'High', 'Very High', 'Ultra']),
+      e('AtmosphereQuality', 'Atmosphere quality', [0, 1, 0, 1], ['Medium', 'High', 'Very High'], { levels: [2, 3, 4] }),
+      e('CloudShadows', 'Cloud shadows', [0, 1, 0, 1], ONOFF),
+      e('GrassQuality', 'Grass quality', [1, 2, 1, 1], ['Off', 'Low', 'Medium', 'High', 'Very High', 'Ultra'], { minIndex: 1 }),
+      e('ObjectDrawDistance', 'Object draw distance', [2, 1, 1, 2], pct(100, 125, 5)),
+      e('LODDrawDistance', 'LOD draw distance', [2, 2, 1, 2], pct(100, 125, 5)),
+      e('TextureResolution', 'Texture resolution', [0, 1, 3, 3], LOWULTRA),
+      e('TextureFiltering', 'Texture filtering', [0, 1, 0, 1], ['Bilinear', 'Trilinear', 'Aniso 1x', 'Aniso 2x', 'Aniso 4x', 'Aniso 8x', 'Aniso 16x'], { minIndex: 3 }),
+      e('WindscreenReflections', 'Windscreen reflections', [0, 1, 0, 1], pct(0, 100, 5), { minIndex: 10 }),
+      e('LensFlareQuality', 'Lens flare quality', [0, 1, 0, 1], ['Off', 'Medium', 'High']),
+      e('DoF', 'Depth of field', [0, 1, 0, 1], ONOFF)
     ]
   };
   if (typeof module === 'object' && module.exports) module.exports = root.SETTINGS_TABLE_PMR;

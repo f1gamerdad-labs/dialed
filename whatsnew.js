@@ -4,17 +4,17 @@
   'use strict';
   var KEY = 'dialed.whatsNewSeen';
   // The release these notes describe. Change it (and ITEMS) only when there is something new to tell people; small fixes in between do not reopen the window.
-  var RELEASE = '0.10.1';
+  var RELEASE = '0.11.0';
   var TITLE = 'What\'s new in Dialed';
   // The big banner at the top: set to null for a release with no new sim. `sim` picks the logo (read from the player's own Steam folder, so it is skipped if missing).
-  var HERO = { sim: 'iracing', title: 'VR is now in Dialed (iRacing only for now)', sub: 'Choose VR on the start screen and Dialed tunes your iRacing VR file: render resolution, foveated rendering and the usual graphics settings. It has only been tested on a Pimax Dream Air. Other headsets should work, but the results can\'t be guaranteed, so please share your results. Free, always.' };
+  var HERO = { sim: 'acrally', title: 'Assetto Corsa Rally and Project Motor Racing are now in Dialed', sub: 'Dialed now reads, suggests and applies graphics settings for both. They are new here, so please check your changes in game and share your results. Free, always.' };
   var ITEMS = [
-    ['Aim for half your headset rate', 'In VR you can aim for half your headset\'s refresh rate with the headset\'s motion smoothing switched on. For example, 36 FPS on a 72 Hz headset.'],
-    ['Share your VR results', 'The Share my result button marks VR rounds, so VR tuning can be checked on more headsets.'],
-    ['A fix for a false "fresh baseline" message', 'Dialed no longer says your graphics card changed when its first hardware check came back empty.'],
-    ['Longer captures', 'Choose 60, 120 or 150 seconds under Capture length, so one capture can cover a whole lap at a long track such as Spa and reach the most demanding parts. If a later round was captured at a very different length, Dialed tells you the comparison may not be fair.'],
-    ['A start screen', 'Dialed now opens by asking which sim you want to tune. Tick "Skip this screen next time" to go straight to your last choice, or use Choose what to test in the sidebar at any time.']
+    ['Thank you, Edin', 'A donation from Edin, a member of the community, helped get Assetto Corsa Rally into Dialed. Massive thank you!'],
+    ['Assetto Corsa Rally', 'All 15 graphic quality settings, one careful step at a time. Applying a change switches the graphics preset to Custom, just as changing it in the game does.'],
+    ['Project Motor Racing', 'The settings on the Advanced Graphics page, with the same names as the menu. Applying a change selects the Custom hardware profile.'],
+    ['What stays yours', 'Upscaling, anti-aliasing, resolution, V-sync, frame generation and frame limits are never changed in either game.']
   ];
+
   // pure: should the window open?
   function shouldShow(seenVersion, current, tourSeen) {
     if (!current) return false;

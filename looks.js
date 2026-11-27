@@ -3,6 +3,18 @@
    so put the specific rules (shadow distance) before the general ones (shadows). Edit the wording here. */
 (function (root) {
   var RULES = [
+    // PMR: exact keys again
+    [/^SettingsVideoGraphicsScreenSpaceShadows /, 'Fine contact shadows disappear, such as around small cockpit details.', 'Fine contact shadows around small details.'],
+    [/^SettingsVideoGraphicsCloudShadows /, 'Moving shadows from clouds disappear from the track.', 'Cloud shadows move across the track.'],
+    [/^SettingsVideoGraphicsGrassQuality /, 'Less grass beside the track.', 'Thicker grass beside the track.'],
+    // AC Rally: matched on its exact key and name, so these never affect another sim's settings
+    [/^EffectsQuality Effects quality$/, 'Dust, spray, smoke and debris look less detailed.', 'More detailed dust, spray, smoke and debris.'],
+    [/^GrassDensity Grass density$/, 'Less grass and fewer low plants beside the road.', 'Thicker grass beside the road.'],
+    [/^FoliageQuality Foliage quality$/, 'Trees and bushes beside the road look simpler.', 'Fuller trees and bushes beside the road.'],
+    [/^InteractiveElementsQuality Interactive elements$/, 'Roadside objects you can hit may look simpler.', 'More detailed roadside objects.'],
+    [/^CarDeformationsQuality /, 'Crash damage on the car may look less detailed.', 'More detailed crash damage.'],
+    [/^LCDGaugeQuality /, 'The digital displays in the cockpit may look less sharp.', 'Sharper digital displays in the cockpit.'],
+    [/^CharactersQuality Characters quality$/, 'People, including your co-driver, may look simpler.', 'More detailed people.'],
     [/frame.?(rate|limit|cap)|max.?framerate|fpslimit|vsync/i,
       'No change to how the game looks: this only changes the frame rate cap.', 'No change to how the game looks: this only changes the frame rate cap.'],
     [/max.?cars.?drawn$|max cars drawn(?! in)|max.?visible.?(cars|vehicles)|maxvisible/i,

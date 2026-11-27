@@ -1059,6 +1059,22 @@ public sealed class MainForm : Form
                     Check("AC EVO: restore refuses a path trick", !BackupService.Restore("acevo", @"..\video.videosettings").ok);
                 }
             }
+            if (Paths.SimOverrides.TryGetValue("acrally", out var yroot)) // --sim-acrally=<throwaway folder holding Saved\SaveGames\PlayerDataSaveSlot.sav>
+            {
+                var yv = SimService.AcRally; var yf = Path.Combine(yroot, "Saved", "SaveGames", "PlayerDataSaveSlot.sav");
+                var yd = SimService.Describe().First(x => (string)x.GetType().GetProperty("id")!.GetValue(x)! == "acrally");
+                Check("AC Rally: found and switched on", (bool)yd.GetType().GetProperty("found")!.GetValue(yd)! && !(bool)yd.GetType().GetProperty("comingSoon")!.GetValue(yd)!);
+                var yorig = File.ReadAllBytes(yf);
+                var yback = (string)SimService.ReadAll(yv)[0].GetType().GetProperty("text")!.GetValue(SimService.ReadAll(yv)[0])!;
+                var yw = SimService.Write(yv, yv.Files[0], yback);
+                Check("AC Rally: writing back the same content leaves the binary save byte-identical", yw.ok && File.ReadAllBytes(yf).SequenceEqual(yorig), yw.message);
+                Check("AC Rally: backup is byte-exact and sits outside the game's Saved folder", yw.backup != null && File.ReadAllBytes(yw.backup).SequenceEqual(yorig) && Path.GetDirectoryName(yw.backup) == Path.Combine(yroot, Paths.BackupsFolderName));
+                var ylist = BackupService.List().Where(i => (string)i.GetType().GetProperty("sim")!.GetValue(i)! == "acrally").ToArray();
+                Check("AC Rally: lists its backup (.sav extension)", ylist.Length == 1, $"found {ylist.Length}");
+                File.WriteAllBytes(yf, new byte[] { 1, 2, 3 });
+                var yr = BackupService.Restore("acrally", Path.GetFileName(yw.backup!));
+                Check("AC Rally: restore puts the original bytes back", yr.ok && File.ReadAllBytes(yf).SequenceEqual(yorig), yr.message);
+            }
         }
         catch (Exception ex) { Check("test ran to the end", false, ex.Message); }
         File.WriteAllText(Path.Combine(Paths.Data, "selftest-backups.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
